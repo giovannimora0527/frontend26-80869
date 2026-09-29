@@ -17,7 +17,7 @@ export const routes: Routes = [
     data: { title: 'Inicio' },
     children: [      
       { path: 'usuarios', component: UsuarioComponent, data: { title: 'Usuarios' }},
-      { path: 'mascotas', component: MascotaComponent, data: { title: 'Mascotas' }}  
+      { path: 'mascotas', component: MascotaComponent, data: { title: 'Mascotas' }} 
       /* Inserte nuevos menus aqui */    
     ]
   },

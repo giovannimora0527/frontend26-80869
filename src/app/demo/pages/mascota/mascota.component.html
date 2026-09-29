@@ -1,43 +1,50 @@
-<div class="container">
-    <div class="container text-center">
-        <button type="button" class="btn btn-outline-primary" (click)="saludar()">Saludar</button>
-    </div>
+<div class="container-fluid">
     <div class="row">
-        <div class="col">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                Launch demo modal
-            </button>
-
-            <!-- Modal -->
-            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
-                aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalLabel">{{ tituloPersonalizado }}</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <h2>{{ tituloPersonalizado }}</h2>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-danger"
-                                data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-outline-primary"
-                                (click)="saludar2('Giovanni')">Guardar</button>
-                        </div>
-                    </div>
-                </div>
+        <h4>{{titleModule}}</h4>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col col-md-6">
+            <input class="form-control" placeholder="Busque la mascota">
+        </div>
+        <div class="col col-md-6 d-flex justify-content-end">
+            <button class="btn btn-outline-primary">Agregar Mascota</button>
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col col-md-12">
+            <div class="table table-responsive table-condensed">
+                <table class="table table-stripped table-responsive table-bordered">
+                    <thead>
+                         <tr>
+                            <th>Nombre</th>
+                            <th>Edad</th>
+                            <th>Fecha Registro</th>
+                            <th>Nombres y Apellidos del cliente</th>
+                            <th>Raza</th>
+                            <th>Opciones</th>
+                         </tr>
+                    </thead>
+                    <tbody *ngIf="listMascotas.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No hay información disponible</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="listMascotas.length > 0">
+                        <tr *ngFor="let mascota of listMascotas">
+                            <td class="text-center">{{ mascota.nombreMascota }}</td>
+                            <td class="text-center">{{ mascota.edad }}</td>
+                            <td class="text-center">{{ mascota.fechaRegistro }}</td>
+                            <td class="text-center">{{ mascota.cliente?.nombres }} {{ mascota.cliente?.apellidos }}</td>
+                            <td class="text-center">{{ mascota.raza?.nombre }}</td>                            
+                            <td class="text-center">
+                                <label>Botones de accion</label>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col">
-            <select class="form-select" *ngFor="let i of maxFilas">
-                <option> Opcion {{ i }}</option>
-            </select>
-        </div>
-    </div>
-
 </div>

@@ -29,15 +29,15 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
-      /* ---------- Nuevos menus aqui -------------  */ 
+      /* ---------- Nuevos menus aqui -------------  */
       {
-        id: 'mascota',
+        id: 'mascotas',
         title: 'Gestión de Mascotas',
         type: 'item',
         url: '/inicio/mascotas',
-        icon: 'feather icon-user',
+        icon: 'feather icon-home',
         classes: 'nav-item'
-      },
+      }, 
     ]
   },  
 ];

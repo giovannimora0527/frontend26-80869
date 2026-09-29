@@ -1,27 +1,36 @@
 import { Component } from '@angular/core';
-import Swal from 'sweetalert2';
+import { CommonModule } from '@angular/common';
+
+import { MascotaService } from '../mascota/service/mascota.service'
+import { Mascota } from 'src/app/models/mascota';
 
 @Component({
   selector: 'app-mascota',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './mascota.component.html',
   styleUrl: './mascota.component.scss'
 })
-export class MascotaComponent {
+export class MascotaComponent {  
+  titleModule: string = "Componente administrativo para gestionar mascotas en el sistema";
+  
+  listMascotas: Mascota[] = [];
 
-  tituloPersonalizado: string = "Crear nueva mascota";
-  maxFilas: number = 3;
-
-  saludar() {
-    Swal.fire({
-      title: 'Hola mundo',
-      icon: 'error',
-      confirmButtonText: 'Aceptar'
-    });
+  constructor(private mascotaService: MascotaService) {
+     this.listarMascota();
   }
 
-  saludar2(personaNombre: string) {
-      console.log("La variable => " + personaNombre);
+  listarMascota() {
+     this.mascotaService.listarMascotas()
+     .subscribe({
+        next: (data) => {
+          this.listMascotas = data; 
+          console.log(this.listMascotas);        
+        },
+        error: (error) => {
+          console.error('Error al listar mascotas:', error);
+        }
+     });
   }
+  
 
 }
