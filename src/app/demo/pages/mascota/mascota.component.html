@@ -35,7 +35,7 @@
                         <tr *ngFor="let mascota of listMascotas">
                             <td class="text-center">{{ mascota.nombreMascota }}</td>
                             <td class="text-center">{{ mascota.edad }}</td>
-                            <td class="text-center">{{ mascota.fechaRegistro }}</td>
+                            <td class="text-center">{{ mascota.fechaRegistro | date:'yyyy-MM-dd HH:mm:ss' }}</td>
                             <td class="text-center">{{ mascota.cliente?.nombres }} {{ mascota.cliente?.apellidos }}</td>
                             <td class="text-center">{{ mascota.raza?.nombre }}</td>                            
                             <td class="text-center">
