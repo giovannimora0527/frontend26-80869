@@ -1,49 +1,107 @@
 <div class="container-fluid">
-    <div class="row">
-        <h4>{{titleModule}}</h4>
-    </div>
-    <br>
-    <div class="row">
-        <div class="col col-md-6">
-            <input class="form-control" placeholder="Busque la mascota">
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col col-md-9">
+                    <input class="form-control" placeholder="Buscar mascota" type="text"
+                        (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col col-md-3 text-end">
+                    <button
+                        class="btn btn-md btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                        (click)="nuevaMascota('C')" title="Agregar mascota">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        &nbsp; Nuevo
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="col col-md-6 d-flex justify-content-end">
-            <button class="btn btn-outline-primary">Agregar Mascota</button>
+        <div class="card-body">
+            <div class="row">
+                <div class="table table-responsive table-condensed col col-md-12">
+                    <table class="table table-stripped table-condensed table-responsive">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Nombre</th>
+                                <th class="text-center">Especie</th>
+                                <th class="text-center">Raza</th>
+                                <th class="text-center">Edad</th>
+                                <th class="text-center">Cliente</th>
+                                <th class="text-center">Fecha de Registro</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody *ngIf="listMascotas.length === 0">
+                            <tr>
+                                <td colspan="7" class="text-center">No hay mascotas registradas</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="listMascotas.length > 0 && mascotasFiltradas.length === 0">
+                            <tr>
+                                <td colspan="7" class="text-center">No se encontraron mascotas</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="mascotasFiltradas.length > 0">
+                            <tr *ngFor="let mascota of mascotasPaginadas">
+                                <td class="text-center">{{ mascota.nombreMascota }}</td>
+                                <td class="text-center">{{ mascota.raza.especie }}</td>
+                                <td class="text-center">{{ mascota.raza.nombre }}</td>
+                                <td class="text-center">{{ mascota.edad }}</td>
+                                <td class="text-center">{{ mascota.cliente.nombres }} {{ mascota.cliente.apellidos }}
+                                </td>
+                                <td class="text-center">{{ mascota.fechaRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-info d-inline-flex 
+                                    align-items-center justify-content-center" (click)="abrirEdicion(mascota)">
+                                        <i class="fa fa-edit"></i>&nbsp;Editar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <nav *ngIf="totalPaginas > 1" aria-label="Paginación de mascotas">
+                <ul class="pagination justify-content-end mb-0">
+                    <li class="page-item" [class.disabled]="paginaActual === 1">
+                        <button class="page-link" type="button" [disabled]="paginaActual === 1"
+                            (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
+                    </li>
+                    <li class="page-item" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual">
+                        <button class="page-link" type="button"
+                            [attr.aria-current]="pagina === paginaActual ? 'page' : null"
+                            (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+                        <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas"
+                            (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
-    <br>
-    <div class="row">
-        <div class="col col-md-12">
-            <div class="table table-responsive table-condensed">
-                <table class="table table-stripped table-responsive table-bordered">
-                    <thead>
-                         <tr>
-                            <th class="text-center">Nombre</th>
-                            <th class="text-center">Edad</th>
-                            <th class="text-center">Fecha Registro</th>
-                            <th class="text-center">Nombres y Apellidos del cliente</th>
-                            <th class="text-center">Raza</th>
-                            <th class="text-center">Opciones</th>
-                         </tr>
-                    </thead>
-                    <tbody *ngIf="listMascotas.length === 0">
-                        <tr>
-                            <td colspan="6" class="text-center">No hay información disponible</td>
-                        </tr>
-                    </tbody>
-                    <tbody *ngIf="listMascotas.length > 0">
-                        <tr *ngFor="let mascota of listMascotas">
-                            <td class="text-center">{{ mascota.nombreMascota }}</td>
-                            <td class="text-center">{{ mascota.edad }}</td>
-                            <td class="text-center">{{ mascota.fechaRegistro | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-                            <td class="text-center">{{ mascota.cliente?.nombres }} {{ mascota.cliente?.apellidos }}</td>
-                            <td class="text-center">{{ mascota.raza?.nombre }}</td>                            
-                            <td class="text-center">
-                                <label>Botones de accion</label>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalCrearMascota" tabindex="-1" aria-labelledby="modalCrearMascotaLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalCrearMascotaLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                (click)="closeModal()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-body">
+                      
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                (click)="closeModal()">Cerrar</button>
+                <button type="button" class="btn btn-primary">{{ titleBoton}}</button>
             </div>
         </div>
     </div>
