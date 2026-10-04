@@ -14,6 +14,7 @@ export interface NavigationItem {
 
   children?: NavigationItem[];
 }
+
 export const NavigationItems: NavigationItem[] = [
   {
     id: 'navigation',
@@ -29,7 +30,6 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
-      /* ---------- Nuevos menus aqui -------------  */
       {
         id: 'mascotas',
         title: 'Gestión de Mascotas',
@@ -37,7 +37,16 @@ export const NavigationItems: NavigationItem[] = [
         url: '/inicio/mascotas',
         icon: 'feather icon-home',
         classes: 'nav-item'
-      }, 
+      },
+      /* ---------- Nuevos menus aqui -------------  */
+      {
+        id: 'formula-medica',
+        title: 'Gestión de Fórmulas Médicas',
+        type: 'item',
+        url: '/formula-medica',
+        icon: 'feather icon-file-text',
+        classes: 'nav-item'
+      }
     ]
-  },  
+  },
 ];
