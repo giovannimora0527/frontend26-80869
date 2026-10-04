@@ -1,1 +1,140 @@
-<p>formula-medica-form works!</p>
+<div class="pc-container">
+  <div class="pc-content">
+    <!-- Breadcrumb -->
+    <div class="page-header">
+      <div class="page-block">
+        <div class="row align-items-center">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+              <li class="breadcrumb-item"><a routerLink="/formula-medica">Inicio</a></li>
+              <li class="breadcrumb-item"><a routerLink="/formula-medica">Fórmulas Médicas</a></li>
+              <li class="breadcrumb-item active" aria-current="page">
+                {{ isEditMode ? 'Editar' : 'Nueva' }} Fórmula
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-12">
+            <div class="page-header-title">
+              <h2 class="mb-0">{{ isEditMode ? 'Editar' : 'Nueva' }} Fórmula Médica</h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            <h5>Datos de la Fórmula</h5>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="guardar()">
+              <div class="row">
+                <!-- Paciente -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Paciente <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="formula.paciente"
+                    name="paciente"
+                    required
+                    placeholder="Nombre del paciente"
+                  />
+                </div>
+
+                <!-- Medicamento -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Medicamento <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="formula.medicamento"
+                    name="medicamento"
+                    required
+                    placeholder="Nombre del medicamento"
+                  />
+                </div>
+
+                <!-- Dosis -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Dosis <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="formula.dosis"
+                    name="dosis"
+                    required
+                    placeholder="Ej: 500mg cada 8h"
+                  />
+                </div>
+
+                <!-- Médico -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Médico <span class="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="formula.medico"
+                    name="medico"
+                    required
+                    placeholder="Nombre del médico"
+                  />
+                </div>
+
+                <!-- Indicaciones -->
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">Indicaciones <span class="text-danger">*</span></label>
+                  <textarea
+                    class="form-control"
+                    [(ngModel)]="formula.indicaciones"
+                    name="indicaciones"
+                    rows="3"
+                    required
+                    placeholder="Indicaciones de uso"
+                  ></textarea>
+                </div>
+
+                <!-- Fecha Emisión -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Fecha de Emisión <span class="text-danger">*</span></label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="formula.fechaEmision"
+                    name="fechaEmision"
+                    required
+                  />
+                </div>
+
+                <!-- Fecha Vencimiento -->
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Fecha de Vencimiento <span class="text-danger">*</span></label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="formula.fechaVencimiento"
+                    name="fechaVencimiento"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Botones -->
+              <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-secondary" (click)="cancelar()">
+                  <i class="ti ti-x me-1"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="ti ti-check me-1"></i> {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

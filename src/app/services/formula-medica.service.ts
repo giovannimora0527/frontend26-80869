@@ -49,6 +49,8 @@ export class FormulaMedicaService {
     }
   ];
 
+  private nextId = 4; // ← ID del próximo registro
+
   constructor() {}
 
   getFormulas(): Observable<FormulaMedica[]> {
@@ -60,6 +62,7 @@ export class FormulaMedicaService {
   }
 
   addFormula(formula: FormulaMedica): void {
+    formula.id = this.nextId++; // ← Asigna ID secuencial
     this.formulas.push(formula);
   }
 
@@ -68,5 +71,9 @@ export class FormulaMedicaService {
     if (index !== -1) {
       this.formulas[index] = formula;
     }
+  }
+
+  deleteFormula(id: number): void {
+    this.formulas = this.formulas.filter(f => f.id !== id);
   }
 }
