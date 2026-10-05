@@ -1,0 +1,55 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestión de Fórmulas Médicas</h5>
+                    <button class="btn btn-primary" (click)="irANuevo()">
+                        <i class="feather icon-plus"></i> Nuevo
+                    </button>
+                </div>
+            </div>
+            <div class="card-block">
+                <div *ngIf="cargando" class="text-center p-4">
+                    <p>Cargando fórmulas médicas...</p>
+                </div>
+
+                <div *ngIf="!cargando" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ID Cita</th>
+                                <th>ID Medicamento</th>
+                                <th>Dosis</th>
+                                <th>Indicaciones</th>
+                                <th>Fecha Creación</th>
+                                <th>Fecha Actualización</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let formula of formulas">
+                                <td>{{ formula.id }}</td>
+                                <td>{{ formula.citaId }}</td>
+                                <td>{{ formula.medicamentoId }}</td>
+                                <td>{{ formula.dosis }}</td>
+                                <td>{{ formula.indicaciones }}</td>
+                                <td>{{ formula.fechaCreacionRegistro | date:'dd/MM/yyyy HH:mm' }}</td>
+                                <td>{{ formula.fechaActualizacionRegistro | date:'dd/MM/yyyy HH:mm' }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" (click)="editarFormula(formula)">
+                                        <i class="feather icon-edit"></i> Editar
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr *ngIf="formulas.length === 0">
+                                <td colspan="8" class="text-center">No hay fórmulas médicas registradas</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -29,6 +29,16 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
+
+      {
+        id: 'formulas-medicas',
+        title: 'Gestión de Fórmulas Médicas',
+        type: 'item',
+        url: '/inicio/formulas-medicas',
+        icon: 'feather icon-file-text',
+        classes: 'nav-item'
+      },
+      
       /* ---------- Nuevos menus aqui -------------  */
       {
         id: 'mascotas',

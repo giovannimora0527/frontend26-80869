@@ -1,0 +1,84 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{{ esEdicion ? 'Editar' : 'Nueva' }} Fórmula Médica</h5>
+            </div>
+            <div class="card-block">
+                <!-- Mensaje de error -->
+                <div *ngIf="mensajeError" class="alert alert-danger">
+                    {{ mensajeError }}
+                </div>
+
+                <form (ngSubmit)="guardar()">
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">ID Cita *</label>
+                        <div class="col-sm-9">
+                            <input type="number" class="form-control" [(ngModel)]="formula.citaId" name="citaId"
+                                placeholder="Ingrese el ID de la cita" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">ID Medicamento *</label>
+                        <div class="col-sm-9">
+                            <input type="number" class="form-control" [(ngModel)]="formula.medicamentoId"
+                                name="medicamentoId" placeholder="Ingrese el ID del medicamento" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">Dosis *</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" [(ngModel)]="formula.dosis" name="dosis"
+                                placeholder="Ej: 1 tableta cada 8 horas" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">Indicaciones *</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" [(ngModel)]="formula.indicaciones" name="indicaciones"
+                                rows="3" placeholder="Ej: Tomar con las comidas por 7 días" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">Nombre Medicamento</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" [(ngModel)]="formula.nombreMedicamento"
+                                name="nombreMedicamento" placeholder="Nombre del medicamento (opcional)">
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">Presentación</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" [(ngModel)]="formula.presentacion"
+                                name="presentacion" placeholder="Ej: Tabletas 500mg">
+                        </div>
+                    </div>
+
+                    <div class="form-group row mb-3">
+                        <label class="col-sm-3 col-form-label">Descripción</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" [(ngModel)]="formula.descripcion" name="descripcion" rows="2"
+                                placeholder="Descripción adicional"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group row mt-4">
+                        <div class="col-sm-9 offset-sm-3">
+                            <button type="button" class="btn btn-secondary me-2" (click)="cancelar()">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary" [disabled]="guardando">
+                                {{ guardando ? 'Guardando...' : (esEdicion ? 'Actualizar' : 'Guardar') }}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
