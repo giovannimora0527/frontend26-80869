@@ -29,7 +29,7 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
-      /* ---------- Clientes y mascotas ---------- */
+      /* ---------- Nuevos menus aqui -------------  */
       {
         id: 'clientes-mascotas',
         title: 'Clientes y Mascotas',
@@ -37,115 +37,107 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-users',
         children: [
           {
-            id: 'cliente',
+            id: 'clientes',
             title: 'Gestión de Clientes',
             type: 'item',
             url: '/inicio/clientes',
-            icon: 'feather icon-user',
-            classes: 'nav-item'
-          },
-          {
-            id: 'mascotas',
-            title: 'Gestión de Mascotas',
-            type: 'item',
-            url: '/inicio/mascotas',
-            icon: 'feather icon-home',
-            classes: 'nav-item'
-          },
-          {
-            id: 'raza',
-            title: 'Gestión de Razas',
-            type: 'item',
-            url: '/inicio/razas',
-            icon: 'feather icon-tag',
-            classes: 'nav-item'
-          }
+            icon: 'feather icon-user' },
+            {
+              id: 'mascotas',
+              title: 'Gestión de Mascotas',
+              type: 'item',
+              url: '/inicio/mascotas',
+              icon: 'feather icon-home'
+            },
+            {
+              id: 'razas',
+              title: 'Gestión de Razas',
+              type: 'item',
+              url: '/inicio/razas',
+              icon: 'feather icon-tag'
+            }
         ]
       },
-      /* ---------- Personal médico ---------- */
       {
-        id: 'personal-medico',
-        title: 'Personal Médico',
+        id: 'medicos-especializaciones',
+        title: 'Médicos y Especializaciones',
         type: 'collapse',
-        icon: 'feather icon-briefcase',
+        icon: 'feather icon-users',
         children: [
           {
-            id: 'medico',
+            id: 'medicos',
             title: 'Gestión de Médicos',
             type: 'item',
             url: '/inicio/medicos',
-            icon: 'feather icon-user',
-            classes: 'nav-item'
+            icon: 'feather icon-user'
           },
           {
-            id: 'especializacion',
+            id: 'especializaciones',
             title: 'Gestión de Especializaciones',
             type: 'item',
             url: '/inicio/especializaciones',
-            icon: 'feather icon-award',
-            classes: 'nav-item'
+            icon: 'feather icon-tag'
           }
         ]
       },
-      /* ---------- Atención clínica ---------- */
       {
-        id: 'atencion-clinica',
-        title: 'Atención Clínica',
+        id: 'citas-historias',
+        title: 'Citas y Historias Médicas',
         type: 'collapse',
-        icon: 'feather icon-activity',
+        icon: 'feather icon-calendar',
         children: [
           {
-            id: 'cita',
+            id: 'citas',
             title: 'Gestión de Citas',
             type: 'item',
             url: '/inicio/citas',
-            icon: 'feather icon-calendar',
-            classes: 'nav-item'
+            icon: 'feather icon-calendar'
           },
           {
-            id: 'historia-medica',
-            title: 'Historias Médicas',
+            id: 'historias-medicas',
+            title: 'Gestión de Historias Médicas',
             type: 'item',
             url: '/inicio/historias-medicas',
-            icon: 'feather icon-folder',
-            classes: 'nav-item'
+            icon: 'feather icon-file-text'
           },
           {
-            id: 'anotacion-historia',
-            title: 'Anotaciones de Historia',
+            id: 'anotaciones-historia',
+            title: 'Gestión de Anotaciones de Historia',
             type: 'item',
-            url: '/inicio/anotaciones-historia',
-            icon: 'feather icon-file-text',
-            classes: 'nav-item'
+            url: '/inicio/anotaciones_historia',
+            icon: 'feather icon-edit'
           }
         ]
       },
-      /* ---------- Farmacia ---------- */
       {
-        id: 'farmacia',
+        id: 'medicamentos-formulas',
         title: 'Farmacia',
         type: 'collapse',
         icon: 'feather icon-package',
         children: [
           {
-            id: 'medicamento',
+            id: 'medicamentos',
             title: 'Gestión de Medicamentos',
             type: 'item',
-            url: '/inicio/medicamentos',
-            icon: 'feather icon-droplet',
-            classes: 'nav-item'
+            url: '/inicio/medicamento',
+            icon: 'feather icon-package'
           },
           {
-            id: 'formula-medica',
-            title: 'Fórmulas Médicas',
+            id: 'formulas-medicas',
+            title: 'Gestión de Fórmulas Médicas',
             type: 'item',
-            url: '/inicio/formulas-medicas',
-            icon: 'feather icon-clipboard',
-            classes: 'nav-item'
+            url: '/inicio/formula-medica',
+            icon: 'feather icon-file-text'
           }
         ]
+      },
+      {
+        id: 'session',
+        title: 'Gestión de Sesión',
+        type: 'item',
+        url: '/inicio/session',
+        icon: 'feather icon-lock'
       }
-      /* ---------- Nuevos menus aqui -------------  */
     ]
   },  
 ];

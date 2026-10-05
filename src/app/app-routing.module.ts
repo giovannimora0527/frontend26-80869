@@ -12,8 +12,7 @@ import { HistoriaMedicaComponent } from './demo/pages/historia-medica/historia-m
 import { AnotacionHistoriaComponent } from './demo/pages/anotacion-historia/anotacion-historia.component';
 import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.component';
 import { FormulaMedicaComponent } from './demo/pages/formula-medica/formula-medica.component';
-
-
+import { SessionComponent } from './demo/pages/session/session.component';
 export const routes: Routes = [
   {
     path: '',
@@ -25,22 +24,18 @@ export const routes: Routes = [
     component: AdminComponent,
     data: { title: 'Inicio' },
     children: [      
-      // Administración
       { path: 'usuarios', component: UsuarioComponent, data: { title: 'Usuarios' }},
-      // Clientes y mascotas
-      { path: 'clientes', component: ClienteComponent, data: { title: 'Clientes' }},
       { path: 'mascotas', component: MascotaComponent, data: { title: 'Mascotas' }},
+      { path: 'clientes', component: ClienteComponent, data: { title: 'Clientes' }},
       { path: 'razas', component: RazaComponent, data: { title: 'Razas' }},
-      // Personal médico
-      { path: 'medicos', component: MedicoComponent, data: { title: 'Médicos' }},
+      { path: 'medicos', component: MedicoComponent, data: { title: 'Medicos' }},
       { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' }},
-      // Atención clínica
       { path: 'citas', component: CitaComponent, data: { title: 'Citas' }},
-      { path: 'historias-medicas', component: HistoriaMedicaComponent, data: { title: 'Historias médicas' }},
-      { path: 'anotaciones-historia', component: AnotacionHistoriaComponent, data: { title: 'Anotaciones de historia' }},
-      // Farmacia
-      { path: 'medicamentos', component: MedicamentoComponent, data: { title: 'Medicamentos' }},
-      { path: 'formulas-medicas', component: FormulaMedicaComponent, data: { title: 'Fórmulas médicas' }}
+      { path: 'historias-medicas', component: HistoriaMedicaComponent, data: { title: 'Historias Médicas' }},
+      { path: 'anotaciones-historia', component: AnotacionHistoriaComponent, data: { title: 'Anotaciones de Historia' }},
+      { path: 'medicamento', component: MedicamentoComponent, data: { title: 'Medicamentos' }},
+      { path: 'formula-medica', component: FormulaMedicaComponent, data: { title: 'Fórmulas Médicas' }},
+      { path: 'session', component: SessionComponent, data: { title: 'Sesión' }}
       /* Inserte nuevos menus aqui */    
     ]
   },
