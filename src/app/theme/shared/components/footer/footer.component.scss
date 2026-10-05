@@ -1,0 +1,34 @@
+:host {
+  display: block;
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e4eaee;
+  background: #ffffff;
+  color: #718096;
+  text-align: right;
+}
+
+.site-footer small {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.site-footer a {
+  color: #087e8b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+  color: #05626d;
+  text-decoration: underline;
+}
