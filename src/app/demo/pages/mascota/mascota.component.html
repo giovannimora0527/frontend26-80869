@@ -22,12 +22,36 @@
                     <table class="table table-stripped table-condensed table-responsive">
                         <thead>
                             <tr>
-                                <th class="text-center">Nombre</th>
-                                <th class="text-center">Especie</th>
-                                <th class="text-center">Raza</th>
-                                <th class="text-center">Edad</th>
-                                <th class="text-center">Cliente</th>
-                                <th class="text-center">Fecha de Registro</th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'nombre' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('nombre')">
+                                        Nombre <i class="fa" [ngClass]="columnaOrden === 'nombre' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'especie' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('especie')">
+                                        Especie <i class="fa" [ngClass]="columnaOrden === 'especie' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'raza' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('raza')">
+                                        Raza <i class="fa" [ngClass]="columnaOrden === 'raza' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'edad' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('edad')">
+                                        Edad <i class="fa" [ngClass]="columnaOrden === 'edad' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'cliente' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('cliente')">
+                                        Cliente <i class="fa" [ngClass]="columnaOrden === 'cliente' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'fechaRegistro' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('fechaRegistro')">
+                                        Fecha de Registro <i class="fa" [ngClass]="columnaOrden === 'fechaRegistro' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                                    </button>
+                                </th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -92,17 +116,9 @@
                 (click)="closeModal()"></button>
             </div>
             <div class="modal-body">
-                <div class="card">
-                    <div class="card-body">
-                      
-                    </div>
-                </div>
+
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                (click)="closeModal()">Cerrar</button>
-                <button type="button" class="btn btn-primary">{{ titleBoton}}</button>
-            </div>
+            <div class="modal-footer"></div>
         </div>
     </div>
 </div>

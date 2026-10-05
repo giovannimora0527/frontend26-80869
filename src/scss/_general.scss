@@ -395,6 +395,10 @@ p.text-muted {
   z-index: 1071;
 }
 
+.swal2-container {
+  z-index: 1100 !important;
+}
+
 .bd-example-modal {
   background-color: #fafafa;
 
