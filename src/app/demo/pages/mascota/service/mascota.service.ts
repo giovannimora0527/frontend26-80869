@@ -18,4 +18,13 @@ export class MascotaService {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar");
   }
 
+  crearMascota(mascota: Mascota): Observable<unknown> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, "guardar", mascota);
+  }
+
+  actualizarMascota(mascota: Mascota): Observable<unknown> {
+    console.log('Actualizando mascota:', mascota);
+    return this.backendService.post(environment.apiUrlAuth, this.api, "actualizar", mascota);
+  }
+
 }
