@@ -1,0 +1,80 @@
+<app-navigation
+  class="pcoded-navbar"
+  [ngClass]="{
+    'navbar-collapsed': navCollapsed,
+    'mob-open': navCollapsedMob
+  }"
+  (NavCollapse)="this.navCollapsed = !this.navCollapsed"
+  (NavCollapsedMob)="navMobClick()"
+/>
+<app-nav-bar class="navbar pcoded-header navbar-expand-lg navbar-light" (NavCollapsedMob)="navMobClick()" />
+<div class="pcoded-main-container">
+  <div class="pcoded-wrapper">
+    <div class="pcoded-content">
+      <div class="pcoded-inner-content">
+        <app-breadcrumb />
+        <div class="main-body">
+          <div class="page-wrapper">
+            @if (isHome) {
+              <section class="clinic-home" aria-labelledby="clinic-home-title">
+                <div class="clinic-home__intro">
+                  <span class="clinic-home__eyebrow">Clinica Veterinaria Uniminuto</span>
+                  <h1 id="clinic-home-title">Bienvenido a tu espacio de gestión</h1>
+                  <p>
+                    Organiza la atención, el seguimiento y el cuidado de nuestras mascotas desde un solo lugar.
+                  </p>
+                  <a class="clinic-home__action" routerLink="/inicio/usuarios">
+                    <i class="feather icon-users" aria-hidden="true"></i>
+                    Gestionar usuarios
+                  </a>
+                </div>
+
+                <div class="clinic-home__panel" aria-label="Resumen de la clinica">
+                  <div class="clinic-home__logo-wrap">
+                    <img class="clinic-home__logo" src="assets/images/logouniminuto.jpg" alt="Logo de Uniminuto" />
+                  </div>
+                  <div class="clinic-home__panel-mark">
+                    <i class="feather icon-heart" aria-hidden="true"></i>
+                  </div>
+                  <span>Atención con proposito</span>
+                  <strong>Cuidado, formación y servicio</strong>
+                  <p>Un punto de encuentro para la comunidad en general al cuidado de las mascotas.</p>
+                </div>
+
+                <div class="clinic-home__highlights">
+                  <article>
+                    <i class="feather icon-calendar" aria-hidden="true"></i>
+                    <div>
+                      <strong>Agenda organizada</strong>
+                      <span>Prepara cada jornada con claridad. Las citas se gestionan de manera eficiente. 
+                        </span>
+                    </div>
+                  </article>
+                  <article>
+                    <i class="feather icon-shield" aria-hidden="true"></i>
+                    <div>
+                      <strong>Gestión responsable</strong>
+                      <span>Información centralizada y accesible. Las herramientas de gestión te permiten mantener el control sobre los horarios, inventario, registros de clientes y mascotas,
+                        profesionales de la salud, inventario de medicamentos y suministros,
+                        y las actividades relacionadas con la clínica.</span>
+                    </div>
+                  </article>
+                  <article>
+                    <i class="feather icon-book-open" aria-hidden="true"></i>
+                    <div>
+                      <strong>Aprendizaje aplicado</strong>
+                      <span>Practica el desarrollo web con Angular aplicado a la Clinica Veterinaria.</span>
+                    </div>
+                  </article>
+                </div>
+              </section>
+            }
+            <router-outlet />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pc-menu-overlay" (click)="closeMenu()" (keydown)="handleKeyDown($event)" tabindex="0"></div>
+</div>
+<app-configuration />

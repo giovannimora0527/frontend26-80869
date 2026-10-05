@@ -1,0 +1,47 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import 'scss/variables';
+
+/* fonts-icon */
+@import 'scss/fonts/fontawesome/scss/fontawesome';
+@import 'scss/fonts/feather/iconfont';
+
+@import 'scss/general';
+@import 'scss/generic';
+@import 'scss/mixins/function';
+
+/* important element */
+@import 'scss/menu/menu-lite';
+
+/* basic elements */
+@import 'scss/theme-elements/theme-elements';
+
+/* third party modules style*/
+@import 'scss/plugins/plugins';
+
+@import 'scss/custom';
+
+
+
+/* Mis estilos personalizados que pueden usar todos los componentes */
+
+.clinic-home__action {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.65rem;
+	margin-top: 2rem;
+	padding: 0.8rem 1.1rem;
+	border-radius: 4px;
+	background: var(--clinic-teal);
+	color: #ffffff;
+	font-weight: 600;
+	text-decoration: none;
+	transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.clinic-home__action:hover,
+.clinic-home__action:focus-visible {
+	background: #05626d;
+	color: #ffffff;
+	transform: translateY(-2px);
+}
