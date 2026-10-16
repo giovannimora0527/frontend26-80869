@@ -37,7 +37,15 @@ export const NavigationItems: NavigationItem[] = [
         url: '/inicio/mascotas',
         icon: 'feather icon-home',
         classes: 'nav-item'
-      }, 
+      },
+      {
+        id: 'formulas',
+        title: 'Gestión de Fórmulas Médicas',
+        type: 'item',
+        url: '/inicio/formulas',
+        icon: 'feather icon-file-text',
+        classes: 'nav-item'
+    },
     ]
   },  
 ];
