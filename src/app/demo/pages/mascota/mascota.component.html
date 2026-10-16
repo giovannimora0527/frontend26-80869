@@ -115,10 +115,47 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
                 (click)="closeModal()"></button>
             </div>
-            <div class="modal-body">
-
-            </div>
-            <div class="modal-footer"></div>
+            <form [formGroup]="form" (ngSubmit)="guardarMascota()">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombreMascota" class="form-label">Nombre de la mascota</label>
+                            <input id="nombreMascota" class="form-control" formControlName="nombreMascota">
+                            <div class="text-danger" *ngIf="f['nombreMascota'].touched && f['nombreMascota'].invalid">Ingresa el nombre de la mascota.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edad" class="form-label">Edad</label>
+                            <input id="edad" class="form-control" type="number" min="1" formControlName="edad">
+                            <div class="text-danger" *ngIf="f['edad'].touched && f['edad'].invalid">Ingresa una edad válida.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="raza" class="form-label">Raza</label>
+                            <select id="raza" class="form-select" formControlName="raza" [compareWith]="compararRazas">
+                                <option [ngValue]="null" disabled>Selecciona una raza</option>
+                                <option *ngFor="let raza of listRazas" [ngValue]="raza">{{ raza.nombre }}</option>
+                            </select>
+                            <div class="text-danger" *ngIf="f['raza'].touched && f['raza'].invalid">Ingresa la raza.</div>
+                        </div>
+                        <div class="col-12"><hr><h2 class="h6">Datos del cliente</h2></div>
+                        <div class="col-md-6">
+                            <label for="cliente" class="form-label">Cliente</label>
+                            <select id="cliente" class="form-select" formControlName="cliente" [compareWith]="compararClientes">
+                                <option [ngValue]="null" disabled>Selecciona un cliente</option>
+                                <option *ngFor="let cliente of listClientes" [ngValue]="cliente">{{ cliente.nombres }} {{ cliente.apellidos }}</option>
+                            </select>
+                            <div class="text-danger" *ngIf="f['cliente'].touched && f['cliente'].invalid">Ingresa el cliente.</div>
+                        </div>                    
+                    </div>
+                    <div class="alert alert-danger mt-3 mb-0" *ngIf="respuestaError" role="alert">{{ respuestaError }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    (click)="closeModal()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="enviando">
+                        {{ enviando ? 'Enviando...' : titleBoton }}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
