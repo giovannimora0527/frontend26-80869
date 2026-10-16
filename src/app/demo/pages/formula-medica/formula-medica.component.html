@@ -1,1 +1,59 @@
-<p>formula-medica works!</p>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Gestión de Fórmulas Médicas</h4>
+
+    <button type="button" class="btn btn-primary">
+    Nuevo
+    </button>
+    </div>
+
+  <div *ngIf="cargando" class="alert alert-info">
+    Cargando fórmulas médicas...
+    </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+    <button class="btn btn-sm btn-outline-danger ms-2"
+            (click)="listarFormulas()">
+    Reintentar
+    </button>
+    </div>
+
+  <div class="table-responsive" *ngIf="!cargando && !error">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+        <tr>
+        <th>ID</th>
+        <th>Dosis</th>
+        <th>Indicaciones</th>
+        <th>Fecha de creación</th>
+        <th>Fecha de actualización</th>
+        <th>Acciones</th>
+        </tr>
+        </thead>
+
+    <tbody>
+        <tr *ngFor="let formula of formulas">
+            <td>{{ formula.id }}</td>
+            <td>{{ formula.dosis }}</td>
+            <td>{{ formula.indicaciones }}</td>
+            <td>{{ formula.fechaCreacionRegistro | date:'dd/MM/yyyy' }}</td>
+            <td>{{ formula.fechaActualizacionRegistro | date:'dd/MM/yyyy' }}</td>
+            <td>
+            <button type="button" class="btn btn-sm btn-warning">
+            Editar
+            </button>
+            </td>
+        </tr>
+
+        <tr *ngIf="formulas.length === 0">
+        <td colspan="6" class="text-center">
+            No hay fórmulas médicas registradas.
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
+</div>
+
