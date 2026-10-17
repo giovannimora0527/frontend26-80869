@@ -1,0 +1,94 @@
+<div class="position-relative">
+  @if (cargando) {
+    <div class="text-center py-2 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Cargando...</div>
+  }
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          @for (col of columnas; track col.campo) {
+            <th class="text-center"
+                [attr.aria-sort]="col.ordenPor && sortBy === col.ordenPor ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
+              @if (col.ordenPor) {
+                <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenar.emit(col.ordenPor)">
+                  {{ col.titulo }}
+                  <i class="fa" [ngClass]="sortBy === col.ordenPor ? (sortDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'" aria-hidden="true"></i>
+                </button>
+              } @else {
+                {{ col.titulo }}
+              }
+            </th>
+          }
+          @if (accionesTpl) {
+            <th class="text-center">Acciones</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @if (pagina && pagina.content.length > 0) {
+          @for (fila of pagina.content; track $index) {
+            <tr>
+              @for (col of columnas; track col.campo) {
+                <td class="text-center">
+                  @switch (col.formato) {
+                    @case ('fecha') { {{ valor(fila, col.campo) | date: 'dd/MM/yyyy' }} }
+                    @case ('hora') { {{ hora(valor(fila, col.campo)) }} }
+                    @case ('fechaHora') { {{ valor(fila, col.campo) | date: 'dd/MM/yyyy HH:mm' }} }
+                    @case ('estado') {
+                      <span class="badge" [ngClass]="claseEstado(valor(fila, col.campo))">{{ valor(fila, col.campo) }}</span>
+                    }
+                    @case ('activo') {
+                      <span class="badge" [ngClass]="valor(fila, col.campo) ? 'bg-success' : 'bg-secondary'">
+                        {{ valor(fila, col.campo) ? 'Activa' : 'Inactiva' }}
+                      </span>
+                    }
+                    @default { {{ texto(valor(fila, col.campo), col.max) }} }
+                  }
+                </td>
+              }
+              @if (accionesTpl) {
+                <td class="text-center text-nowrap">
+                  <ng-container [ngTemplateOutlet]="accionesTpl" [ngTemplateOutletContext]="{ $implicit: fila }"></ng-container>
+                </td>
+              }
+            </tr>
+          }
+        } @else if (!cargando) {
+          <tr>
+            <td class="text-center text-muted py-4" [attr.colspan]="columnas.length + (accionesTpl ? 1 : 0)">{{ mensajeVacio }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (pagina && pagina.totalElements > 0) {
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">Mostrando {{ desde }}–{{ hasta }} de {{ pagina.totalElements }}</span>
+        <select class="form-select form-select-sm w-auto" aria-label="Registros por página" (change)="alCambiarTamanio($event)">
+          @for (t of tamanios; track t) {
+            <option [value]="t" [selected]="t === pagina.size">{{ t }} por página</option>
+          }
+        </select>
+      </div>
+      @if (pagina.totalPages > 1) {
+        <nav aria-label="Paginación">
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="pagina.page === 0">
+              <button class="page-link" type="button" (click)="irAPagina(pagina.page - 1)">Anterior</button>
+            </li>
+            @for (p of paginasVisibles; track p) {
+              <li class="page-item" [class.active]="p === pagina.page">
+                <button class="page-link" type="button" (click)="irAPagina(p)">{{ p + 1 }}</button>
+              </li>
+            }
+            <li class="page-item" [class.disabled]="pagina.page >= pagina.totalPages - 1">
+              <button class="page-link" type="button" (click)="irAPagina(pagina.page + 1)">Siguiente</button>
+            </li>
+          </ul>
+        </nav>
+      }
+    </div>
+  }
+</div>

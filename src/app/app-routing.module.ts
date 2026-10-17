@@ -12,7 +12,7 @@ import { RazaComponent } from './demo/pages/raza/raza.component';
 import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.component';
 import { HistoriaMedicaComponent } from './demo/pages/historia-medica/historia-medica.component';
 import { AnotacionHistoriaComponent } from './demo/pages/anotacion-historia/anotacion-historia.component';
-import { CitaComponent } from './demo/pages/cita/cita.component';
+import { CrearCitaComponent } from './demo/pages/cita/crear-cita.component';
 import { SessionComponent } from './demo/pages/session/session.component';
 
 export const routes: Routes = [
@@ -33,7 +33,7 @@ export const routes: Routes = [
       { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' } },
       { path: 'medicos', component: MedicoComponent, data: { title: 'Médicos' } },
       { path: 'medicamentos', component: MedicamentoComponent, data: { title: 'Medicamentos' } },
-      { path: 'citas', component: CitaComponent, data: { title: 'Citas' } },
+      { path: 'citas', component: CrearCitaComponent, data: { title: 'Citas' } },
       { path: 'historias-medicas', component: HistoriaMedicaComponent, data: { title: 'Historias Médicas' } },
       { path: 'anotaciones-historia', component: AnotacionHistoriaComponent, data: { title: 'Anotaciones de Historia' } },
       { path: 'formulas-medicas', component: FormulaMedicaComponent, data: { title: 'Fórmulas Médicas' } },
