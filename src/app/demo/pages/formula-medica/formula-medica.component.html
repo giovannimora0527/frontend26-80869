@@ -1,55 +1,112 @@
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Gestión de Fórmulas Médicas</h5>
-                    <button class="btn btn-primary" (click)="irANuevo()">
-                        <i class="feather icon-plus"></i> Nuevo
-                    </button>
-                </div>
-            </div>
-            <div class="card-block">
-                <div *ngIf="cargando" class="text-center p-4">
-                    <p>Cargando fórmulas médicas...</p>
-                </div>
-
-                <div *ngIf="!cargando" class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>ID Cita</th>
-                                <th>ID Medicamento</th>
-                                <th>Dosis</th>
-                                <th>Indicaciones</th>
-                                <th>Fecha Creación</th>
-                                <th>Fecha Actualización</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let formula of formulas">
-                                <td>{{ formula.id }}</td>
-                                <td>{{ formula.citaId }}</td>
-                                <td>{{ formula.medicamentoId }}</td>
-                                <td>{{ formula.dosis }}</td>
-                                <td>{{ formula.indicaciones }}</td>
-                                <td>{{ formula.fechaCreacionRegistro | date:'dd/MM/yyyy HH:mm' }}</td>
-                                <td>{{ formula.fechaActualizacionRegistro | date:'dd/MM/yyyy HH:mm' }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-warning" (click)="editarFormula(formula)">
-                                        <i class="feather icon-edit"></i> Editar
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr *ngIf="formulas.length === 0">
-                                <td colspan="8" class="text-center">No hay fórmulas médicas registradas</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Gestión de Fórmulas Médicas</h5>
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" type="button" (click)="irANuevo()">
+        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva fórmula
+      </button>
     </div>
+    <div class="card-body">
+      <form [formGroup]="filtrosForm" (ngSubmit)="buscar()" class="row g-2 mb-3">
+        <div class="col-md-3">
+          <input class="form-control" formControlName="texto" placeholder="Buscar medicamento o mascota" aria-label="Buscar medicamento o mascota" />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="medicoId" aria-label="Veterinario">
+            <option value="">Todos los veterinarios</option>
+            @for (m of medicos; track m.id) {
+              <option [value]="m.id">{{ m.nombres }} {{ m.apellidos }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="medicamentoId" aria-label="Medicamento">
+            <option value="">Todos los medicamentos</option>
+            @for (m of medicamentos; track m.id) {
+              <option [value]="m.id">{{ m.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-1">
+          <select class="form-select" formControlName="activo" aria-label="Estado">
+            <option value="">Todas</option>
+            <option value="true">Activas</option>
+            <option value="false">Inactivas</option>
+          </select>
+        </div>
+        <div class="col-md-2"><input type="date" class="form-control" formControlName="fechaDesde" aria-label="Emitida desde" /></div>
+        <div class="col-md-2 d-flex gap-1">
+          <input type="date" class="form-control" formControlName="fechaHasta" aria-label="Emitida hasta" />
+          <button class="btn btn-primary" type="submit" title="Buscar"><i class="fa fa-search" aria-hidden="true"></i></button>
+          <button class="btn btn-outline-secondary" type="button" (click)="limpiar()" title="Limpiar"><i class="fa fa-eraser" aria-hidden="true"></i></button>
+        </div>
+      </form>
+
+      <app-data-table
+        [columnas]="columnas"
+        [pagina]="pagina"
+        [cargando]="cargando"
+        [sortBy]="filtro.sortBy ?? ''"
+        [sortDir]="filtro.sortDir ?? 'desc'"
+        [accionesTpl]="acciones"
+        mensajeVacio="No hay fórmulas médicas que coincidan con la búsqueda."
+        (ordenar)="ordenar($event)"
+        (cambioPagina)="cambiarPagina($event)"
+        (cambioTamanio)="cambiarTamanio($event)">
+      </app-data-table>
+
+      <ng-template #acciones let-formula>
+        <button class="btn btn-sm btn-outline-secondary me-1" type="button" (click)="verDetalle(formula)">
+          <i class="fa fa-eye" aria-hidden="true"></i> Ver
+        </button>
+        @if (formula.activo) {
+          <button class="btn btn-sm btn-outline-info me-1" type="button" (click)="editarFormula(formula)">
+            <i class="fa fa-edit" aria-hidden="true"></i> Editar
+          </button>
+        }
+        <button class="btn btn-sm" type="button" [ngClass]="formula.activo ? 'btn-outline-danger' : 'btn-outline-success'" (click)="cambiarActivo(formula)">
+          {{ formula.activo ? 'Inactivar' : 'Activar' }}
+        </button>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalle completo de la fórmula -->
+<div class="modal fade" [id]="modalId" tabindex="-1" aria-labelledby="tituloFormulaDetalle" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="tituloFormulaDetalle">Detalle de la fórmula médica</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        @if (detalle) {
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Estado</dt>
+            <dd class="col-sm-8"><span class="badge" [ngClass]="detalle.activo ? 'bg-success' : 'bg-secondary'">{{ detalle.activo ? 'Activa' : 'Inactiva' }}</span></dd>
+            <dt class="col-sm-4">Mascota</dt><dd class="col-sm-8">{{ detalle.mascotaNombre }}</dd>
+            <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ detalle.clienteNombre }}</dd>
+            <dt class="col-sm-4">Veterinario</dt><dd class="col-sm-8">{{ detalle.medicoNombre }}</dd>
+            <dt class="col-sm-4">Cita / consulta</dt><dd class="col-sm-8">#{{ detalle.citaId }} — {{ detalle.citaFechaHora | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            @if (detalle.historiaId) {
+              <dt class="col-sm-4">Historia clínica</dt><dd class="col-sm-8">#{{ detalle.historiaId }}</dd>
+            }
+            <dt class="col-sm-4">Medicamento</dt>
+            <dd class="col-sm-8">{{ detalle.medicamentoNombre }} @if (detalle.medicamentoPresentacion) { <span class="text-muted">({{ detalle.medicamentoPresentacion }})</span> }</dd>
+            <dt class="col-sm-4">Fecha de emisión</dt><dd class="col-sm-8">{{ detalle.fechaEmision | date: 'dd/MM/yyyy' }}</dd>
+            <dt class="col-sm-4">Dosis</dt><dd class="col-sm-8">{{ detalle.dosis }}</dd>
+            <dt class="col-sm-4">Frecuencia</dt><dd class="col-sm-8">{{ detalle.frecuencia }}</dd>
+            <dt class="col-sm-4">Duración</dt><dd class="col-sm-8">{{ detalle.duracionDias }} días</dd>
+            <dt class="col-sm-4">Indicaciones</dt><dd class="col-sm-8">{{ detalle.indicaciones }}</dd>
+            <dt class="col-sm-4">Registrada</dt><dd class="col-sm-8">{{ detalle.fechaCreacionRegistro | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            @if (detalle.fechaActualizacionRegistro) {
+              <dt class="col-sm-4">Última actualización</dt><dd class="col-sm-8">{{ detalle.fechaActualizacionRegistro | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            }
+          </dl>
+        }
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+    </div>
+  </div>
 </div>

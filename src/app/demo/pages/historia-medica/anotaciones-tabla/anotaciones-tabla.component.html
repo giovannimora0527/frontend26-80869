@@ -1,0 +1,46 @@
+@if (historiaId && mascotaId) {
+  <div class="form-check form-switch mb-2">
+    <input class="form-check-input" type="checkbox" role="switch" id="alcanceAnotaciones" [checked]="verTodaMascota" (change)="alternarAlcance()" />
+    <label class="form-check-label" for="alcanceAnotaciones">Ver el histórico de toda la mascota (no solo esta historia)</label>
+  </div>
+}
+<form [formGroup]="filtrosForm" (ngSubmit)="buscar()" class="row g-2 mb-2">
+  <div class="col-md-5"><input class="form-control form-control-sm" formControlName="texto" placeholder="Buscar en descripción, observación o diagnóstico" aria-label="Buscar anotaciones" /></div>
+  <div class="col-md-3"><input type="date" class="form-control form-control-sm" formControlName="fechaDesde" aria-label="Desde" /></div>
+  <div class="col-md-3"><input type="date" class="form-control form-control-sm" formControlName="fechaHasta" aria-label="Hasta" /></div>
+  <div class="col-md-1 d-flex gap-1">
+    <button class="btn btn-sm btn-primary" type="submit" title="Buscar"><i class="fa fa-search" aria-hidden="true"></i></button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" (click)="limpiar()" title="Limpiar"><i class="fa fa-eraser" aria-hidden="true"></i></button>
+  </div>
+</form>
+
+<app-data-table
+  [columnas]="columnas"
+  [pagina]="pagina"
+  [cargando]="cargando"
+  [sortBy]="filtro.sortBy ?? ''"
+  [sortDir]="filtro.sortDir ?? 'desc'"
+  [accionesTpl]="acciones"
+  mensajeVacio="Aún no hay anotaciones."
+  (ordenar)="ordenar($event)"
+  (cambioPagina)="cambiarPagina($event)"
+  (cambioTamanio)="cambiarTamanio($event)">
+</app-data-table>
+
+<ng-template #acciones let-anotacion>
+  <button class="btn btn-sm btn-outline-secondary" type="button" (click)="verDetalle(anotacion)"><i class="fa fa-eye" aria-hidden="true"></i> Detalle</button>
+</ng-template>
+
+@if (detalle) {
+  <div class="card border-primary mt-2">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <strong>Anotación del {{ detalle.fecha | date: 'dd/MM/yyyy HH:mm' }} — {{ detalle.medicoNombre }}</strong>
+      <button type="button" class="btn-close" aria-label="Cerrar detalle" (click)="detalle = null"></button>
+    </div>
+    <div class="card-body">
+      <p class="mb-1"><strong>Descripción:</strong> {{ detalle.descripcion }}</p>
+      <p class="mb-1"><strong>Observación:</strong> {{ detalle.observacion || '—' }}</p>
+      <p class="mb-0"><strong>Diagnóstico / evolución:</strong> {{ detalle.diagnosticoEvolucion || '—' }}</p>
+    </div>
+  </div>
+}

@@ -1,1 +1,194 @@
-﻿<div class="card"><div class="card-header"><h5>Gestión de Historias Médicas</h5></div><div class="card-body"><p class="text-muted mb-0">Módulo en construcción.</p></div></div>
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Gestión de Historias Clínicas</h5>
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" type="button" (click)="nuevaHistoria()">
+        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva historia
+      </button>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="filtrosForm" (ngSubmit)="buscar()" class="row g-2 mb-3">
+        <div class="col-md-3"><input class="form-control" formControlName="texto" placeholder="Buscar motivo, mascota o cliente" aria-label="Buscar" /></div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="estado" aria-label="Estado">
+            <option value="">Todos los estados</option>
+            <option value="ABIERTA">ABIERTA</option>
+            <option value="CERRADA">CERRADA</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="medicoId" aria-label="Veterinario">
+            <option value="">Todos los veterinarios</option>
+            @for (m of medicos; track m.id) { <option [value]="m.id">{{ m.nombres }} {{ m.apellidos }}</option> }
+          </select>
+        </div>
+        <div class="col-md-2"><input type="date" class="form-control" formControlName="fechaDesde" aria-label="Desde" /></div>
+        <div class="col-md-2"><input type="date" class="form-control" formControlName="fechaHasta" aria-label="Hasta" /></div>
+        <div class="col-md-1 d-flex gap-1">
+          <button class="btn btn-primary" type="submit" title="Buscar"><i class="fa fa-search" aria-hidden="true"></i></button>
+          <button class="btn btn-outline-secondary" type="button" (click)="limpiar()" title="Limpiar"><i class="fa fa-eraser" aria-hidden="true"></i></button>
+        </div>
+      </form>
+
+      <app-data-table
+        [columnas]="columnas"
+        [pagina]="pagina"
+        [cargando]="cargando"
+        [sortBy]="filtro.sortBy ?? ''"
+        [sortDir]="filtro.sortDir ?? 'desc'"
+        [accionesTpl]="acciones"
+        mensajeVacio="No hay historias clínicas que coincidan con la búsqueda."
+        (ordenar)="ordenar($event)"
+        (cambioPagina)="cambiarPagina($event)"
+        (cambioTamanio)="cambiarTamanio($event)">
+      </app-data-table>
+
+      <ng-template #acciones let-historia>
+        <button class="btn btn-sm btn-outline-secondary me-1" type="button" (click)="verHistoria(historia)"><i class="fa fa-eye" aria-hidden="true"></i> Ver</button>
+        @if (historia.estado === 'ABIERTA') {
+          <button class="btn btn-sm btn-outline-danger" type="button" (click)="cerrarHistoria(historia)">Cerrar</button>
+        }
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: nueva historia clínica -->
+<div class="modal fade" [id]="modalNuevaId" tabindex="-1" aria-labelledby="tituloHistoriaNueva" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="tituloHistoriaNueva">Nueva historia clínica</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form [formGroup]="historiaForm" (ngSubmit)="guardarHistoria()" novalidate>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="hClienteId" class="form-label">Cliente</label>
+              <select id="hClienteId" class="form-select" formControlName="clienteId">
+                <option [ngValue]="null" disabled>Seleccione un cliente</option>
+                @for (c of clientes; track c.id) { <option [ngValue]="c.id">{{ c.nombres }} {{ c.apellidos }}</option> }
+              </select>
+              @if (f['clienteId'].touched && f['clienteId'].invalid) { <div class="text-danger small">Seleccione el cliente.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="hMascotaId" class="form-label">Mascota</label>
+              <select id="hMascotaId" class="form-select" formControlName="mascotaId">
+                <option [ngValue]="null" disabled>{{ mascotas.length ? 'Seleccione una mascota' : 'Primero elija un cliente' }}</option>
+                @for (m of mascotas; track m.mascotaId) { <option [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option> }
+              </select>
+              @if (f['mascotaId'].touched && f['mascotaId'].invalid) { <div class="text-danger small">Seleccione la mascota.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="hCitaId" class="form-label">Cita atendida</label>
+              <select id="hCitaId" class="form-select" formControlName="citaId">
+                <option [ngValue]="null" disabled>{{ citasAtendidas.length ? 'Seleccione la cita' : 'La mascota no tiene citas atendidas' }}</option>
+                @for (c of citasAtendidas; track c.id) { <option [ngValue]="c.id">{{ c.fecha | date: 'dd/MM/yyyy' }} {{ c.hora.substring(0, 5) }} — {{ c.motivo }}</option> }
+              </select>
+              @if (f['citaId'].touched && f['citaId'].invalid) { <div class="text-danger small">Seleccione la cita atendida.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="hMedicoId" class="form-label">Veterinario</label>
+              <select id="hMedicoId" class="form-select" formControlName="medicoId">
+                <option [ngValue]="null" disabled>Seleccione un veterinario</option>
+                @for (m of medicos; track m.id) { <option [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option> }
+              </select>
+              @if (f['medicoId'].touched && f['medicoId'].invalid) { <div class="text-danger small">Seleccione el veterinario.</div> }
+            </div>
+            <div class="col-12">
+              <label for="hMotivo" class="form-label">Motivo de consulta</label>
+              <input id="hMotivo" class="form-control" formControlName="motivo" />
+              @if (f['motivo'].touched && f['motivo'].invalid) { <div class="text-danger small">Ingrese el motivo de la consulta.</div> }
+            </div>
+            <div class="col-12">
+              <label for="hDiagnostico" class="form-label">Diagnóstico</label>
+              <textarea id="hDiagnostico" class="form-control" rows="2" formControlName="diagnostico"></textarea>
+              @if (f['diagnostico'].touched && f['diagnostico'].invalid) { <div class="text-danger small">Ingrese el diagnóstico.</div> }
+            </div>
+            <div class="col-12">
+              <label for="hObservaciones" class="form-label">Observaciones (opcional)</label>
+              <textarea id="hObservaciones" class="form-control" rows="2" formControlName="observaciones"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="enviando">
+            @if (enviando) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+            Guardar historia
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: ver historia y su histórico de anotaciones -->
+<div class="modal fade" [id]="modalVerId" tabindex="-1" aria-labelledby="tituloHistoriaVer" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="tituloHistoriaVer">Historia clínica</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        @if (historiaSeleccionada) {
+          <dl class="row mb-3">
+            <dt class="col-sm-2">Mascota</dt><dd class="col-sm-4">{{ historiaSeleccionada.mascotaNombre }}</dd>
+            <dt class="col-sm-2">Cliente</dt><dd class="col-sm-4">{{ historiaSeleccionada.clienteNombre }}</dd>
+            <dt class="col-sm-2">Veterinario</dt><dd class="col-sm-4">{{ historiaSeleccionada.medicoNombre }}</dd>
+            <dt class="col-sm-2">Fecha</dt><dd class="col-sm-4">{{ historiaSeleccionada.fechaConsulta | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            <dt class="col-sm-2">Motivo</dt><dd class="col-sm-10">{{ historiaSeleccionada.motivo }}</dd>
+            <dt class="col-sm-2">Diagnóstico</dt><dd class="col-sm-10">{{ historiaSeleccionada.diagnostico || '—' }}</dd>
+            <dt class="col-sm-2">Observaciones</dt><dd class="col-sm-10">{{ historiaSeleccionada.observaciones || '—' }}</dd>
+            <dt class="col-sm-2">Estado</dt>
+            <dd class="col-sm-10"><span class="badge" [ngClass]="historiaSeleccionada.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ historiaSeleccionada.estado }}</span></dd>
+          </dl>
+
+          <h2 class="h6">Histórico de anotaciones</h2>
+          <app-anotaciones-tabla [historiaId]="historiaSeleccionada.id" [mascotaId]="historiaSeleccionada.mascotaId" [refrescar]="refrescarAnotaciones"></app-anotaciones-tabla>
+
+          @if (historiaSeleccionada.estado === 'ABIERTA') {
+            <hr />
+            <h2 class="h6">Agregar anotación</h2>
+            <form [formGroup]="anotacionForm" (ngSubmit)="guardarAnotacion()" novalidate class="row g-2">
+              <div class="col-md-4">
+                <label for="aMedicoId" class="form-label">Veterinario</label>
+                <select id="aMedicoId" class="form-select" formControlName="medicoId">
+                  <option [ngValue]="null" disabled>Seleccione</option>
+                  @for (m of medicos; track m.id) { <option [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option> }
+                </select>
+                @if (fa['medicoId'].touched && fa['medicoId'].invalid) { <div class="text-danger small">Seleccione el veterinario.</div> }
+              </div>
+              <div class="col-md-8">
+                <label for="aDescripcion" class="form-label">Descripción</label>
+                <input id="aDescripcion" class="form-control" formControlName="descripcion" />
+                @if (fa['descripcion'].touched && fa['descripcion'].invalid) { <div class="text-danger small">Ingrese la descripción.</div> }
+              </div>
+              <div class="col-md-6">
+                <label for="aObservacion" class="form-label">Observación</label>
+                <textarea id="aObservacion" class="form-control" rows="2" formControlName="observacion"></textarea>
+                @if (fa['observacion'].touched && fa['observacion'].invalid) { <div class="text-danger small">Ingrese la observación.</div> }
+              </div>
+              <div class="col-md-6">
+                <label for="aDiagnostico" class="form-label">Diagnóstico / evolución</label>
+                <textarea id="aDiagnostico" class="form-control" rows="2" formControlName="diagnosticoEvolucion"></textarea>
+                @if (fa['diagnosticoEvolucion'].touched && fa['diagnosticoEvolucion'].invalid) { <div class="text-danger small">Ingrese el diagnóstico o la evolución.</div> }
+              </div>
+              <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary" [disabled]="enviando">
+                  @if (enviando) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                  Agregar anotación
+                </button>
+              </div>
+            </form>
+          } @else {
+            <div class="alert alert-secondary mt-3 mb-0">La historia está cerrada y no admite nuevas anotaciones.</div>
+          }
+        }
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button></div>
+    </div>
+  </div>
+</div>

@@ -1,84 +1,97 @@
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">{{ esEdicion ? 'Editar' : 'Nueva' }} Fórmula Médica</h5>
-            </div>
-            <div class="card-block">
-                <!-- Mensaje de error -->
-                <div *ngIf="mensajeError" class="alert alert-danger">
-                    {{ mensajeError }}
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header"><h5 class="mb-0">{{ esEdicion ? 'Editar' : 'Nueva' }} fórmula médica</h5></div>
+    <div class="card-body">
+      @if (esEdicion && detalle && !detalle.activo) {
+        <div class="alert alert-warning">Esta fórmula está inactiva y no puede modificarse. Actívela desde el listado para editarla.</div>
+      }
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div class="row g-3">
+          @if (esEdicion) {
+            @if (detalle) {
+              <div class="col-12">
+                <div class="alert alert-info mb-0">
+                  <strong>{{ detalle.mascotaNombre }}</strong> ({{ detalle.clienteNombre }}) — Cita #{{ detalle.citaId }} del {{ detalle.citaFechaHora | date: 'dd/MM/yyyy HH:mm' }} — Veterinario: {{ detalle.medicoNombre }}.
+                  <br /><small>La cita, la mascota y el veterinario no se pueden cambiar en una fórmula ya emitida.</small>
                 </div>
-
-                <form (ngSubmit)="guardar()">
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">ID Cita *</label>
-                        <div class="col-sm-9">
-                            <input type="number" class="form-control" [(ngModel)]="formula.citaId" name="citaId"
-                                placeholder="Ingrese el ID de la cita" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">ID Medicamento *</label>
-                        <div class="col-sm-9">
-                            <input type="number" class="form-control" [(ngModel)]="formula.medicamentoId"
-                                name="medicamentoId" placeholder="Ingrese el ID del medicamento" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">Dosis *</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" [(ngModel)]="formula.dosis" name="dosis"
-                                placeholder="Ej: 1 tableta cada 8 horas" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">Indicaciones *</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control" [(ngModel)]="formula.indicaciones" name="indicaciones"
-                                rows="3" placeholder="Ej: Tomar con las comidas por 7 días" required></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">Nombre Medicamento</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" [(ngModel)]="formula.nombreMedicamento"
-                                name="nombreMedicamento" placeholder="Nombre del medicamento (opcional)">
-                        </div>
-                    </div>
-
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">Presentación</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control" [(ngModel)]="formula.presentacion"
-                                name="presentacion" placeholder="Ej: Tabletas 500mg">
-                        </div>
-                    </div>
-
-                    <div class="form-group row mb-3">
-                        <label class="col-sm-3 col-form-label">Descripción</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control" [(ngModel)]="formula.descripcion" name="descripcion" rows="2"
-                                placeholder="Descripción adicional"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-group row mt-4">
-                        <div class="col-sm-9 offset-sm-3">
-                            <button type="button" class="btn btn-secondary me-2" (click)="cancelar()">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary" [disabled]="guardando">
-                                {{ guardando ? 'Guardando...' : (esEdicion ? 'Actualizar' : 'Guardar') }}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+              </div>
+            }
+          } @else {
+            <div class="col-md-6">
+              <label for="clienteId" class="form-label">Cliente</label>
+              <select id="clienteId" class="form-select" formControlName="clienteId">
+                <option [ngValue]="null" disabled>Seleccione un cliente</option>
+                @for (c of clientes; track c.id) { <option [ngValue]="c.id">{{ c.nombres }} {{ c.apellidos }}</option> }
+              </select>
+              @if (f['clienteId'].touched && f['clienteId'].invalid) { <div class="text-danger small">Seleccione el cliente.</div> }
             </div>
+            <div class="col-md-6">
+              <label for="mascotaId" class="form-label">Mascota</label>
+              <select id="mascotaId" class="form-select" formControlName="mascotaId">
+                <option [ngValue]="null" disabled>{{ mascotas.length ? 'Seleccione una mascota' : 'Primero elija un cliente' }}</option>
+                @for (m of mascotas; track m.mascotaId) { <option [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option> }
+              </select>
+              @if (f['mascotaId'].touched && f['mascotaId'].invalid) { <div class="text-danger small">Seleccione la mascota.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="citaId" class="form-label">Cita / consulta</label>
+              <select id="citaId" class="form-select" formControlName="citaId">
+                <option [ngValue]="null" disabled>{{ citas.length ? 'Seleccione la cita' : 'Primero elija una mascota con citas' }}</option>
+                @for (c of citas; track c.id) { <option [ngValue]="c.id">{{ c.fecha | date: 'dd/MM/yyyy' }} {{ c.hora.substring(0, 5) }} — {{ c.estado }} — {{ c.motivo }}</option> }
+              </select>
+              @if (f['citaId'].touched && f['citaId'].invalid) { <div class="text-danger small">Seleccione la cita o consulta.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="medicoId" class="form-label">Veterinario</label>
+              <select id="medicoId" class="form-select" formControlName="medicoId">
+                <option [ngValue]="null" disabled>Seleccione un veterinario</option>
+                @for (m of medicos; track m.id) { <option [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option> }
+              </select>
+              @if (f['medicoId'].touched && f['medicoId'].invalid) { <div class="text-danger small">Seleccione el veterinario.</div> }
+            </div>
+          }
+          <div class="col-md-6">
+            <label for="medicamentoId" class="form-label">Medicamento</label>
+            <select id="medicamentoId" class="form-select" formControlName="medicamentoId">
+              <option [ngValue]="null" disabled>Seleccione un medicamento</option>
+              @for (m of medicamentos; track m.id) { <option [ngValue]="m.id">{{ m.nombre }}{{ m.presentacion ? ' — ' + m.presentacion : '' }}</option> }
+            </select>
+            @if (f['medicamentoId'].touched && f['medicamentoId'].invalid) { <div class="text-danger small">Seleccione el medicamento.</div> }
+          </div>
+          <div class="col-md-6">
+            <label for="fechaEmision" class="form-label">Fecha de emisión</label>
+            <input id="fechaEmision" type="date" class="form-control" formControlName="fechaEmision" [attr.min]="fechaMinima || null" />
+            @if (f['fechaEmision'].touched && f['fechaEmision'].invalid) { <div class="text-danger small">Ingrese la fecha de emisión.</div> }
+          </div>
+          <div class="col-md-6">
+            <label for="dosis" class="form-label">Dosis</label>
+            <input id="dosis" class="form-control" formControlName="dosis" placeholder="Ej: 1 tableta de 500 mg" maxlength="255" />
+            @if (f['dosis'].touched && f['dosis'].invalid) { <div class="text-danger small">Ingrese una dosis válida (máx. 255 caracteres).</div> }
+          </div>
+          <div class="col-md-3">
+            <label for="frecuencia" class="form-label">Frecuencia</label>
+            <input id="frecuencia" class="form-control" formControlName="frecuencia" placeholder="Ej: cada 8 horas" maxlength="100" />
+            @if (f['frecuencia'].touched && f['frecuencia'].invalid) { <div class="text-danger small">Ingrese la frecuencia.</div> }
+          </div>
+          <div class="col-md-3">
+            <label for="duracionDias" class="form-label">Duración (días)</label>
+            <input id="duracionDias" type="number" class="form-control" formControlName="duracionDias" min="1" max="365" />
+            @if (f['duracionDias'].touched && f['duracionDias'].invalid) { <div class="text-danger small">Ingrese una duración entre 1 y 365 días.</div> }
+          </div>
+          <div class="col-12">
+            <label for="indicaciones" class="form-label">Indicaciones</label>
+            <textarea id="indicaciones" class="form-control" rows="3" formControlName="indicaciones"></textarea>
+            @if (f['indicaciones'].touched && f['indicaciones'].invalid) { <div class="text-danger small">Ingrese las indicaciones.</div> }
+          </div>
         </div>
+        <div class="mt-4 d-flex gap-2">
+          <button type="button" class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="guardando || (esEdicion && detalle && !detalle.activo)">
+            @if (guardando) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+            {{ esEdicion ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>

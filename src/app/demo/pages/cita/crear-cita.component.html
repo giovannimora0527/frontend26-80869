@@ -1,0 +1,111 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Crear cita médica</h5>
+  </div>
+
+  <div class="card-body">
+    <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="clienteId" class="form-label">Cliente <span class="text-danger">*</span></label>
+          <select
+            id="clienteId"
+            class="form-select"
+            formControlName="clienteId"
+            (change)="cambiarCliente()"
+            [class.is-invalid]="form.controls.clienteId.touched && form.controls.clienteId.invalid">
+            <option [ngValue]="null">Selecciona un cliente</option>
+            <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
+              {{ nombreCliente(cliente) }}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="form.controls.clienteId.touched && form.controls.clienteId.hasError('required')">
+            Selecciona un cliente.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="mascotaId" class="form-label">Mascota <span class="text-danger">*</span></label>
+          <select
+            id="mascotaId"
+            class="form-select"
+            formControlName="mascotaId"
+            [class.is-invalid]="form.controls.mascotaId.touched && form.controls.mascotaId.invalid">
+            <option [ngValue]="null">
+              {{ cargandoMascotas ? 'Cargando mascotas...' : 'Selecciona una mascota' }}
+            </option>
+            <option *ngFor="let mascota of mascotas" [ngValue]="mascota.mascotaId">
+              {{ mascota.nombreMascota ?? mascota.nombre }}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="form.controls.mascotaId.touched && form.controls.mascotaId.hasError('required')">
+            Selecciona una mascota.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="medicoId" class="form-label">Médico <span class="text-danger">*</span></label>
+          <select
+            id="medicoId"
+            class="form-select"
+            formControlName="medicoId"
+            [class.is-invalid]="form.controls.medicoId.touched && form.controls.medicoId.invalid">
+            <option [ngValue]="null">Selecciona un médico</option>
+            <option *ngFor="let medico of medicos" [ngValue]="idMedico(medico)">
+              {{ nombreMedico(medico) }}
+            </option>
+          </select>
+          <div class="invalid-feedback" *ngIf="form.controls.medicoId.touched && form.controls.medicoId.hasError('required')">
+            Selecciona un médico.
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="fechaHora" class="form-label">Fecha y hora <span class="text-danger">*</span></label>
+          <input
+            id="fechaHora"
+            type="datetime-local"
+            class="form-control"
+            formControlName="fechaHora"
+            [min]="fechaMinima"
+            [class.is-invalid]="form.controls.fechaHora.touched && form.controls.fechaHora.invalid">
+          <div class="invalid-feedback" *ngIf="form.controls.fechaHora.touched && form.controls.fechaHora.hasError('required')">
+            Indica la fecha y hora de la cita.
+          </div>
+          <div class="invalid-feedback" *ngIf="form.controls.fechaHora.touched && form.controls.fechaHora.hasError('fechaNoFutura')">
+            La cita debe programarse para una fecha y hora futuras.
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label for="motivo" class="form-label">Motivo de la consulta <span class="text-danger">*</span></label>
+          <textarea
+            id="motivo"
+            class="form-control"
+            rows="3"
+            maxlength="500"
+            formControlName="motivo"
+            [class.is-invalid]="form.controls.motivo.touched && form.controls.motivo.invalid"></textarea>
+          <div class="invalid-feedback" *ngIf="form.controls.motivo.touched && form.controls.motivo.hasError('required')">
+            Indica el motivo de la consulta.
+          </div>
+          <div class="invalid-feedback" *ngIf="form.controls.motivo.touched && form.controls.motivo.hasError('soloEspacios')">
+            El motivo no puede contener únicamente espacios.
+          </div>
+          <div class="invalid-feedback" *ngIf="form.controls.motivo.touched && form.controls.motivo.hasError('minlength')">
+            El motivo debe tener al menos 5 caracteres.
+          </div>
+          <div class="invalid-feedback" *ngIf="form.controls.motivo.touched && form.controls.motivo.hasError('maxlength')">
+            El motivo no puede superar los 500 caracteres.
+          </div>
+        </div>
+
+        <div class="col-12 d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary" [disabled]="guardando">
+            {{ guardando ? 'Guardando...' : 'Crear cita' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

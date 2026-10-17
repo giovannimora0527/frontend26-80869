@@ -1,1 +1,154 @@
-﻿<div class="card"><div class="card-header"><h5>Gestión de Citas</h5></div><div class="card-body"><p class="text-muted mb-0">Módulo en construcción.</p></div></div>
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Gestión de Citas</h5>
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" type="button" (click)="nuevaCita()">
+        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva cita
+      </button>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="filtrosForm" (ngSubmit)="buscar()" class="row g-2 mb-3">
+        <div class="col-md-3">
+          <input class="form-control" formControlName="texto" placeholder="Buscar cliente o mascota" aria-label="Buscar cliente o mascota" />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="estado" aria-label="Estado">
+            <option value="">Todos los estados</option>
+            @for (e of estados; track e) {
+              <option [value]="e">{{ e }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="medicoId" aria-label="Veterinario">
+            <option value="">Todos los veterinarios</option>
+            @for (m of medicos; track m.id) {
+              <option [value]="m.id">{{ m.nombres }} {{ m.apellidos }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2"><input type="date" class="form-control" formControlName="fechaDesde" aria-label="Desde" /></div>
+        <div class="col-md-2"><input type="date" class="form-control" formControlName="fechaHasta" aria-label="Hasta" /></div>
+        <div class="col-md-1 d-flex gap-1">
+          <button class="btn btn-primary" type="submit" title="Buscar"><i class="fa fa-search" aria-hidden="true"></i></button>
+          <button class="btn btn-outline-secondary" type="button" (click)="limpiar()" title="Limpiar"><i class="fa fa-eraser" aria-hidden="true"></i></button>
+        </div>
+      </form>
+
+      <app-data-table
+        [columnas]="columnas"
+        [pagina]="pagina"
+        [cargando]="cargando"
+        [sortBy]="filtro.sortBy ?? ''"
+        [sortDir]="filtro.sortDir ?? 'desc'"
+        [accionesTpl]="acciones"
+        mensajeVacio="No hay citas que coincidan con la búsqueda."
+        (ordenar)="ordenar($event)"
+        (cambioPagina)="cambiarPagina($event)"
+        (cambioTamanio)="cambiarTamanio($event)">
+      </app-data-table>
+
+      <ng-template #acciones let-cita>
+        @if (puedeEditar(cita)) {
+          <button class="btn btn-sm btn-outline-info me-1" type="button" (click)="editarCita(cita)">
+            <i class="fa fa-edit" aria-hidden="true"></i> Editar
+          </button>
+        }
+        @for (destino of transiciones(cita); track destino) {
+          <button class="btn btn-sm me-1" type="button"
+                  [ngClass]="destino === 'CANCELADA' ? 'btn-outline-danger' : 'btn-outline-success'"
+                  (click)="cambiarEstado(cita, destino)">{{ etiquetaEstado[destino] }}</button>
+        }
+        @if (cita.estado === 'CANCELADA') {
+          <button class="btn btn-sm btn-outline-warning" type="button" (click)="reactivar(cita)">Reactivar</button>
+        }
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear / editar cita -->
+<div class="modal fade" [id]="modalId" tabindex="-1" aria-labelledby="tituloModalCita" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="tituloModalCita">{{ modoEdicion ? 'Editar cita' : 'Nueva cita' }}</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form [formGroup]="citaForm" (ngSubmit)="guardar()" novalidate>
+        <div class="modal-body">
+          @if (modoEdicion) {
+            <div class="alert alert-info py-2">Solo se pueden cambiar la fecha, la hora, el veterinario y el motivo. El estado se cambia desde el listado.</div>
+          }
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="clienteId" class="form-label">Cliente</label>
+              <select id="clienteId" class="form-select" formControlName="clienteId">
+                <option [ngValue]="null" disabled>Seleccione un cliente</option>
+                @for (c of clientes; track c.id) {
+                  <option [ngValue]="c.id">{{ c.nombres }} {{ c.apellidos }}</option>
+                }
+              </select>
+              @if (f['clienteId'].touched && f['clienteId'].invalid) { <div class="text-danger small">Seleccione el cliente.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="mascotaId" class="form-label">Mascota</label>
+              <select id="mascotaId" class="form-select" formControlName="mascotaId">
+                <option [ngValue]="null" disabled>{{ mascotas.length ? 'Seleccione una mascota' : 'Primero elija un cliente' }}</option>
+                @for (m of mascotas; track m.mascotaId) {
+                  <option [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
+                }
+              </select>
+              @if (f['mascotaId'].touched && f['mascotaId'].invalid) { <div class="text-danger small">Seleccione la mascota del cliente.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="medicoId" class="form-label">Veterinario</label>
+              <select id="medicoId" class="form-select" formControlName="medicoId">
+                <option [ngValue]="null" disabled>Seleccione un veterinario</option>
+                @for (m of medicos; track m.id) {
+                  <option [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option>
+                }
+              </select>
+              @if (f['medicoId'].touched && f['medicoId'].invalid) { <div class="text-danger small">Seleccione el veterinario.</div> }
+            </div>
+            @if (!modoEdicion) {
+              <div class="col-md-6">
+                <label for="estado" class="form-label">Estado</label>
+                <select id="estado" class="form-select" formControlName="estado">
+                  @for (e of estadosIniciales; track e) {
+                    <option [value]="e">{{ e }}</option>
+                  }
+                </select>
+              </div>
+            }
+            <div class="col-md-6">
+              <label for="fecha" class="form-label">Fecha</label>
+              <input id="fecha" type="date" class="form-control" formControlName="fecha" [min]="fechaMinima" />
+              @if (f['fecha'].touched && f['fecha'].invalid) { <div class="text-danger small">Ingrese la fecha.</div> }
+            </div>
+            <div class="col-md-6">
+              <label for="hora" class="form-label">Hora</label>
+              <input id="hora" type="time" class="form-control" formControlName="hora" />
+              @if (f['hora'].touched && f['hora'].invalid) { <div class="text-danger small">Ingrese la hora.</div> }
+            </div>
+            @if (citaForm.errors?.['fechaPasada'] && (f['fecha'].touched || f['hora'].touched)) {
+              <div class="col-12 text-danger small">La fecha y hora no pueden ser anteriores al momento actual.</div>
+            }
+            <div class="col-12">
+              <label for="motivo" class="form-label">Motivo de la consulta</label>
+              <textarea id="motivo" class="form-control" rows="2" formControlName="motivo" maxlength="500"></textarea>
+              @if (f['motivo'].touched && f['motivo'].invalid) { <div class="text-danger small">Ingrese el motivo de la consulta.</div> }
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="enviando">
+            @if (enviando) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+            {{ modoEdicion ? 'Actualizar cita' : 'Guardar cita' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
