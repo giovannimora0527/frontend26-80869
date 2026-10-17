@@ -12,7 +12,6 @@ export interface NavigationItem {
   external?: boolean;
   target?: boolean;
   breadcrumbs?: boolean;
-  
   children?: NavigationItem[];
 }
 
@@ -31,7 +30,6 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
-       /* ---------- Nuevos menus aqui -------------  */
       {
         id: 'mascotas',
         title: 'Gestión de Mascotas',
@@ -54,6 +52,14 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/inicio/citas',
         icon: 'feather icon-calendar',
+        classes: 'nav-item'
+      },
+      {
+        id: 'historias-clinicas',
+        title: 'Historias Clínicas',
+        type: 'item',
+        url: '/inicio/historias-clinicas',
+        icon: 'feather icon-clipboard',
         classes: 'nav-item'
       }
     ]

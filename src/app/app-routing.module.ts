@@ -7,6 +7,7 @@ import { UsuarioComponent } from './demo/pages/usuario/usuario.component';
 import { MascotaComponent } from './demo/pages/mascota/mascota.component';
 import { FormulaMedicaComponent } from './demo/pages/formula-medica/formula-medica.component';
 import { CitaComponent } from './demo/pages/cita/cita.component';
+import { HistoriaMedicaComponent } from './demo/pages/historia-medica/historia-medica.component';
 
 export const routes: Routes = [
   {
@@ -38,6 +39,11 @@ export const routes: Routes = [
         path: 'citas',
         component: CitaComponent,
         data: { title: 'Citas' }
+      },
+      {
+        path: 'historias-clinicas',
+        component: HistoriaMedicaComponent,
+        data: { title: 'Historias Clínicas' }
       }
     ]
   },

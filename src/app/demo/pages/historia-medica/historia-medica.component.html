@@ -1,0 +1,211 @@
+
+<div class="row">
+  <div class="col-12">
+    <div class="page-header mb-3">
+      <h3>Historias clínicas</h3>
+      <p>Consulta las historias médicas y registra anotaciones.</p>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="mensaje" class="alert alert-success">
+  {{ mensaje }}
+</div>
+
+<div *ngIf="error" class="alert alert-danger">
+  {{ error }}
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Crear historia clínica</h5>
+  </div>
+
+  <div class="card-body">
+    <form (ngSubmit)="crearHistoria()">
+      <div class="row align-items-end">
+        <div class="col-md-8 mb-3">
+          <label for="mascotaId" class="form-label">
+            Mascota
+          </label>
+
+          <select
+            id="mascotaId"
+            class="form-select"
+            name="mascotaId"
+            [(ngModel)]="mascotaId"
+            required>
+            <option [ngValue]="null">
+              Selecciona una mascota
+            </option>
+
+            <option
+              *ngFor="let mascota of mascotas"
+              [ngValue]="mascota.mascotaId">
+              {{ mascota.nombreMascota }}
+              (ID: {{ mascota.mascotaId }})
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="guardando">
+            {{ guardando ? 'Guardando...' : 'Crear historia' }}
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <small class="text-muted">
+      Cada mascota puede tener una sola historia clínica con la
+      validación actual del sistema.
+    </small>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Historias registradas</h5>
+  </div>
+
+  <div class="card-body">
+    <div *ngIf="cargando" class="text-center p-3">
+      Cargando historias clínicas...
+    </div>
+
+    <div class="table-responsive" *ngIf="!cargando">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Mascota</th>
+            <th>Fecha de creación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let historia of historias">
+            <td>{{ historia.id }}</td>
+            <td>
+              {{ historia.mascota?.nombreMascota || 'Sin nombre' }}
+            </td>
+            <td>
+              {{ historia.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn btn-sm btn-primary"
+                (click)="verAnotaciones(historia)">
+                Ver anotaciones
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="historias.length === 0">
+            <td colspan="4" class="text-center">
+              No hay historias clínicas registradas.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4" *ngIf="historiaSeleccionada">
+  <div class="card-header">
+    <h5 class="mb-0">
+      Anotaciones de la historia #{{ historiaSeleccionada.id }}
+    </h5>
+  </div>
+
+  <div class="card-body">
+    <p>
+      <strong>Mascota:</strong>
+      {{ historiaSeleccionada.mascota?.nombreMascota }}
+    </p>
+
+    <h6 class="mb-3">Registrar anotación médica</h6>
+
+    <form (ngSubmit)="crearAnotacion()">
+      <div class="mb-3">
+        <label for="medicoId" class="form-label">
+          Médico
+        </label>
+
+        <select
+          id="medicoId"
+          class="form-select"
+          name="medicoId"
+          [(ngModel)]="medicoId"
+          required>
+          <option [ngValue]="null">
+            Selecciona un médico
+          </option>
+
+          <option
+            *ngFor="let medico of medicos"
+            [ngValue]="medico.id">
+            {{ medico.nombres }} {{ medico.apellidos }}
+          </option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="descripcion" class="form-label">
+          Descripción de la anotación
+        </label>
+
+        <textarea
+          id="descripcion"
+          class="form-control"
+          name="descripcion"
+          rows="3"
+          [(ngModel)]="descripcion"
+          placeholder="Escribe las observaciones de la consulta..."
+          required>
+        </textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-success"
+        [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : 'Registrar anotación' }}
+      </button>
+    </form>
+
+    <hr>
+
+    <h6 class="mb-3">Historial de anotaciones</h6>
+
+    <div *ngIf="anotaciones.length === 0" class="text-muted">
+      Esta historia todavía no tiene anotaciones.
+    </div>
+
+    <div
+      class="border rounded p-3 mb-3"
+      *ngFor="let anotacion of anotaciones">
+
+      <div class="d-flex justify-content-between flex-wrap">
+        <strong>
+          {{ anotacion.medico?.nombres }}
+          {{ anotacion.medico?.apellidos }}
+        </strong>
+
+        <small class="text-muted">
+          {{ anotacion.fecha | date:'dd/MM/yyyy HH:mm' }}
+        </small>
+      </div>
+
+      <p class="mb-0 mt-2">
+        {{ anotacion.descripcion }}
+      </p>
+    </div>
+  </div>
+</div>
