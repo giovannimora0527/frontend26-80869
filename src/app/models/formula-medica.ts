@@ -1,51 +1,119 @@
+import { FiltroPagina } from './page-response';
+
 /**
- * Interfaz que representa una fórmula médica en el sistema.
- * 
- * Describe los detalles de los medicamentos prescritos a un paciente
- * durante una cita médica, incluyendo sus identificadores, posología y fechas de auditoría.
- * 
- * @author Yulian Montealegre
+ * Fila resumida del listado de fórmulas (sin dosis ni indicaciones).
  */
-export interface FormulaMedica {
-    /** Identificador único de la fórmula médica en la base de datos. */
-    id: number;
+export interface FormulaResumen {
+  /** Identificador de la fórmula. */
+  id: number;
+  /** Fecha de emisión (yyyy-MM-dd). */
+  fechaEmision: string;
+  /** Nombre de la mascota. */
+  mascotaNombre: string;
+  /** Nombre del cliente. */
+  clienteNombre: string;
+  /** Nombre del veterinario. */
+  medicoNombre: string;
+  /** Nombre del medicamento. */
+  medicamentoNombre: string;
+  /** Frecuencia de administración. */
+  frecuencia: string;
+  /** Duración del tratamiento en días. */
+  duracionDias: number;
+  /** Si la fórmula está activa. */
+  activo: boolean;
+}
 
-    /** Identificador de la cita médica asociada a esta prescripción. */
-    citaId: number;
+/**
+ * Detalle completo de una fórmula médica.
+ */
+export interface FormulaDetalle {
+  /** Identificador de la fórmula. */
+  id: number;
+  /** Id de la cita asociada. */
+  citaId: number;
+  /** Fecha y hora de la cita asociada. */
+  citaFechaHora: string;
+  /** Id de la historia asociada (opcional). */
+  historiaId?: number | null;
+  /** Id de la mascota. */
+  mascotaId: number;
+  /** Nombre de la mascota. */
+  mascotaNombre: string;
+  /** Id del cliente. */
+  clienteId: number;
+  /** Nombre del cliente. */
+  clienteNombre: string;
+  /** Id del veterinario. */
+  medicoId: number;
+  /** Nombre del veterinario. */
+  medicoNombre: string;
+  /** Id del medicamento. */
+  medicamentoId: number;
+  /** Nombre del medicamento. */
+  medicamentoNombre: string;
+  /** Presentación del medicamento. */
+  medicamentoPresentacion?: string;
+  /** Fecha de emisión (yyyy-MM-dd). */
+  fechaEmision: string;
+  /** Dosis. */
+  dosis: string;
+  /** Frecuencia. */
+  frecuencia: string;
+  /** Duración en días. */
+  duracionDias: number;
+  /** Indicaciones. */
+  indicaciones: string;
+  /** Si la fórmula está activa. */
+  activo: boolean;
+  /** Fecha de creación del registro. */
+  fechaCreacionRegistro: string;
+  /** Fecha de la última actualización. */
+  fechaActualizacionRegistro?: string | null;
+}
 
-    /** Identificador del medicamento prescrito en el catálogo o inventario. */
-    medicamentoId: number;
+/**
+ * Datos para crear o editar una fórmula. Al editar solo se envían los campos editables.
+ */
+export interface FormulaRq {
+  /** Cita o consulta asociada (solo al crear). */
+  citaId?: number;
+  /** Mascota (solo al crear; debe ser la de la cita). */
+  mascotaId?: number;
+  /** Veterinario que emite (solo al crear). */
+  medicoId?: number;
+  /** Medicamento recetado. */
+  medicamentoId: number;
+  /** Fecha de emisión (no anterior a la consulta). */
+  fechaEmision: string;
+  /** Dosis. */
+  dosis: string;
+  /** Frecuencia. */
+  frecuencia: string;
+  /** Duración en días (1 a 365). */
+  duracionDias: number;
+  /** Indicaciones. */
+  indicaciones: string;
+}
 
-    /** 
-     * Nombre comercial o genérico del medicamento.
-     * @optional Campo opcional para desnormalizar o mostrar información rápida en UI.
-     */
-    nombreMedicamento?: string;
-
-    /** 
-     * Descripción general del medicamento o detalles adicionales sobre la prescripción.
-     * @optional
-     */
-    descripcion?: string;
-
-    /** 
-     * Forma farmacéutica o presentación del medicamento (ej. Jarabe, Tabletas 500mg, Ampolla).
-     * @optional
-     */
-    presentacion?: string;
-
-    /** Cantidad y concentración del medicamento administrado por toma (ej. "1 tableta de 500mg"). */
-    dosis: string;
-
-    /** Instrucciones para el paciente sobre frecuencia y duración del tratamiento (ej. "Cada 8 horas por 7 días"). */
-    indicaciones: string;
-
-    /** Fecha y hora en que se creó el registro en el sistema (formato ISO 8601 recomendado). */
-    fechaCreacionRegistro: string;
-
-    /** 
-     * Fecha y hora de la última modificación del registro.
-     * @optional
-     */
-    fechaActualizacionRegistro?: string;
+/**
+ * Filtros del listado de fórmulas.
+ */
+export interface FormulaFiltro extends FiltroPagina {
+  /** Id de la mascota. */
+  mascotaId?: number;
+  /** Id del cliente. */
+  clienteId?: number;
+  /** Id del veterinario. */
+  medicoId?: number;
+  /** Id del medicamento. */
+  medicamentoId?: number;
+  /** Activa (true) o inactiva (false). */
+  activo?: boolean;
+  /** Fecha de emisión inicial (yyyy-MM-dd). */
+  fechaDesde?: string;
+  /** Fecha de emisión final (yyyy-MM-dd). */
+  fechaHasta?: string;
+  /** Texto libre: medicamento o mascota. */
+  texto?: string;
 }

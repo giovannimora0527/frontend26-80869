@@ -1,7 +1,17 @@
+/**
+ * Cliente (dueño de las mascotas).
+ */
 export class Cliente {
-   tipoDocumento?: string;
-   numeroDocumento?: string;
-   nombres?: string;
-   apellidos?: string;
-   direccion?: string;
+  /** Identificador del cliente. */
+  id?: number;
+  /** Tipo de documento. */
+  tipoDocumento?: string;
+  /** Número de documento. */
+  numeroDocumento?: string;
+  /** Nombres. */
+  nombres?: string;
+  /** Apellidos. */
+  apellidos?: string;
+  /** Dirección. */
+  direccion?: string;
 }
