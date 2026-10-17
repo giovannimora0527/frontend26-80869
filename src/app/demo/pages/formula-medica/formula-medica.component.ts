@@ -18,12 +18,14 @@ export class FormulaMedicaComponent implements OnInit {
   cargando = true;
   guardando = false;
   mostrandoFormulario = false;
+  mostrandoDetalle = false;
   modoEdicion = false;
 
   error = '';
   mensajeFormulario = '';
 
   formulaId: number | null = null;
+  formulaSeleccionada: any = null;
 
   nuevaFormula = this.formularioVacio();
 
@@ -57,8 +59,14 @@ export class FormulaMedicaComponent implements OnInit {
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error al consultar las fórmulas médicas:', err);
-        this.error = 'No fue posible cargar las fórmulas médicas.';
+        console.error(
+          'Error al consultar las fórmulas médicas:',
+          err
+        );
+
+        this.error =
+          'No fue posible cargar las fórmulas médicas.';
+
         this.cargando = false;
       }
     });
@@ -69,7 +77,21 @@ export class FormulaMedicaComponent implements OnInit {
     this.formulaId = null;
     this.nuevaFormula = this.formularioVacio();
     this.mensajeFormulario = '';
+    this.mostrandoDetalle = false;
+    this.formulaSeleccionada = null;
     this.mostrandoFormulario = true;
+  }
+
+  verDetalle(formula: any): void {
+    this.formulaSeleccionada = formula;
+    this.mostrandoFormulario = false;
+    this.mostrandoDetalle = true;
+    this.mensajeFormulario = '';
+  }
+
+  cerrarDetalle(): void {
+    this.mostrandoDetalle = false;
+    this.formulaSeleccionada = null;
   }
 
   editarFormula(formula: any): void {
@@ -77,8 +99,9 @@ export class FormulaMedicaComponent implements OnInit {
     this.formulaId = formula.id;
 
     this.nuevaFormula = {
-      citaId: formula.cita?.id ?? null,
-      medicamentoId: formula.medicamento?.id ?? null,
+      citaId: formula.cita?.id ?? formula.citaId ?? null,
+      medicamentoId:
+        formula.medicamento?.id ?? formula.medicamentoId ?? null,
       dosis: formula.dosis ?? '',
       indicaciones: formula.indicaciones ?? '',
       fechaEmision: formula.fechaEmision ?? '',
@@ -86,6 +109,8 @@ export class FormulaMedicaComponent implements OnInit {
       duracionTratamiento: formula.duracionTratamiento ?? ''
     };
 
+    this.mostrandoDetalle = false;
+    this.formulaSeleccionada = null;
     this.mensajeFormulario = '';
     this.mostrandoFormulario = true;
   }
@@ -129,7 +154,11 @@ export class FormulaMedicaComponent implements OnInit {
         );
       },
       error: (err) => {
-        console.error('Error al crear la fórmula médica:', err);
+        console.error(
+          'Error al crear la fórmula médica:',
+          err
+        );
+
         this.guardando = false;
         this.mensajeFormulario =
           err?.error?.message ||
@@ -155,7 +184,11 @@ export class FormulaMedicaComponent implements OnInit {
         );
       },
       error: (err) => {
-        console.error('Error al actualizar la fórmula médica:', err);
+        console.error(
+          'Error al actualizar la fórmula médica:',
+          err
+        );
+
         this.guardando = false;
         this.mensajeFormulario =
           err?.error?.message ||

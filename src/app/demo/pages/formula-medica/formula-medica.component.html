@@ -1,5 +1,7 @@
 
 <div class="container-fluid">
+
+<!-- Encabezado -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4>Gestión de Fórmulas Médicas</h4>
 
@@ -10,8 +12,90 @@
     Nuevo
     </button>
 </div>
+
+<!-- Detalle de la fórmula médica -->
+<div
+    class="card mb-4"
+    *ngIf="mostrandoDetalle && formulaSeleccionada">
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Detalle de la fórmula médica</h5>
+
+    <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        (click)="cerrarDetalle()">
+        Cerrar
+    </button>
+    </div>
+
+    <div class="card-body">
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+        <strong>ID de la fórmula:</strong>
+        <p>{{ formulaSeleccionada.id }}</p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>ID de la cita:</strong>
+        <p>{{ formulaSeleccionada.citaId ?? '—' }}</p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>ID del medicamento:</strong>
+        <p>{{ formulaSeleccionada.medicamentoId ?? '—' }}</p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>Fecha de emisión:</strong>
+        <p>
+            {{ formulaSeleccionada.fechaEmision
+            ? (formulaSeleccionada.fechaEmision | date:'dd/MM/yyyy')
+            : '—' }}
+        </p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>Frecuencia:</strong>
+        <p>{{ formulaSeleccionada.frecuencia || '—' }}</p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>Duración del tratamiento:</strong>
+        <p>{{ formulaSeleccionada.duracionTratamiento || '—' }}</p>
+        </div>
+
+        <div class="col-12 mb-3">
+        <strong>Indicaciones:</strong>
+        <p>{{ formulaSeleccionada.indicaciones || 'Sin indicaciones' }}</p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>Fecha de creación:</strong>
+        <p>
+            {{ formulaSeleccionada.fechaCreacionRegistro
+            ? (formulaSeleccionada.fechaCreacionRegistro | date:'dd/MM/yyyy')
+            : '—' }}
+        </p>
+        </div>
+
+        <div class="col-md-6 mb-3">
+        <strong>Fecha de actualización:</strong>
+        <p>
+            {{ formulaSeleccionada.fechaActualizacionRegistro
+            ? (formulaSeleccionada.fechaActualizacionRegistro | date:'dd/MM/yyyy')
+            : '—' }}
+        </p>
+        </div>
+
+    </div>
+    </div>
+</div>
+
 <!-- Formulario para crear o editar -->
   <div class="card mb-4" *ngIf="mostrandoFormulario">
+
     <div class="card-header">
     <h5 class="mb-0">
         {{ modoEdicion ? 'Editar fórmula médica' : 'Nueva fórmula médica' }}
@@ -20,7 +104,9 @@
 
     <div class="card-body">
     <form (ngSubmit)="guardarFormula()">
+
         <div class="row">
+
         <div class="col-md-6 mb-3">
             <label class="form-label">ID de la cita</label>
             <input
@@ -95,11 +181,10 @@
             rows="3">
             </textarea>
         </div>
+
         </div>
 
-        <div
-          *ngIf="mensajeFormulario"
-        class="alert alert-info">
+        <div *ngIf="mensajeFormulario" class="alert alert-info">
         {{ mensajeFormulario }}
         </div>
 
@@ -111,7 +196,7 @@
             guardando
             ? 'Guardando...'
             : (modoEdicion ? 'Guardar cambios' : 'Guardar fórmula')
-        }}
+            }}
         </button>
 
         <button
@@ -120,6 +205,7 @@
         (click)="mostrandoFormulario = false">
         Cancelar
         </button>
+
     </form>
     </div>
 </div>
@@ -142,10 +228,10 @@
 </div>
 
 <!-- Tabla de fórmulas médicas -->
-<div
-    class="table-responsive"
-    *ngIf="!cargando && !error">
+  <div class="table-responsive" *ngIf="!cargando && !error">
+
     <table class="table table-striped table-hover align-middle">
+
     <thead class="table-dark">
         <tr>
         <th>ID</th>
@@ -161,7 +247,9 @@
     </thead>
 
     <tbody>
+
         <tr *ngFor="let formula of formulas">
+
         <td>{{ formula.id }}</td>
         <td>{{ formula.dosis }}</td>
         <td>{{ formula.indicaciones || 'Sin indicaciones' }}</td>
@@ -193,14 +281,24 @@
             }}
         </td>
 
-        <td>
+        <td class="text-nowrap">
+
+            <button
+            type="button"
+            class="btn btn-sm btn-info me-2"
+            (click)="verDetalle(formula)">
+            Ver
+            </button>
+
             <button
             type="button"
             class="btn btn-sm btn-warning"
             (click)="editarFormula(formula)">
             Editar
             </button>
+
         </td>
+
         </tr>
 
         <tr *ngIf="formulas.length === 0">
@@ -208,7 +306,9 @@
             No hay fórmulas médicas registradas.
         </td>
         </tr>
+
     </tbody>
     </table>
 </div>
-    </div>
+
+</div>

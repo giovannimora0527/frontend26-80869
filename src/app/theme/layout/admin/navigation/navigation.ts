@@ -1,3 +1,4 @@
+
 export interface NavigationItem {
   id: string;
   title: string;
@@ -11,9 +12,10 @@ export interface NavigationItem {
   external?: boolean;
   target?: boolean;
   breadcrumbs?: boolean;
-
+  
   children?: NavigationItem[];
 }
+
 export const NavigationItems: NavigationItem[] = [
   {
     id: 'navigation',
@@ -29,7 +31,7 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
-      /* ---------- Nuevos menus aqui -------------  */
+       /* ---------- Nuevos menus aqui -------------  */
       {
         id: 'mascotas',
         title: 'Gestión de Mascotas',
@@ -45,7 +47,15 @@ export const NavigationItems: NavigationItem[] = [
         url: '/inicio/formulas',
         icon: 'feather icon-file-text',
         classes: 'nav-item'
-    },
+      },
+      {
+        id: 'citas',
+        title: 'Gestión de Citas',
+        type: 'item',
+        url: '/inicio/citas',
+        icon: 'feather icon-calendar',
+        classes: 'nav-item'
+      }
     ]
-  },  
+  }
 ];

@@ -1,0 +1,35 @@
+
+.table {
+vertical-align: middle;
+margin-top: 15px;
+}
+
+.table thead th {
+white-space: nowrap;
+font-weight: 600;
+}
+
+.table tbody td {
+padding: 12px;
+}
+
+.alert {
+margin-top: 15px;
+}
+
+button {
+transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+transform: translateY(-1px);
+}
+
+p {
+color: #6c757d;
+margin-bottom: 20px;
+}
+
+.table-responsive {
+border-radius: 8px;
+}

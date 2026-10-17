@@ -1,0 +1,259 @@
+
+<div class="row">
+    <div class="col-sm-12">
+    <div class="card">
+
+        <div class="card-header">
+        <h5>Gestión de Citas</h5>
+        </div>
+
+        <div class="card-body">
+
+        <!-- Mensajes de confirmación y error -->
+        <div
+          *ngIf="mensaje"
+            class="alert alert-success"
+            role="alert"
+        >
+            {{ mensaje }}
+        </div>
+
+        <div
+          *ngIf="error"
+            class="alert alert-danger"
+            role="alert"
+        >
+            {{ error }}
+        </div>
+
+        <!-- Formulario de registro y edición -->
+        <h5 class="mb-3">
+            {{ editando ? 'Editar cita' : 'Registrar nueva cita' }}
+        </h5>
+
+        <form
+            #formCita="ngForm"
+            (ngSubmit)="guardarCita()"
+        >
+
+            <div class="row">
+
+            <!-- Seleccionar mascota -->
+            <div class="col-md-6 mb-3">
+                <label
+                for="mascotaId"
+                class="form-label"
+                >
+                Seleccionar mascota
+                </label>
+
+                <select
+                id="mascotaId"
+                name="mascotaId"
+                class="form-select"
+                [(ngModel)]="formulario.mascotaId"
+                required
+                >
+                <option
+                    [ngValue]="null"
+                    disabled
+                >
+                    Selecciona una mascota
+                </option>
+
+                <option
+                  *ngFor="let mascota of mascotas"
+                    [ngValue]="mascota.mascotaId"
+                >
+                    {{ mascota.nombreMascota }}
+                </option>
+                </select>
+            </div>
+
+            <!-- Seleccionar médico -->
+            <div class="col-md-6 mb-3">
+                <label
+                for="medicoId"
+                class="form-label"
+                >
+                Seleccionar médico
+                </label>
+
+                <select
+                id="medicoId"
+                name="medicoId"
+                class="form-select"
+                [(ngModel)]="formulario.medicoId"
+                required
+                >
+                <option
+                    [ngValue]="null"
+                    disabled
+                >
+                    Selecciona un médico
+                </option>
+
+                <option
+                  *ngFor="let medico of medicos"
+                    [ngValue]="medico.id"
+                >
+                    {{ medico.nombres }} {{ medico.apellidos }}
+                </option>
+                </select>
+            </div>
+
+            <!-- Fecha y hora de la cita -->
+            <div class="col-md-6 mb-3">
+                <label
+                for="fechaHora"
+                class="form-label"
+                >
+                Fecha y hora
+                </label>
+
+                <input
+                type="datetime-local"
+                id="fechaHora"
+                name="fechaHora"
+                class="form-control"
+                [(ngModel)]="formulario.fechaHora"
+                required
+                >
+            </div>
+
+            <!-- Motivo de la consulta -->
+            <div class="col-md-6 mb-3">
+                <label
+                for="motivo"
+                class="form-label"
+                >
+                Motivo de la consulta
+                </label>
+
+                <input
+                type="text"
+                id="motivo"
+                name="motivo"
+                class="form-control"
+                [(ngModel)]="formulario.motivo"
+                placeholder="Ej. Consulta general"
+                required
+                >
+            </div>
+
+            </div>
+
+            <!-- Botones del formulario -->
+            <button
+            type="submit"
+            class="btn btn-primary me-2"
+            [disabled]="guardando || formCita.invalid"
+            >
+            {{
+                guardando
+                ? 'Guardando...'
+                : (editando ? 'Actualizar cita' : 'Guardar cita')
+            }}
+            </button>
+
+            <button
+            *ngIf="editando"
+            type="button"
+            class="btn btn-secondary"
+            (click)="cancelarEdicion()"
+            >
+            Cancelar
+            </button>
+
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Tabla de citas registradas -->
+        <h5 class="mb-3">
+            Citas registradas
+        </h5>
+
+        <div
+          *ngIf="cargando"
+            class="alert alert-info"
+            role="status"
+        >
+            Cargando citas...
+        </div>
+
+        <div
+            class="table-responsive"
+          *ngIf="!cargando"
+        >
+            <table class="table table-striped table-hover">
+
+            <thead>
+                <tr>
+                <th>ID</th>
+                <th>Mascota</th>
+                <th>Médico</th>
+                <th>Fecha y hora</th>
+                <th>Motivo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let cita of citas">
+
+                <td>
+                    {{ cita.id }}
+                </td>
+
+                <td>
+                    {{ cita.mascota?.nombreMascota || 'Sin dato' }}
+                </td>
+
+                <td>
+                    {{ cita.medico?.nombres || 'Sin dato' }}
+                    {{ cita.medico?.apellidos || '' }}
+                </td>
+
+                <td>
+                    {{ cita.fechaHora | date:'dd/MM/yyyy, h:mm a' }}
+                </td>
+
+                <td>
+                    {{ cita.motivo }}
+                </td>
+
+                <td>
+                    {{ cita.estado }}
+                </td>
+
+                <td>
+                    <button
+                    type="button"
+                    class="btn btn-sm btn-primary"
+                    (click)="editarCita(cita)"
+                >
+                    Editar
+                    </button>
+                </td>
+
+                </tr>
+
+              <tr *ngIf="citas.length === 0">
+                <td
+                    colspan="7"
+                    class="text-center"
+                >
+                    No hay citas registradas.
+                </td>
+                </tr>
+
+            </tbody>
+            </table>
+        </div>
+
+        </div>
+    </div>
+    </div>
+</div>
