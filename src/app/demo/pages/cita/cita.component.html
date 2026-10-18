@@ -1,0 +1,231 @@
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h5 class="mb-0">Gestión de Citas</h5>
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" (click)="nueva()" title="Registrar cita">
+        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;Nueva cita
+      </button>
+    </div>
+
+    <div class="card-body">
+      <!-- Filtros (se aplican en el servidor) -->
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <label class="form-label small mb-1">Buscar</label>
+          <input class="form-control" type="text" placeholder="Cliente, mascota, veterinario o motivo"
+                 [(ngModel)]="filtro.texto" (ngModelChange)="buscarConRetraso()" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Estado</label>
+          <select class="form-select" [(ngModel)]="filtro.estado" (ngModelChange)="buscar()">
+            <option value="">Todos</option>
+            <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Cliente</label>
+          <select class="form-select" [(ngModel)]="filtro.clienteId" (ngModelChange)="alCambiarClienteFiltro()">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let c of clientes" [ngValue]="c.id">{{ nombreCompleto(c) }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Mascota</label>
+          <select class="form-select" [(ngModel)]="filtro.mascotaId" (ngModelChange)="buscar()" [disabled]="!filtro.clienteId">
+            <option [ngValue]="null">{{ filtro.clienteId ? 'Todas' : 'Seleccione un cliente' }}</option>
+            <option *ngFor="let m of mascotasFiltro" [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Veterinario</label>
+          <select class="form-select" [(ngModel)]="filtro.medicoId" (ngModelChange)="buscar()">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let m of medicos" [ngValue]="m.id">{{ nombreCompleto(m) }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Desde</label>
+          <input class="form-control" type="date" [(ngModel)]="filtro.fechaDesde" (ngModelChange)="buscar()" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Hasta</label>
+          <input class="form-control" type="date" [(ngModel)]="filtro.fechaHasta" (ngModelChange)="buscar()" />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" type="button" (click)="limpiarFiltros()">Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+        <span>{{ error }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="cargar()">Reintentar</button>
+      </div>
+
+      <div class="table-responsive position-relative">
+        <table class="table table-striped table-hover align-middle">
+          <thead>
+            <tr>
+              <th><app-orden-th etiqueta="Fecha" columna="fecha" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Hora" columna="hora" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Cliente" columna="cliente" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Mascota" columna="mascota" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Veterinario" columna="veterinario" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Estado" columna="estado" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody *ngIf="cargando">
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando citas...
+              </td>
+            </tr>
+          </tbody>
+          <tbody *ngIf="!cargando && !error && filas.length === 0">
+            <tr><td colspan="7" class="text-center text-muted py-4">No se encontraron citas con los filtros indicados.</td></tr>
+          </tbody>
+          <tbody *ngIf="!cargando && filas.length > 0">
+            <tr *ngFor="let c of filas">
+              <td>{{ c.fecha | date:'dd/MM/yyyy' }}</td>
+              <td>{{ c.hora }}</td>
+              <td>{{ c.clienteNombre }}</td>
+              <td>{{ c.mascotaNombre }}</td>
+              <td>{{ c.medicoNombre }}</td>
+              <td><span class="badge" [ngClass]="claseEstado(c.estado)">{{ c.estado }}</span></td>
+              <td class="text-center text-nowrap">
+                <button class="btn btn-sm btn-outline-info me-1" (click)="ver(c)" title="Ver detalle"><i class="fa fa-eye"></i> Ver</button>
+                <button *ngIf="esActiva(c)" class="btn btn-sm btn-outline-primary me-1" (click)="editar(c)" title="Editar"><i class="fa fa-edit"></i> Editar</button>
+                <button *ngIf="esActiva(c)" class="btn btn-sm btn-outline-danger" (click)="cancelar(c)" title="Cancelar cita"><i class="fa fa-ban"></i> Cancelar</button>
+                <button *ngIf="c.estado === 'Cancelada'" class="btn btn-sm btn-outline-success" (click)="reactivar(c)" title="Reactivar cita"><i class="fa fa-undo"></i> Reactivar</button>
+                <a *ngIf="c.estado === 'Atendida'" class="btn btn-sm btn-outline-success" [routerLink]="['/historias-clinicas']" [queryParams]="{ citaId: c.id }" title="Crear la historia clínica de esta cita">
+                  <i class="fa fa-file-medical"></i> Historia
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginador [page]="page" [size]="size" [total]="totalElements" [totalPages]="totalPages"
+                     [tamanios]="tamanios" (irAPagina)="irAPagina($event)" (cambiarTamanio)="cambiarTamanio($event)"></app-paginador>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear / editar -->
+<div class="modal fade" id="modalCita" tabindex="-1" aria-labelledby="tituloModalCita" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tituloModalCita">{{ modo === 'C' ? 'Registrar cita' : 'Editar cita' }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div class="modal-body">
+          <div *ngIf="cargandoCita" class="text-center py-3">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Cargando cita...
+          </div>
+          <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+          <div *ngIf="modo === 'E'" class="alert alert-info py-2 small">
+            El cliente y la mascota no se pueden cambiar. Si se equivocó de mascota, cancele la cita y registre otra.
+          </div>
+
+          <div class="row g-3" [class.opacity-50]="cargandoCita">
+            <div class="col-md-6">
+              <label class="form-label" for="citaCliente">Cliente *</label>
+              <select id="citaCliente" class="form-select" formControlName="clienteId"
+                      [class.is-invalid]="f['clienteId'].invalid && f['clienteId'].touched">
+                <option [ngValue]="null">Seleccione un cliente</option>
+                <option *ngFor="let c of clientes" [ngValue]="c.id">{{ nombreCompleto(c) }}</option>
+              </select>
+              <div class="invalid-feedback">El cliente es obligatorio.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="citaMascota">Mascota *</label>
+              <select id="citaMascota" class="form-select" formControlName="mascotaId"
+                      [class.is-invalid]="f['mascotaId'].invalid && f['mascotaId'].touched">
+                <option [ngValue]="null">{{ cargandoMascotas ? 'Cargando mascotas...' : 'Seleccione una mascota' }}</option>
+                <option *ngFor="let m of mascotasForm" [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
+              </select>
+              <div class="invalid-feedback">La mascota es obligatoria.</div>
+              <div class="form-text" *ngIf="modo === 'C' && f['clienteId'].value && !cargandoMascotas && mascotasForm.length === 0">
+                Este cliente no tiene mascotas registradas.
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="citaMedico">Veterinario *</label>
+              <select id="citaMedico" class="form-select" formControlName="medicoId"
+                      [class.is-invalid]="f['medicoId'].invalid && f['medicoId'].touched">
+                <option [ngValue]="null">Seleccione un veterinario</option>
+                <option *ngFor="let m of medicos" [ngValue]="m.id">{{ nombreCompleto(m) }}</option>
+              </select>
+              <div class="invalid-feedback">El veterinario es obligatorio.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="citaEstado">Estado *</label>
+              <select id="citaEstado" class="form-select" formControlName="estado">
+                <option *ngFor="let e of estadosDisponibles" [value]="e">{{ e }}</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="citaFecha">Fecha *</label>
+              <input id="citaFecha" type="date" class="form-control" formControlName="fecha"
+                     [class.is-invalid]="(f['fecha'].invalid && f['fecha'].touched) || (form.errors?.['fechaPasada'] && f['fecha'].touched)" />
+              <div class="invalid-feedback">{{ form.errors?.['fechaPasada'] ? 'No se pueden registrar citas en fechas pasadas.' : 'La fecha es obligatoria.' }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="citaHora">Hora *</label>
+              <input id="citaHora" type="time" class="form-control" formControlName="hora"
+                     [class.is-invalid]="(f['hora'].invalid && f['hora'].touched) || (form.errors?.['fechaPasada'] && f['hora'].touched)" />
+              <div class="invalid-feedback">{{ form.errors?.['fechaPasada'] ? 'La hora ya pasó.' : 'La hora es obligatoria.' }}</div>
+              <div class="form-text">El veterinario no puede tener otra cita a menos de 15 minutos.</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="citaMotivo">Motivo de la consulta *</label>
+              <textarea id="citaMotivo" rows="3" class="form-control" formControlName="motivo" maxlength="500"
+                        [class.is-invalid]="f['motivo'].invalid && f['motivo'].touched"></textarea>
+              <div class="invalid-feedback">Describa el motivo (mínimo 3 caracteres).</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" [disabled]="enviando">Cerrar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="enviando || cargandoCita">
+            <span *ngIf="enviando" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            {{ enviando ? 'Guardando...' : (modo === 'C' ? 'Guardar cita' : 'Actualizar cita') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver (detalle completo) -->
+<div class="modal fade" id="modalVerCita" tabindex="-1" aria-labelledby="tituloVerCita" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tituloVerCita">Detalle de la cita</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="cargandoDetalle" class="text-center py-3">
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>Cargando...
+        </div>
+        <div *ngIf="errorDetalle" class="alert alert-danger">{{ errorDetalle }}</div>
+        <dl class="row mb-0" *ngIf="citaDetalle as c">
+          <dt class="col-sm-4">Fecha y hora</dt><dd class="col-sm-8">{{ formatear(c.fechaHora) }}</dd>
+          <dt class="col-sm-4">Estado</dt><dd class="col-sm-8"><span class="badge" [ngClass]="claseEstado(c.estado)">{{ c.estado }}</span></dd>
+          <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ nombreCompleto(c.cliente) }} <span class="text-muted">({{ c.cliente?.tipoDocumento }} {{ c.cliente?.numeroDocumento }})</span></dd>
+          <dt class="col-sm-4">Teléfono</dt><dd class="col-sm-8">{{ c.cliente?.telefono || '—' }}</dd>
+          <dt class="col-sm-4">Mascota</dt><dd class="col-sm-8">{{ c.mascota?.nombreMascota }} <span class="text-muted" *ngIf="c.mascota?.raza">({{ c.mascota.raza?.especie }} · {{ c.mascota.raza?.nombre }})</span></dd>
+          <dt class="col-sm-4">Veterinario</dt><dd class="col-sm-8">{{ nombreCompleto(c.medico) }}</dd>
+          <dt class="col-sm-4">Motivo</dt><dd class="col-sm-8">{{ c.motivo }}</dd>
+        </dl>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

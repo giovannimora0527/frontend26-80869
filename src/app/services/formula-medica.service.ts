@@ -1,79 +1,40 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
+import { BackendService } from './backend.service';
+import { FormulaFiltro, FormulaMedica, FormulaResumen, FormulaRq } from '../models/formula-medica';
+import { Pagina, ParametrosPagina, RespuestaEscritura } from '../models/pagina';
+import { construirParams } from '../utils/params.util';
+import { environment } from '../../environments/environment';
 
-export interface FormulaMedica {
-  id: number;
-  paciente: string;
-  medicamento: string;
-  dosis: string;
-  indicaciones: string;
-  fechaEmision: string;
-  fechaVencimiento: string;
-  medico: string;
-}
-
-@Injectable({
-  providedIn: 'root'
-})
+/** Operaciones de fórmulas médicas contra `/clinica/v1/formula-medica`. */
+@Injectable({ providedIn: 'root' })
 export class FormulaMedicaService {
-  private formulas: FormulaMedica[] = [
-    {
-      id: 1,
-      paciente: 'Juan Pérez',
-      medicamento: 'Acetaminofén',
-      dosis: '500mg cada 8h',
-      indicaciones: 'Tomar después de las comidas',
-      fechaEmision: '2026-10-01',
-      fechaVencimiento: '2026-11-01',
-      medico: 'Dra. María López'
-    },
-    {
-      id: 2,
-      paciente: 'Ana Gómez',
-      medicamento: 'Ibuprofeno',
-      dosis: '400mg cada 12h',
-      indicaciones: 'Solo si hay dolor intenso',
-      fechaEmision: '2026-10-03',
-      fechaVencimiento: '2026-11-03',
-      medico: 'Dr. Carlos Ruiz'
-    },
-    {
-      id: 3,
-      paciente: 'Luis Ramírez',
-      medicamento: 'Amoxicilina',
-      dosis: '500mg cada 8h',
-      indicaciones: 'Completar 7 días de tratamiento',
-      fechaEmision: '2026-10-04',
-      fechaVencimiento: '2026-11-04',
-      medico: 'Dra. Patricia Vega'
-    }
-  ];
+  private api = 'formula-medica';
 
-  private nextId = 4; // ← ID del próximo registro
+  constructor(private backendService: BackendService) { }
 
-  constructor() {}
-
-  getFormulas(): Observable<FormulaMedica[]> {
-    return of(this.formulas);
+  /** `GET /formula-medica/paginado`: listado resumido paginado. */
+  listarPaginado(pagina: ParametrosPagina, filtro: FormulaFiltro): Observable<Pagina<FormulaResumen>> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'paginado', construirParams(pagina, filtro));
   }
 
-  getFormulaById(id: number): Observable<FormulaMedica | undefined> {
-    return of(this.formulas.find(f => f.id === id));
+  /** `GET /formula-medica/consultar/{id}`: detalle completo. */
+  consultar(id: number): Observable<FormulaMedica> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, `consultar/${id}`);
   }
 
-  addFormula(formula: FormulaMedica): void {
-    formula.id = this.nextId++; // ← Asigna ID secuencial
-    this.formulas.push(formula);
+  /** `POST /formula-medica/guardar`: crea una fórmula. */
+  crear(formula: FormulaRq): Observable<RespuestaEscritura> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', formula);
   }
 
-  updateFormula(formula: FormulaMedica): void {
-    const index = this.formulas.findIndex(f => f.id === formula.id);
-    if (index !== -1) {
-      this.formulas[index] = formula;
-    }
+  /** `PUT /formula-medica/actualizar/{id}`: edita dosis, frecuencia, duración e indicaciones. */
+  actualizar(id: number, formula: FormulaRq): Observable<RespuestaEscritura> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, `actualizar/${id}`, formula);
   }
 
-  deleteFormula(id: number): void {
-    this.formulas = this.formulas.filter(f => f.id !== id);
+  /** `PATCH /formula-medica/inactivar/{id}`: inactiva (no se elimina físicamente). */
+  inactivar(id: number): Observable<RespuestaEscritura> {
+    return this.backendService.patch(environment.apiUrlAuth, this.api, `inactivar/${id}`);
   }
 }

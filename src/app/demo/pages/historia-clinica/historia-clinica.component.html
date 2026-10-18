@@ -1,0 +1,211 @@
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h5 class="mb-0">Historias clínicas</h5>
+      <button class="btn btn-outline-primary d-inline-flex align-items-center" (click)="nueva()" title="Crear historia clínica">
+        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;Nueva historia
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <label class="form-label small mb-1">Buscar</label>
+          <input class="form-control" type="text" placeholder="Cliente, mascota, veterinario o motivo"
+                 [(ngModel)]="filtro.texto" (ngModelChange)="buscarConRetraso()" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-1">Estado</label>
+          <select class="form-select" [(ngModel)]="filtro.estado" (ngModelChange)="buscar()">
+            <option value="">Todos</option>
+            <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Cliente</label>
+          <select class="form-select" [(ngModel)]="filtro.clienteId" (ngModelChange)="alCambiarClienteFiltro()">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let c of clientes" [ngValue]="c.id">{{ nombreCompleto(c) }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Mascota</label>
+          <select class="form-select" [(ngModel)]="filtro.mascotaId" (ngModelChange)="buscar()" [disabled]="!filtro.clienteId">
+            <option [ngValue]="null">{{ filtro.clienteId ? 'Todas' : 'Seleccione un cliente' }}</option>
+            <option *ngFor="let m of mascotasFiltro" [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Veterinario</label>
+          <select class="form-select" [(ngModel)]="filtro.medicoId" (ngModelChange)="buscar()">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let m of medicos" [ngValue]="m.id">{{ nombreCompleto(m) }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Desde</label>
+          <input class="form-control" type="date" [(ngModel)]="filtro.fechaDesde" (ngModelChange)="buscar()" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-1">Hasta</label>
+          <input class="form-control" type="date" [(ngModel)]="filtro.fechaHasta" (ngModelChange)="buscar()" />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" type="button" (click)="limpiarFiltros()">Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+        <span>{{ error }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="cargar()">Reintentar</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+          <thead>
+            <tr>
+              <th><app-orden-th etiqueta="Fecha consulta" columna="fecha" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Cliente" columna="cliente" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Mascota" columna="mascota" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Veterinario" columna="veterinario" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Motivo" columna="motivo" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th><app-orden-th etiqueta="Estado" columna="estado" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody *ngIf="cargando">
+            <tr><td colspan="7" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Cargando historias...</td></tr>
+          </tbody>
+          <tbody *ngIf="!cargando && !error && filas.length === 0">
+            <tr><td colspan="7" class="text-center text-muted py-4">No se encontraron historias clínicas con los filtros indicados.</td></tr>
+          </tbody>
+          <tbody *ngIf="!cargando && filas.length > 0">
+            <tr *ngFor="let h of filas">
+              <td class="text-nowrap">{{ formatear(h.fechaHora) }}</td>
+              <td>{{ h.clienteNombre }}</td>
+              <td>{{ h.mascotaNombre }}</td>
+              <td>{{ h.medicoNombre }}</td>
+              <td>{{ h.motivo }}</td>
+              <td><span class="badge" [ngClass]="esAbierta(h.estado) ? 'bg-success' : 'bg-secondary'">{{ h.estado }}</span></td>
+              <td class="text-center text-nowrap">
+                <button class="btn btn-sm btn-outline-info" (click)="ver(h)" title="Ver historia y anotaciones"><i class="fa fa-eye"></i> Ver</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginador [page]="page" [size]="size" [total]="totalElements" [totalPages]="totalPages"
+                     [tamanios]="tamanios" (irAPagina)="irAPagina($event)" (cambiarTamanio)="cambiarTamanio($event)"></app-paginador>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear historia -->
+<div class="modal fade" id="modalHistoria" tabindex="-1" aria-labelledby="tituloModalHistoria" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tituloModalHistoria">Nueva historia clínica</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div class="modal-body">
+          <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+          <div class="alert alert-info py-2 small">La historia se crea a partir de una cita <strong>atendida</strong>, y cada cita tiene una sola historia.</div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" for="hisCliente">Cliente *</label>
+              <select id="hisCliente" class="form-select" formControlName="clienteId" [class.is-invalid]="f['clienteId'].invalid && f['clienteId'].touched">
+                <option [ngValue]="null">Seleccione un cliente</option>
+                <option *ngFor="let c of clientes" [ngValue]="c.id">{{ nombreCompleto(c) }}</option>
+              </select>
+              <div class="invalid-feedback">El cliente es obligatorio.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="hisMascota">Mascota *</label>
+              <select id="hisMascota" class="form-select" formControlName="mascotaId" [class.is-invalid]="f['mascotaId'].invalid && f['mascotaId'].touched">
+                <option [ngValue]="null">{{ cargandoMascotas ? 'Cargando...' : 'Seleccione una mascota' }}</option>
+                <option *ngFor="let m of mascotasForm" [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
+              </select>
+              <div class="invalid-feedback">La mascota es obligatoria.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="hisCita">Cita atendida *</label>
+              <select id="hisCita" class="form-select" formControlName="citaId" [class.is-invalid]="f['citaId'].invalid && f['citaId'].touched">
+                <option [ngValue]="null">{{ cargandoCitas ? 'Cargando...' : 'Seleccione una cita' }}</option>
+                <option *ngFor="let c of citasForm" [ngValue]="c.id">{{ c.fecha | date:'dd/MM/yyyy' }} {{ c.hora }} · {{ c.medicoNombre }}</option>
+              </select>
+              <div class="invalid-feedback">La cita es obligatoria.</div>
+              <div class="form-text" *ngIf="f['mascotaId'].value && !cargandoCitas && citasForm.length === 0">Esta mascota no tiene citas atendidas.</div>
+            </div>
+            <div class="col-12" *ngIf="medicoDeLaCita">
+              <span class="text-muted small">Veterinario de la consulta:</span> <strong>{{ medicoDeLaCita.nombre }}</strong>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="hisMotivo">Motivo de la consulta *</label>
+              <input id="hisMotivo" class="form-control" formControlName="motivo" [class.is-invalid]="f['motivo'].invalid && f['motivo'].touched" />
+              <div class="invalid-feedback">El motivo es obligatorio.</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="hisDiagnostico">Diagnóstico *</label>
+              <textarea id="hisDiagnostico" rows="3" class="form-control" formControlName="diagnostico" [class.is-invalid]="f['diagnostico'].invalid && f['diagnostico'].touched"></textarea>
+              <div class="invalid-feedback">El diagnóstico es obligatorio.</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="hisObservaciones">Observaciones</label>
+              <textarea id="hisObservaciones" rows="2" class="form-control" formControlName="observaciones"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" [disabled]="enviando">Cerrar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="enviando">
+            <span *ngIf="enviando" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            {{ enviando ? 'Guardando...' : 'Guardar historia' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver historia + anotaciones -->
+<div class="modal fade" id="modalVerHistoria" tabindex="-1" aria-labelledby="tituloVerHistoria" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tituloVerHistoria">Historia clínica {{ historiaDetalle ? '#' + historiaDetalle.id : '' }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="cargandoDetalle" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Cargando...</div>
+        <div *ngIf="errorDetalle" class="alert alert-danger">{{ errorDetalle }}</div>
+
+        <ng-container *ngIf="historiaDetalle as h">
+          <dl class="row">
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9"><span class="badge" [ngClass]="esAbierta(h.estado) ? 'bg-success' : 'bg-secondary'">{{ h.estado }}</span></dd>
+            <dt class="col-sm-3">Fecha de la consulta</dt><dd class="col-sm-9">{{ formatear(h.fechaCreacion) }}</dd>
+            <dt class="col-sm-3">Cliente</dt><dd class="col-sm-9">{{ nombreCompleto(h.cliente) }}</dd>
+            <dt class="col-sm-3">Mascota</dt><dd class="col-sm-9">{{ h.mascota?.nombreMascota }}</dd>
+            <dt class="col-sm-3">Veterinario</dt><dd class="col-sm-9">{{ nombreCompleto(h.medico) }}</dd>
+            <dt class="col-sm-3">Cita</dt><dd class="col-sm-9">{{ formatear(h.cita?.fechaHora) }}</dd>
+            <dt class="col-sm-3">Motivo</dt><dd class="col-sm-9">{{ h.motivo }}</dd>
+            <dt class="col-sm-3">Diagnóstico</dt><dd class="col-sm-9">{{ h.diagnostico }}</dd>
+            <dt class="col-sm-3">Observaciones</dt><dd class="col-sm-9">{{ h.observaciones || '—' }}</dd>
+          </dl>
+          <hr />
+          <app-anotaciones-historia [historiaId]="h.id" [abierta]="esAbierta(h.estado)" [medicoSugeridoId]="h.medico?.id ?? null"></app-anotaciones-historia>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button *ngIf="historiaDetalle && esAbierta(historiaDetalle.estado)" type="button" class="btn btn-outline-danger me-auto" (click)="cerrarHistoria()" [disabled]="cerrando">
+          <span *ngIf="cerrando" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Cerrar historia
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar ventana</button>
+      </div>
+    </div>
+  </div>
+</div>

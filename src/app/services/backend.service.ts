@@ -101,4 +101,23 @@ export class BackendService {
       headers: headers,
     });
   }
+
+  // Servicio generico para realizar peticiones PATCH al backend (cancelar, reactivar, inactivar, cerrar).
+  patch<T>(urlApi: string, endpoint: string, service: string, data: unknown = {}): Observable<T> {
+    const tokenRecuperado = localStorage.getItem('token') || '';
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
+    });
+    return this.http.patch<T>(`${urlApi}/${endpoint}/${service}`, data, { headers });
+  }
+
+    delete<T>(urlApi: string, endpoint: string, service: string): Observable<T> {
+    const tokenRecuperado = localStorage.getItem('token') || '';
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
+    });
+    return this.http.delete<T>(`${urlApi}/${endpoint}/${service}`, { headers });
+  }
 }

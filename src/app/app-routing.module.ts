@@ -12,9 +12,11 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'formula-medica',
+        redirectTo: 'citas',
         pathMatch: 'full'
       },
+      // Pantalla de bienvenida (la dibuja el layout cuando la URL es /inicio).
+      { path: 'inicio', pathMatch: 'full', children: [] },
       {
         path: 'inicio/usuarios',
         component: UsuarioComponent
@@ -24,23 +26,27 @@ export const routes: Routes = [
         component: MascotaComponent
       },
       {
+        path: 'citas',
+        loadComponent: () =>
+          import('./demo/pages/cita/cita.component').then(m => m.CitaComponent)
+      },
+      {
+        path: 'historias-clinicas',
+        loadComponent: () =>
+          import('./demo/pages/historia-clinica/historia-clinica.component').then(m => m.HistoriaClinicaComponent)
+      },
+      {
+        path: 'formulas-medicas',
+        loadComponent: () =>
+          import('./demo/pages/formula-medica/formula-medica.component').then(m => m.FormulaMedicaComponent)
+      },
+      // Compatibilidad con la ruta anterior del módulo de fórmulas.
+      {
         path: 'formula-medica',
-        loadComponent: () =>
-          import('./views/formula-medica/formula-medica-list/formula-medica-list.component')
-            .then(m => m.FormulaMedicaListComponent)
+        redirectTo: 'formulas-medicas',
+        pathMatch: 'full'
       },
-      {
-        path: 'formula-medica/nuevo',
-        loadComponent: () =>
-          import('./views/formula-medica/formula-medica-form/formula-medica-form.component')
-            .then(m => m.FormulaMedicaFormComponent)
-      },
-      {
-        path: 'formula-medica/editar/:id',
-        loadComponent: () =>
-          import('./views/formula-medica/formula-medica-form/formula-medica-form.component')
-            .then(m => m.FormulaMedicaFormComponent)
-      }
+      { path: '**', redirectTo: 'citas' }
     ]
   },
   {

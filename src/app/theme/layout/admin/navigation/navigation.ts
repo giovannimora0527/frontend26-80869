@@ -40,10 +40,26 @@ export const NavigationItems: NavigationItem[] = [
       },
       /* ---------- Nuevos menus aqui -------------  */
       {
-        id: 'formula-medica',
+        id: 'citas',
+        title: 'Gestión de Citas',
+        type: 'item',
+        url: '/citas',
+        icon: 'feather icon-calendar',
+        classes: 'nav-item'
+      },
+      {
+        id: 'historias-clinicas',
+        title: 'Historias Clínicas',
+        type: 'item',
+        url: '/historias-clinicas',
+        icon: 'feather icon-clipboard',
+        classes: 'nav-item'
+      },
+      {
+        id: 'formulas-medicas',
         title: 'Gestión de Fórmulas Médicas',
         type: 'item',
-        url: '/formula-medica',
+        url: '/formulas-medicas',
         icon: 'feather icon-file-text',
         classes: 'nav-item'
       }

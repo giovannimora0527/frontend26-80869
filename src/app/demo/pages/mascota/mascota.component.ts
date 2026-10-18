@@ -6,6 +6,7 @@ import { Mascota } from 'src/app/models/mascota';
 import { FormBuilder, FormGroup, Validators, AbstractControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import Swal from 'sweetalert2';
+import { mensajeDeError } from 'src/app/utils/error.util';
 
 import { Modal } from 'bootstrap';
 import { Raza } from 'src/app/models/raza';
@@ -298,7 +299,7 @@ export class MascotaComponent {
       error: (error) => {
         this.enviando = false;
         console.error('Error al guardar la mascota:', error);
-        Swal.fire('Error', error.message, 'error');
+        Swal.fire('Error', mensajeDeError(error, 'No se pudo guardar la mascota.'), 'error');
       }
     });
   }

@@ -1,0 +1,96 @@
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="mb-0">Anotaciones de la historia</h6>
+  <button *ngIf="abierta" type="button" class="btn btn-sm btn-outline-primary" (click)="alternarFormulario()">
+    <i class="fa" [ngClass]="mostrarFormulario ? 'fa-times' : 'fa-plus'"></i>
+    {{ mostrarFormulario ? 'Cancelar' : 'Agregar anotación' }}
+  </button>
+  <span *ngIf="!abierta" class="badge bg-secondary">Historia cerrada: solo lectura</span>
+</div>
+
+<!-- Formulario de nueva anotación -->
+<form *ngIf="mostrarFormulario && abierta" [formGroup]="form" (ngSubmit)="guardar()" novalidate class="border rounded p-3 mb-3">
+  <div *ngIf="errorFormulario" class="alert alert-danger py-2" role="alert">{{ errorFormulario }}</div>
+  <div class="row g-2">
+    <div class="col-md-4">
+      <label class="form-label small mb-1" for="anoMedico">Veterinario *</label>
+      <select id="anoMedico" class="form-select" formControlName="medicoId" [class.is-invalid]="f['medicoId'].invalid && f['medicoId'].touched">
+        <option [ngValue]="null">Seleccione</option>
+        <option *ngFor="let m of medicos" [ngValue]="m.id">{{ nombreCompleto(m) }}</option>
+      </select>
+      <div class="invalid-feedback">El veterinario es obligatorio.</div>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label small mb-1" for="anoDescripcion">Descripción *</label>
+      <input id="anoDescripcion" class="form-control" formControlName="descripcion" maxlength="255" [class.is-invalid]="f['descripcion'].invalid && f['descripcion'].touched" />
+      <div class="invalid-feedback">La descripción es obligatoria.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label small mb-1" for="anoObservacion">Observación *</label>
+      <textarea id="anoObservacion" rows="2" class="form-control" formControlName="observacion" [class.is-invalid]="f['observacion'].invalid && f['observacion'].touched"></textarea>
+      <div class="invalid-feedback">La observación es obligatoria.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label small mb-1" for="anoDiagnostico">Diagnóstico / evolución *</label>
+      <textarea id="anoDiagnostico" rows="2" class="form-control" formControlName="diagnostico" [class.is-invalid]="f['diagnostico'].invalid && f['diagnostico'].touched"></textarea>
+      <div class="invalid-feedback">El diagnóstico o la evolución es obligatorio.</div>
+    </div>
+  </div>
+  <div class="text-end mt-2">
+    <small class="text-muted me-2">Una vez guardada, la anotación no se puede editar ni eliminar.</small>
+    <button type="submit" class="btn btn-primary btn-sm" [disabled]="enviando">
+      <span *ngIf="enviando" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      {{ enviando ? 'Guardando...' : 'Guardar anotación' }}
+    </button>
+  </div>
+</form>
+
+<!-- Filtros -->
+<div class="row g-2 mb-2">
+  <div class="col-md-4">
+    <input class="form-control form-control-sm" type="text" placeholder="Buscar en descripción o diagnóstico"
+           [(ngModel)]="filtro.texto" (ngModelChange)="buscarConRetraso()" />
+  </div>
+  <div class="col-md-3">
+    <select class="form-select form-select-sm" [(ngModel)]="filtro.medicoId" (ngModelChange)="buscar()">
+      <option [ngValue]="null">Todos los veterinarios</option>
+      <option *ngFor="let m of medicos" [ngValue]="m.id">{{ nombreCompleto(m) }}</option>
+    </select>
+  </div>
+  <div class="col-md-2"><input class="form-control form-control-sm" type="date" [(ngModel)]="filtro.fechaDesde" (ngModelChange)="buscar()" title="Desde" /></div>
+  <div class="col-md-2"><input class="form-control form-control-sm" type="date" [(ngModel)]="filtro.fechaHasta" (ngModelChange)="buscar()" title="Hasta" /></div>
+  <div class="col-md-1"><button class="btn btn-sm btn-outline-secondary w-100" type="button" (click)="limpiarFiltros()" title="Limpiar filtros">&times;</button></div>
+</div>
+
+<div *ngIf="error" class="alert alert-danger d-flex justify-content-between align-items-center py-2">
+  <span>{{ error }}</span><button class="btn btn-sm btn-outline-danger" (click)="cargar()">Reintentar</button>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm table-striped align-middle">
+    <thead>
+      <tr>
+        <th><app-orden-th etiqueta="Fecha" columna="fecha" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+        <th><app-orden-th etiqueta="Veterinario" columna="veterinario" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+        <th><app-orden-th etiqueta="Descripción" columna="descripcion" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+        <th><app-orden-th etiqueta="Diagnóstico" columna="diagnostico" [sortBy]="sortBy" [sortDir]="sortDir" (ordenar)="ordenar($event)"></app-orden-th></th>
+      </tr>
+    </thead>
+    <tbody *ngIf="cargando">
+      <tr><td colspan="4" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Cargando anotaciones...</td></tr>
+    </tbody>
+    <tbody *ngIf="!cargando && !error && filas.length === 0">
+      <tr><td colspan="4" class="text-center text-muted py-3">Esta historia aún no tiene anotaciones con esos criterios.</td></tr>
+    </tbody>
+    <tbody *ngIf="!cargando && filas.length > 0">
+      <tr *ngFor="let a of filas">
+        <td class="text-nowrap">{{ formatear(a.fecha) }}</td>
+        <td>{{ a.medicoNombre }}</td>
+        <td>{{ a.descripcion }}</td>
+        <td>{{ a.diagnostico }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-paginador [page]="page" [size]="size" [total]="totalElements" [totalPages]="totalPages"
+               [tamanios]="tamanios" (irAPagina)="irAPagina($event)" (cambiarTamanio)="cambiarTamanio($event)"></app-paginador>
