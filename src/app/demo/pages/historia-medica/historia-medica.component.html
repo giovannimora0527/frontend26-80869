@@ -12,7 +12,7 @@
         <div class="col-md-2">
           <select class="form-select" formControlName="estado" aria-label="Estado">
             <option value="">Todos los estados</option>
-            <option value="ABIERTA">ABIERTA</option>
+            <option value="ACTIVA">ACTIVA</option>
             <option value="CERRADA">CERRADA</option>
           </select>
         </div>
@@ -45,7 +45,7 @@
 
       <ng-template #acciones let-historia>
         <button class="btn btn-sm btn-outline-secondary me-1" type="button" (click)="verHistoria(historia)"><i class="fa fa-eye" aria-hidden="true"></i> Ver</button>
-        @if (historia.estado === 'ABIERTA') {
+        @if (historia.estado === 'ACTIVA') {
           <button class="btn btn-sm btn-outline-danger" type="button" (click)="cerrarHistoria(historia)">Cerrar</button>
         }
       </ng-template>
@@ -96,6 +96,11 @@
               </select>
               @if (f['medicoId'].touched && f['medicoId'].invalid) { <div class="text-danger small">Seleccione el veterinario.</div> }
             </div>
+            <div class="col-md-6">
+              <label for="hFechaHora" class="form-label">Fecha y hora de la consulta</label>
+              <input id="hFechaHora" type="datetime-local" class="form-control" formControlName="fechaHora" [attr.max]="fechaHoraMaxima" />
+              @if (f['fechaHora'].touched && f['fechaHora'].invalid) { <div class="text-danger small">Ingrese la fecha y hora de la consulta.</div> }
+            </div>
             <div class="col-12">
               <label for="hMotivo" class="form-label">Motivo de consulta</label>
               <input id="hMotivo" class="form-control" formControlName="motivo" />
@@ -138,18 +143,19 @@
             <dt class="col-sm-2">Mascota</dt><dd class="col-sm-4">{{ historiaSeleccionada.mascotaNombre }}</dd>
             <dt class="col-sm-2">Cliente</dt><dd class="col-sm-4">{{ historiaSeleccionada.clienteNombre }}</dd>
             <dt class="col-sm-2">Veterinario</dt><dd class="col-sm-4">{{ historiaSeleccionada.medicoNombre }}</dd>
-            <dt class="col-sm-2">Fecha</dt><dd class="col-sm-4">{{ historiaSeleccionada.fechaConsulta | date: 'dd/MM/yyyy HH:mm' }}</dd>
-            <dt class="col-sm-2">Motivo</dt><dd class="col-sm-10">{{ historiaSeleccionada.motivo }}</dd>
+            <dt class="col-sm-2">Fecha</dt><dd class="col-sm-4">{{ historiaSeleccionada.fechaHora | date: 'dd/MM/yyyy HH:mm' }}</dd>
+            <dt class="col-sm-2">Motivo</dt><dd class="col-sm-10">{{ historiaSeleccionada.motivoConsulta }}</dd>
             <dt class="col-sm-2">Diagnóstico</dt><dd class="col-sm-10">{{ historiaSeleccionada.diagnostico || '—' }}</dd>
             <dt class="col-sm-2">Observaciones</dt><dd class="col-sm-10">{{ historiaSeleccionada.observaciones || '—' }}</dd>
+            <dt class="col-sm-2">Anotaciones</dt><dd class="col-sm-10">{{ historiaSeleccionada.totalAnotaciones }}</dd>
             <dt class="col-sm-2">Estado</dt>
-            <dd class="col-sm-10"><span class="badge" [ngClass]="historiaSeleccionada.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ historiaSeleccionada.estado }}</span></dd>
+            <dd class="col-sm-10"><span class="badge" [ngClass]="historiaSeleccionada.estado === 'ACTIVA' ? 'bg-success' : 'bg-secondary'">{{ historiaSeleccionada.estado }}</span></dd>
           </dl>
 
           <h2 class="h6">Histórico de anotaciones</h2>
-          <app-anotaciones-tabla [historiaId]="historiaSeleccionada.id" [mascotaId]="historiaSeleccionada.mascotaId" [refrescar]="refrescarAnotaciones"></app-anotaciones-tabla>
+          <app-anotaciones-tabla [historiaId]="historiaSeleccionada.id" [refrescar]="refrescarAnotaciones"></app-anotaciones-tabla>
 
-          @if (historiaSeleccionada.estado === 'ABIERTA') {
+          @if (historiaSeleccionada.estado === 'ACTIVA') {
             <hr />
             <h2 class="h6">Agregar anotación</h2>
             <form [formGroup]="anotacionForm" (ngSubmit)="guardarAnotacion()" novalidate class="row g-2">

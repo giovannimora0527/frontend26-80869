@@ -1,0 +1,41 @@
+<div class="container mt-4">
+  <h2>{{ isEditMode ? 'Editar' : 'Crear' }} Fórmula Médica</h2>
+
+  <div *ngIf="mensaje" class="alert" [class.alert-success]="tipoMensaje === 'success'" [class.alert-danger]="tipoMensaje === 'error'">
+    {{ mensaje }}
+  </div>
+
+  <form (ngSubmit)="guardarFormula()" #form="ngForm">
+    
+    <!-- ID de la Cita (En un caso real, esto sería un combo que trae las citas del cliente) -->
+    <div class="mb-3">
+      <label class="form-label">ID de la Consulta/Cita *</label>
+      <input type="number" class="form-control" [(ngModel)]="formula.cita.id" name="citaId" required>
+    </div>
+
+    <!-- ID del Medicamento -->
+    <div class="mb-3">
+      <label class="form-label">ID del Medicamento *</label>
+      <input type="number" class="form-control" [(ngModel)]="formula.medicamento.id" name="medicamentoId" required>
+    </div>
+
+    <!-- Dosis -->
+    <div class="mb-3">
+      <label class="form-label">Dosis *</label>
+      <input type="text" class="form-control" [(ngModel)]="formula.dosis" name="dosis" required placeholder="Ej: 1 tableta cada 8 horas">
+    </div>
+
+    <!-- Indicaciones -->
+    <div class="mb-3">
+      <label class="form-label">Indicaciones *</label>
+      <textarea class="form-control" rows="4" [(ngModel)]="formula.indicaciones" name="indicaciones" required placeholder="Ej: Tomar con las comidas"></textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="cargando || form.invalid">
+        {{ cargando ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

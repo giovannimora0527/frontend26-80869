@@ -3,26 +3,33 @@
     <div class="card-header"><h5 class="mb-0">Anotaciones de Historia Clínica</h5></div>
     <div class="card-body">
       <form [formGroup]="selectorForm" class="row g-2 mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label for="selCliente" class="form-label">Cliente</label>
           <select id="selCliente" class="form-select" formControlName="clienteId">
             <option [ngValue]="null">Seleccione un cliente</option>
             @for (c of clientes; track c.id) { <option [ngValue]="c.id">{{ c.nombres }} {{ c.apellidos }}</option> }
           </select>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <label for="selMascota" class="form-label">Mascota</label>
           <select id="selMascota" class="form-select" formControlName="mascotaId">
             <option [ngValue]="null">{{ mascotas.length ? 'Seleccione una mascota' : 'Primero elija un cliente' }}</option>
             @for (m of mascotas; track m.mascotaId) { <option [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option> }
           </select>
         </div>
+        <div class="col-md-4">
+          <label for="selHistoria" class="form-label">Historia clínica</label>
+          <select id="selHistoria" class="form-select" formControlName="historiaId">
+            <option [ngValue]="null">{{ historias.length ? 'Seleccione una historia' : 'La mascota no tiene historias' }}</option>
+            @for (h of historias; track h.id) { <option [ngValue]="h.id">{{ h.fechaHora | date: 'dd/MM/yyyy HH:mm' }} — {{ h.motivoConsulta }} ({{ h.estado }})</option> }
+          </select>
+        </div>
       </form>
 
-      @if (mascotaId) {
-        <app-anotaciones-tabla [mascotaId]="mascotaId"></app-anotaciones-tabla>
+      @if (historiaId) {
+        <app-anotaciones-tabla [historiaId]="historiaId"></app-anotaciones-tabla>
       } @else {
-        <p class="text-muted mb-0">Seleccione un cliente y una mascota para ver su histórico de anotaciones.</p>
+        <p class="text-muted mb-0">Seleccione un cliente, una mascota y una historia clínica para ver su histórico de anotaciones.</p>
       }
     </div>
   </div>

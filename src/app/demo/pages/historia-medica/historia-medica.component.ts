@@ -5,13 +5,14 @@ import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validator
 import { AnotacionRq } from 'src/app/models/anotacion';
 import { Cita } from 'src/app/models/cita';
 import { Cliente } from 'src/app/models/cliente';
-import { Historia, HistoriaFiltro, HistoriaRq } from 'src/app/models/historia';
+import { HistoriaDetalle, HistoriaFiltro, HistoriaResumen, HistoriaRq } from 'src/app/models/historia';
 import { Mascota } from 'src/app/models/mascota';
 import { Medico } from 'src/app/models/medico';
 import { PageResponse } from 'src/app/models/page-response';
 import { NotificacionService } from 'src/app/services/notificacion.service';
 import { ColumnaTabla, DataTableComponent } from 'src/app/shared/data-table/data-table.component';
 import { mensajeDeError } from 'src/app/utils/api-error';
+import { ahoraLocal, aIsoLocal } from 'src/app/utils/fechas';
 import { abrirModal, cerrarModal } from 'src/app/utils/modal';
 import { noEnBlanco } from 'src/app/utils/validadores';
 import { AnotacionService } from '../anotacion-historia/service/anotacion.service';
@@ -40,20 +41,20 @@ export class HistoriaMedicaComponent implements OnInit {
   readonly modalVerId = 'modalHistoriaVer';
   /** Columnas del DataTable. */
   readonly columnas: ColumnaTabla[] = [
-    { campo: 'fechaConsulta', titulo: 'Fecha', ordenPor: 'fechaConsulta', formato: 'fechaHora' },
+    { campo: 'fechaHora', titulo: 'Fecha', ordenPor: 'fechaHora', formato: 'fechaHora' },
     { campo: 'mascotaNombre', titulo: 'Mascota', ordenPor: 'mascota' },
     { campo: 'clienteNombre', titulo: 'Cliente', ordenPor: 'cliente' },
     { campo: 'medicoNombre', titulo: 'Veterinario', ordenPor: 'medico' },
-    { campo: 'motivo', titulo: 'Motivo de consulta', ordenPor: 'motivo', max: 50 },
+    { campo: 'motivoConsulta', titulo: 'Motivo de consulta', ordenPor: 'motivoConsulta', max: 50 },
     { campo: 'estado', titulo: 'Estado', ordenPor: 'estado', formato: 'estado' }
   ];
 
   /** Página actual de historias. */
-  pagina: PageResponse<Historia> | null = null;
+  pagina: PageResponse<HistoriaResumen> | null = null;
   /** Indica si hay una consulta en curso. */
   cargando = false;
   /** Paginación, orden y filtros vigentes. */
-  filtro: HistoriaFiltro = { page: 0, size: 10, sortBy: 'fechaConsulta', sortDir: 'desc' };
+  filtro: HistoriaFiltro = { page: 0, size: 10, sortBy: 'fechaHora', sortDir: 'desc' };
   /** Clientes para el combo. */
   clientes: Cliente[] = [];
   /** Veterinarios para los combos. */
@@ -69,11 +70,13 @@ export class HistoriaMedicaComponent implements OnInit {
   /** Formulario de nueva anotación (dentro del modal Ver). */
   anotacionForm!: FormGroup;
   /** Historia que se muestra en el modal Ver. */
-  historiaSeleccionada: Historia | null = null;
+  historiaSeleccionada: HistoriaDetalle | null = null;
   /** Contador que fuerza la recarga de la tabla de anotaciones. */
   refrescarAnotaciones = 0;
   /** Evita envíos dobles. */
   enviando = false;
+  /** Fecha y hora máxima permitida para la consulta (ahora): el backend rechaza consultas futuras. */
+  fechaHoraMaxima = ahoraLocal();
 
   /**
    * @param historiaService Servicio de historias.
@@ -106,6 +109,7 @@ export class HistoriaMedicaComponent implements OnInit {
       mascotaId: [null, Validators.required],
       citaId: [null, Validators.required],
       medicoId: [null, Validators.required],
+      fechaHora: [ahoraLocal(), Validators.required],
       motivo: ['', [Validators.required, noEnBlanco()]],
       diagnostico: ['', [Validators.required, noEnBlanco()]],
       observaciones: ['']
@@ -135,11 +139,16 @@ export class HistoriaMedicaComponent implements OnInit {
         });
       }
     });
-    // Al elegir la cita se heredan el veterinario y el motivo.
+    // Al elegir la cita se heredan el veterinario, el motivo y la fecha de la consulta (si ya pasó).
     this.historiaForm.controls['citaId'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((citaId: number | null) => {
       const cita = this.citasAtendidas.find((c) => c.id === Number(citaId));
       if (cita) {
-        this.historiaForm.patchValue({ medicoId: cita.medicoId, motivo: cita.motivo });
+        const fechaCita = cita.fechaHora.substring(0, 16);
+        this.historiaForm.patchValue({
+          medicoId: cita.medicoId,
+          motivo: cita.motivo,
+          fechaHora: fechaCita <= ahoraLocal() ? fechaCita : ahoraLocal()
+        });
       }
     });
 
@@ -191,7 +200,7 @@ export class HistoriaMedicaComponent implements OnInit {
   /** Limpia filtros y restablece el orden inicial (fecha de consulta descendente). */
   limpiar(): void {
     this.filtrosForm.reset({ texto: '', estado: '', medicoId: '', fechaDesde: '', fechaHasta: '' });
-    this.filtro = { page: 0, size: this.filtro.size, sortBy: 'fechaConsulta', sortDir: 'desc' };
+    this.filtro = { page: 0, size: this.filtro.size, sortBy: 'fechaHora', sortDir: 'desc' };
     this.cargar();
   }
 
@@ -221,7 +230,8 @@ export class HistoriaMedicaComponent implements OnInit {
   nuevaHistoria(): void {
     this.mascotas = [];
     this.citasAtendidas = [];
-    this.historiaForm.reset({ clienteId: null, mascotaId: null, citaId: null, medicoId: null, motivo: '', diagnostico: '', observaciones: '' });
+    this.fechaHoraMaxima = ahoraLocal();
+    this.historiaForm.reset({ clienteId: null, mascotaId: null, citaId: null, medicoId: null, fechaHora: ahoraLocal(), motivo: '', diagnostico: '', observaciones: '' });
     abrirModal(this.modalNuevaId);
   }
 
@@ -237,16 +247,17 @@ export class HistoriaMedicaComponent implements OnInit {
       mascotaId: Number(v.mascotaId),
       citaId: Number(v.citaId),
       medicoId: Number(v.medicoId),
-      motivo: String(v.motivo).trim(),
+      fechaHora: aIsoLocal(v.fechaHora),
+      motivoConsulta: String(v.motivo).trim(),
       diagnostico: String(v.diagnostico).trim(),
       observaciones: v.observaciones?.trim() || undefined
     };
     this.enviando = true;
     this.historiaService.crear(rq).subscribe({
-      next: () => {
+      next: (respuesta) => {
         this.enviando = false;
         cerrarModal(this.modalNuevaId);
-        this.notificacion.exito('La historia clínica fue registrada correctamente.');
+        this.notificacion.exito(respuesta.message || 'La historia clínica fue registrada correctamente.');
         this.cargar();
       },
       error: (error) => {
@@ -261,7 +272,7 @@ export class HistoriaMedicaComponent implements OnInit {
    *
    * @param historia Historia de la fila.
    */
-  verHistoria(historia: Historia): void {
+  verHistoria(historia: HistoriaResumen): void {
     this.historiaService.consultar(historia.id).subscribe({
       next: (datos) => {
         this.historiaSeleccionada = datos;
@@ -289,11 +300,11 @@ export class HistoriaMedicaComponent implements OnInit {
     };
     this.enviando = true;
     this.anotacionService.crear(rq).subscribe({
-      next: () => {
+      next: (respuesta) => {
         this.enviando = false;
         this.anotacionForm.reset({ medicoId: rq.medicoId, descripcion: '', observacion: '', diagnosticoEvolucion: '' });
         this.refrescarAnotaciones++;
-        this.notificacion.exito('La anotación fue agregada.');
+        this.notificacion.exito(respuesta.message || 'La anotación fue agregada.');
       },
       error: (error) => {
         this.enviando = false;
@@ -307,14 +318,14 @@ export class HistoriaMedicaComponent implements OnInit {
    *
    * @param historia Historia de la fila.
    */
-  async cerrarHistoria(historia: Historia): Promise<void> {
+  async cerrarHistoria(historia: HistoriaResumen): Promise<void> {
     const confirmado = await this.notificacion.confirmar(`¿Desea cerrar la historia de ${historia.mascotaNombre}? Ya no se podrán agregar anotaciones.`);
     if (!confirmado) {
       return;
     }
     this.historiaService.cerrar(historia.id).subscribe({
-      next: () => {
-        this.notificacion.exito('La historia clínica fue cerrada.');
+      next: (respuesta) => {
+        this.notificacion.exito(respuesta.message || 'La historia clínica fue cerrada.');
         this.cargar();
       },
       error: (error) => this.notificacion.error(mensajeDeError(error))

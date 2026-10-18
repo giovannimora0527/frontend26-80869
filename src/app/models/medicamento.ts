@@ -1,13 +1,7 @@
-/**
- * Medicamento del catálogo.
- */
+/** Medicamento disponible para las fórmulas médicas. */
 export interface Medicamento {
-  /** Identificador del medicamento. */
   id: number;
-  /** Nombre del medicamento. */
   nombre: string;
-  /** Presentación (jarabe, tabletas, etc.). */
+  descripcion?: string;
   presentacion?: string;
-  /** Fecha de vencimiento (yyyy-MM-dd). */
-  fechaVence?: string;
 }

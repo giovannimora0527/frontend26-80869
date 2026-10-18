@@ -1,89 +1,56 @@
-import { FiltroPagina } from './page-response';
+import { Cliente } from './cliente';
+import { Mascota } from './mascota';
+import { Medico } from './medico';
 
-/** Estados posibles de una cita (siempre en mayúsculas, igual que el backend). */
-export type EstadoCita = 'PENDIENTE' | 'PROGRAMADA' | 'CONFIRMADA' | 'ATENDIDA' | 'CANCELADA';
+/** Estados que acepta el backend para una cita. */
+export const ESTADOS_CITA = ['Pendiente', 'Confirmada', 'Programada', 'Atendida', 'Cancelada'] as const;
+export type EstadoCita = typeof ESTADOS_CITA[number];
 
-/**
- * Transiciones de estado permitidas. Solo sirve para mostrar u ocultar botones:
- * el backend es quien valida de verdad.
- */
-export const TRANSICIONES_CITA: Record<EstadoCita, EstadoCita[]> = {
-  PENDIENTE: ['CONFIRMADA', 'PROGRAMADA', 'CANCELADA'],
-  PROGRAMADA: ['CONFIRMADA', 'ATENDIDA', 'CANCELADA'],
-  CONFIRMADA: ['ATENDIDA', 'CANCELADA'],
-  ATENDIDA: [],
-  CANCELADA: []
-};
-
-/** Estados en los que una cita todavía puede editarse. */
-export const ESTADOS_EDITABLES: EstadoCita[] = ['PENDIENTE', 'PROGRAMADA', 'CONFIRMADA'];
-
-/**
- * Cita tal como la devuelve el backend (listado y detalle).
- */
-export interface Cita {
-  /** Identificador de la cita. */
+/** Fila resumida del listado de citas (`GET /cita/paginado`). */
+export interface CitaResumen {
   id: number;
-  /** Fecha y hora completas (ISO). */
-  fechaHora: string;
-  /** Fecha (yyyy-MM-dd). */
   fecha: string;
-  /** Hora (HH:mm:ss). */
   hora: string;
-  /** Id del cliente. */
-  clienteId: number;
-  /** Nombre completo del cliente. */
-  clienteNombre: string;
-  /** Id de la mascota. */
-  mascotaId: number;
-  /** Nombre de la mascota. */
-  mascotaNombre: string;
-  /** Id del veterinario. */
-  medicoId: number;
-  /** Nombre del veterinario. */
-  medicoNombre: string;
-  /** Estado de la cita. */
-  estado: EstadoCita;
-  /** Motivo de la consulta. */
-  motivo: string;
-  /** Id de la historia asociada (solo en el detalle). */
-  historiaId?: number | null;
-}
-
-/**
- * Datos que se envían para crear o editar una cita.
- */
-export interface CitaRq {
-  /** Cliente dueño de la mascota. */
-  clienteId: number;
-  /** Mascota (debe pertenecer al cliente). */
-  mascotaId: number;
-  /** Veterinario asignado. */
-  medicoId: number;
-  /** Fecha y hora en formato ISO (yyyy-MM-ddTHH:mm:ss). */
   fechaHora: string;
-  /** Motivo de la consulta. */
+  clienteId: number;
+  clienteNombre: string;
+  mascotaId: number;
+  mascotaNombre: string;
+  medicoId: number;
+  medicoNombre: string;
+  estado: string;
   motivo: string;
-  /** Estado inicial (solo al crear). */
-  estado?: string;
 }
 
-/**
- * Filtros del listado de citas.
- */
-export interface CitaFiltro extends FiltroPagina {
-  /** Estado exacto. */
-  estado?: string;
-  /** Id del cliente. */
-  clienteId?: number;
-  /** Id de la mascota. */
-  mascotaId?: number;
-  /** Id del veterinario. */
-  medicoId?: number;
-  /** Fecha inicial (yyyy-MM-dd). */
-  fechaDesde?: string;
-  /** Fecha final (yyyy-MM-dd). */
-  fechaHasta?: string;
-  /** Texto libre: mascota o cliente. */
+/** Detalle completo de una cita (`GET /cita/consultar/{id}`). */
+export interface Cita {
+  id: number;
+  cliente: Cliente;
+  mascota: Mascota;
+  medico: Medico;
+  fechaHora: string;
+  estado: string;
+  motivo: string;
+}
+
+/** Cuerpo para crear o editar una cita. */
+export interface CitaRq {
+  clienteId: number;
+  mascotaId: number;
+  medicoId: number;
+  fecha: string;
+  hora: string;
+  motivo: string;
+  estado: string;
+}
+
+/** Filtros del listado de citas. */
+export interface CitaFiltro {
   texto?: string;
+  estado?: string;
+  clienteId?: number | null;
+  mascotaId?: number | null;
+  medicoId?: number | null;
+  fechaDesde?: string;
+  fechaHasta?: string;
 }

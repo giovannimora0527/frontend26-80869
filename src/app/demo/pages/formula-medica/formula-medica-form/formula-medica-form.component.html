@@ -3,7 +3,7 @@
     <div class="card-header"><h5 class="mb-0">{{ esEdicion ? 'Editar' : 'Nueva' }} fórmula médica</h5></div>
     <div class="card-body">
       @if (esEdicion && detalle && !detalle.activo) {
-        <div class="alert alert-warning">Esta fórmula está inactiva y no puede modificarse. Actívela desde el listado para editarla.</div>
+        <div class="alert alert-warning">Esta fórmula está inactiva y no puede modificarse.</div>
       }
       <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
         <div class="row g-3">

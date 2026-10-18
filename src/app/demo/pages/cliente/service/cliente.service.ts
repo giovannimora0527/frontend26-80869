@@ -18,14 +18,4 @@ export class ClienteService {
   listarClientes(): Observable<Cliente[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar");
   }
-
-  /**
-   * Consulta un cliente por su id.
-   *
-   * @param id Id del cliente.
-   * @returns Cliente encontrado (el backend responde 404 si no existe).
-   */
-  consultarCliente(id: number): Observable<Cliente> {
-    return this.backendService.get(environment.apiUrlAuth, this.api, `${id}`);
-  }
 }

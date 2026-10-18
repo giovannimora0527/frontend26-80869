@@ -9,9 +9,9 @@ import { mensajeDeError } from 'src/app/utils/api-error';
 import { AnotacionService } from '../../anotacion-historia/service/anotacion.service';
 
 /**
- * Histórico de anotaciones en un DataTable (filtrar, ordenar por fecha, paginar y consultar el
- * detalle de una anotación). Se reutiliza en el modal "Ver" de la historia clínica y en la
- * pantalla de anotaciones. Siempre muestra primero la anotación más reciente.
+ * Histórico de anotaciones de una historia clínica en un DataTable: filtrar, ordenar por fecha,
+ * paginar y consultar el detalle de una anotación. Se reutiliza en el modal "Ver" de la historia
+ * clínica y en la pantalla de anotaciones. Siempre muestra primero la anotación más reciente.
  */
 @Component({
   selector: 'app-anotaciones-tabla',
@@ -19,14 +19,12 @@ import { AnotacionService } from '../../anotacion-historia/service/anotacion.ser
   templateUrl: './anotaciones-tabla.component.html'
 })
 export class AnotacionesTablaComponent implements OnChanges {
-  /** Historia de la que se muestran las anotaciones (opcional). */
+  /** Historia de la que se muestran las anotaciones. */
   @Input() historiaId: number | null = null;
-  /** Mascota de la que se muestra todo el histórico (opcional). */
-  @Input() mascotaId: number | null = null;
   /** Contador que el padre incrementa para forzar la recarga (p. ej. tras crear una anotación). */
   @Input() refrescar = 0;
 
-  /** Columnas del DataTable. */
+  /** Columnas del DataTable (alias de orden válidos en el backend: fecha y medico). */
   readonly columnas: ColumnaTabla[] = [
     { campo: 'fecha', titulo: 'Fecha y hora', ordenPor: 'fecha', formato: 'fechaHora' },
     { campo: 'medicoNombre', titulo: 'Veterinario', ordenPor: 'medico' },
@@ -34,8 +32,6 @@ export class AnotacionesTablaComponent implements OnChanges {
     { campo: 'diagnosticoEvolucion', titulo: 'Diagnóstico / evolución', max: 60 }
   ];
 
-  /** Si es true se muestra el histórico de toda la mascota en lugar de solo esta historia. */
-  verTodaMascota = false;
   /** Página actual de anotaciones. */
   pagina: PageResponse<Anotacion> | null = null;
   /** Indica si hay una consulta en curso. */
@@ -60,27 +56,21 @@ export class AnotacionesTablaComponent implements OnChanges {
     this.filtrosForm = formBuilder.group({ texto: [''], fechaDesde: [''], fechaHasta: [''] });
   }
 
-  /** Reinicia la consulta cuando cambia la historia, la mascota o el contador de refresco. */
+  /** Reinicia la consulta cuando cambia la historia o el contador de refresco. */
   ngOnChanges(): void {
     this.detalle = null;
     this.filtro = { ...this.filtro, page: 0 };
     this.cargar();
   }
 
-  /** Consulta la página actual del histórico. */
+  /** Consulta la página actual del histórico de la historia seleccionada. */
   cargar(): void {
-    if (!this.historiaId && !this.mascotaId) {
+    if (!this.historiaId) {
       this.pagina = null;
       return;
     }
-    const porMascota = this.mascotaId && (this.verTodaMascota || !this.historiaId);
-    const consulta: AnotacionFiltro = {
-      ...this.filtro,
-      historiaId: porMascota ? undefined : (this.historiaId ?? undefined),
-      mascotaId: porMascota ? (this.mascotaId ?? undefined) : undefined
-    };
     this.cargando = true;
-    this.anotacionService.listar(consulta).subscribe({
+    this.anotacionService.listarPorHistoria(this.historiaId, this.filtro).subscribe({
       next: (datos) => {
         this.pagina = datos;
         this.cargando = false;
@@ -92,13 +82,6 @@ export class AnotacionesTablaComponent implements OnChanges {
     });
   }
 
-  /** Alterna entre las anotaciones de esta historia y las de toda la mascota. */
-  alternarAlcance(): void {
-    this.verTodaMascota = !this.verTodaMascota;
-    this.filtro = { ...this.filtro, page: 0 };
-    this.cargar();
-  }
-
   /** Aplica los filtros del formulario. */
   buscar(): void {
     const v = this.filtrosForm.getRawValue();
@@ -106,14 +89,18 @@ export class AnotacionesTablaComponent implements OnChanges {
     this.cargar();
   }
 
-  /** Limpia los filtros. */
+  /** Limpia los filtros y restablece el orden (fecha descendente). */
   limpiar(): void {
     this.filtrosForm.reset({ texto: '', fechaDesde: '', fechaHasta: '' });
     this.filtro = { page: 0, size: this.filtro.size, sortBy: 'fecha', sortDir: 'desc' };
     this.cargar();
   }
 
-  /** @param alias Alias de columna entendido por el backend. */
+  /**
+   * Cambia el orden: misma columna alterna la dirección, otra columna ordena ascendente.
+   *
+   * @param alias Alias de columna entendido por el backend.
+   */
   ordenar(alias: string): void {
     if (this.filtro.sortBy === alias) {
       this.filtro = { ...this.filtro, page: 0, sortDir: this.filtro.sortDir === 'asc' ? 'desc' : 'asc' };

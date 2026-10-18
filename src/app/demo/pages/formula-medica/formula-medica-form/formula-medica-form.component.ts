@@ -23,7 +23,8 @@ import { FormulaMedicaService } from '../service/formula-medica.service';
 /**
  * Formulario reactivo para crear o editar una fórmula médica.
  * Al crear: Cliente → Mascota del cliente → Cita de esa mascota (combos dependientes).
- * Al editar solo cambian medicamento, fecha de emisión, dosis, frecuencia, duración e indicaciones.
+ * Al editar solo cambian medicamento, fecha de emisión, dosis, frecuencia, duración e indicaciones;
+ * mascota, cita y veterinario se reenvían tal como están porque el backend los exige y comprueba que no cambien.
  */
 @Component({
   selector: 'app-formula-medica-form',
@@ -191,7 +192,14 @@ export class FormulaMedicaFormComponent implements OnInit {
       this.notificacion.error('La fecha de emisión no puede ser anterior a la fecha de la consulta.');
       return;
     }
+    const origen = this.esEdicion ? this.detalle : null;
+    if (this.esEdicion && !origen) {
+      return;
+    }
     const rq: FormulaRq = {
+      mascotaId: origen ? origen.mascotaId : Number(v.mascotaId),
+      citaId: origen ? origen.citaId : Number(v.citaId),
+      medicoId: origen ? origen.medicoId : Number(v.medicoId),
       medicamentoId: Number(v.medicamentoId),
       fechaEmision: v.fechaEmision,
       dosis: String(v.dosis).trim(),
@@ -199,19 +207,14 @@ export class FormulaMedicaFormComponent implements OnInit {
       duracionDias: Number(v.duracionDias),
       indicaciones: String(v.indicaciones).trim()
     };
-    if (!this.esEdicion) {
-      rq.citaId = Number(v.citaId);
-      rq.mascotaId = Number(v.mascotaId);
-      rq.medicoId = Number(v.medicoId);
-    }
     this.guardando = true;
     const solicitud = this.esEdicion && this.formulaId
       ? this.formulaService.actualizar(this.formulaId, rq)
       : this.formulaService.crear(rq);
     solicitud.subscribe({
-      next: () => {
+      next: (respuesta) => {
         this.guardando = false;
-        this.notificacion.exito(this.esEdicion ? 'La fórmula fue actualizada correctamente.' : 'La fórmula fue creada correctamente.');
+        this.notificacion.exito(respuesta.message || (this.esEdicion ? 'La fórmula fue actualizada correctamente.' : 'La fórmula fue creada correctamente.'));
         void this.router.navigate(['/inicio/formulas-medicas']);
       },
       error: (error) => {

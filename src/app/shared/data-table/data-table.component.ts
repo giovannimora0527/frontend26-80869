@@ -92,7 +92,7 @@ export class DataTableComponent {
   /**
    * Clase de Bootstrap para el badge de un estado.
    *
-   * @param estado Estado de la cita o de la historia.
+   * @param estado Estado de la cita (PENDIENTE...CANCELADA) o de la historia (ACTIVA, CERRADA).
    * @returns Clases CSS.
    */
   claseEstado(estado: unknown): string {
@@ -104,7 +104,7 @@ export class DataTableComponent {
       case 'CONFIRMADA':
         return 'bg-primary';
       case 'ATENDIDA':
-      case 'ABIERTA':
+      case 'ACTIVA':
         return 'bg-success';
       case 'CANCELADA':
         return 'bg-danger';

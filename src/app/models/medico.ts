@@ -1,13 +1,10 @@
-/**
- * Veterinario (en la base de datos se llama médico).
- */
+/** Veterinario que atiende citas, escribe anotaciones y emite fórmulas. */
 export interface Medico {
-  /** Identificador del veterinario. */
   id: number;
-  /** Nombres. */
+  tipoDocumento?: string;
+  numeroDocumento?: string;
   nombres: string;
-  /** Apellidos. */
   apellidos: string;
-  /** Registro profesional. */
+  telefono?: string;
   registroProfesional?: string;
 }

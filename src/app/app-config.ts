@@ -1,4 +1,4 @@
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from "@angular/common/http";
+import { HTTP_INTERCEPTORS, provideHttpClient } from "@angular/common/http";
 import { ApplicationConfig } from "@angular/core";
 import { provideClientHydration } from "@angular/platform-browser";
 import { provideAnimations } from "@angular/platform-browser/animations";
@@ -20,7 +20,7 @@ export const appConfig: ApplicationConfig = {
         withViewTransitions(),
         withHashLocation()
       ),
-      provideHttpClient(withInterceptorsFromDi()),     
+      provideHttpClient(),     
       provideAnimations(),
       provideClientHydration(),
       {

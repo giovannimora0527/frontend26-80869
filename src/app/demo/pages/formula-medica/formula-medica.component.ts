@@ -1,199 +1,315 @@
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { FormulaDetalle, FormulaFiltro, FormulaResumen } from 'src/app/models/formula-medica';
+import {
+  AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators
+} from '@angular/forms';
+import { Observable } from 'rxjs';
+
+import { CitaResumen } from 'src/app/models/cita';
+import { Cliente } from 'src/app/models/cliente';
+import { FormulaFiltro, FormulaMedica, FormulaResumen, FormulaRq } from 'src/app/models/formula-medica';
+import { Mascota } from 'src/app/models/mascota';
 import { Medicamento } from 'src/app/models/medicamento';
 import { Medico } from 'src/app/models/medico';
-import { PageResponse } from 'src/app/models/page-response';
-import { NotificacionService } from 'src/app/services/notificacion.service';
-import { ColumnaTabla, DataTableComponent } from 'src/app/shared/data-table/data-table.component';
-import { mensajeDeError } from 'src/app/utils/api-error';
-import { abrirModal } from 'src/app/utils/modal';
-import { MedicamentoService } from '../medicamento/service/medicamento.service';
-import { MedicoServiceService } from '../medico/service/medico-service.service';
-import { FormulaMedicaService } from './service/formula-medica.service';
+import { Pagina, ParametrosPagina } from 'src/app/models/pagina';
+import { CitaService } from 'src/app/services/cita.service';
+import { ClienteService } from 'src/app/services/cliente.service';
+import { FormulaMedicaService } from 'src/app/services/formula-medica.service';
+import { MedicamentoService } from 'src/app/services/medicamento.service';
+import { MedicoService } from 'src/app/services/medico.service';
+import { MascotaService } from '../mascota/service/mascota.service';
+import { PaginadorComponent } from 'src/app/shared/paginador/paginador.component';
+import { OrdenThComponent } from 'src/app/shared/orden-th/orden-th.component';
+import { TablaServidor } from 'src/app/utils/tabla-servidor';
+import { alertaError, alertaExito, confirmar } from 'src/app/utils/alertas.util';
+import { mensajeDeError } from 'src/app/utils/error.util';
+import { abrirModal, cerrarModal } from 'src/app/utils/modal.util';
+import { formatearFechaHora, separarFechaHora } from 'src/app/utils/fecha.util';
+
+/** La dosis debe contener una cantidad mayor que cero (por ejemplo "500 mg", "2,5 ml"). */
+function dosisValida(control: AbstractControl): ValidationErrors | null {
+  const texto = String(control.value ?? '').trim();
+  if (!texto) {
+    return null; // lo cubre `required`
+  }
+  const m = /(\d+(?:[.,]\d+)?)/.exec(texto);
+  return m && parseFloat(m[1].replace(',', '.')) > 0 ? null : { dosisSinCantidad: true };
+}
 
 /**
- * Listado de fórmulas médicas: DataTable paginado en el servidor (orden inicial por fecha de
- * creación descendente), filtros, detalle completo, edición e inactivación lógica.
- * El listado muestra información resumida; el detalle completo se ve en el modal "Ver".
+ * Módulo de **Fórmulas médicas**.
+ *
+ * - Listado resumido con paginación, filtros y orden en el servidor.
+ * - Formulario reactivo en modal con combos dependientes Cliente → Mascota → Cita (más Medicamento).
+ * - Al editar solo se modifican dosis, frecuencia, duración e indicaciones (regla del backend).
+ * - Las fórmulas se **inactivan**, nunca se eliminan; una fórmula inactiva queda solo de consulta.
  */
 @Component({
   selector: 'app-formula-medica',
-  imports: [CommonModule, ReactiveFormsModule, DataTableComponent],
-  templateUrl: './formula-medica.component.html',
-  styleUrls: ['./formula-medica.component.scss']
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginadorComponent, OrdenThComponent],
+  templateUrl: './formula-medica.component.html'
 })
-export class FormulaMedicaComponent implements OnInit {
-  /** Id del modal de detalle. */
-  readonly modalId = 'modalFormulaDetalle';
-  /** Columnas resumidas del listado. */
-  readonly columnas: ColumnaTabla[] = [
-    { campo: 'fechaEmision', titulo: 'Emisión', ordenPor: 'fechaEmision', formato: 'fecha' },
-    { campo: 'mascotaNombre', titulo: 'Mascota', ordenPor: 'mascota' },
-    { campo: 'clienteNombre', titulo: 'Cliente', ordenPor: 'cliente' },
-    { campo: 'medicoNombre', titulo: 'Veterinario', ordenPor: 'medico' },
-    { campo: 'medicamentoNombre', titulo: 'Medicamento', ordenPor: 'medicamento' },
-    { campo: 'frecuencia', titulo: 'Frecuencia' },
-    { campo: 'duracionDias', titulo: 'Días' },
-    { campo: 'activo', titulo: 'Estado', ordenPor: 'activo', formato: 'activo' }
-  ];
+export class FormulaMedicaComponent extends TablaServidor<FormulaResumen, FormulaFiltro> implements OnInit, OnDestroy {
+  filtro: FormulaFiltro = this.filtroVacio();
 
-  /** Página actual de fórmulas. */
-  pagina: PageResponse<FormulaResumen> | null = null;
-  /** Indica si hay una consulta en curso. */
-  cargando = false;
-  /** Paginación, orden y filtros vigentes (inicial: creación descendente). */
-  filtro: FormulaFiltro = { page: 0, size: 10, sortBy: 'fechaCreacion', sortDir: 'desc' };
-  /** Veterinarios para el filtro. */
+  clientes: Cliente[] = [];
   medicos: Medico[] = [];
-  /** Medicamentos para el filtro. */
   medicamentos: Medicamento[] = [];
-  /** Formulario de filtros. */
-  filtrosForm!: FormGroup;
-  /** Fórmula mostrada en el modal de detalle. */
-  detalle: FormulaDetalle | null = null;
+  mascotasFiltro: Mascota[] = [];
+  mascotasForm: Mascota[] = [];
+  citasForm: CitaResumen[] = [];
 
-  /**
-   * @param formulaService Servicio de fórmulas.
-   * @param medicoService Servicio de veterinarios.
-   * @param medicamentoService Servicio de medicamentos.
-   * @param notificacion Mensajes al usuario.
-   * @param formBuilder Constructor de formularios reactivos.
-   * @param router Navegación a las pantallas de crear/editar.
-   */
+  form!: FormGroup;
+  modo: 'C' | 'E' = 'C';
+  formulaEnEdicion: FormulaMedica | null = null;
+  enviando = false;
+  cargandoFormula = false;
+  cargandoMascotas = false;
+  cargandoCitas = false;
+  errorFormulario = '';
+
+  formulaDetalle: FormulaMedica | null = null;
+  cargandoDetalle = false;
+  errorDetalle = '';
+
+  readonly formatear = formatearFechaHora;
+
   constructor(
     private readonly formulaService: FormulaMedicaService,
-    private readonly medicoService: MedicoServiceService,
+    private readonly citaService: CitaService,
+    private readonly clienteService: ClienteService,
+    private readonly medicoService: MedicoService,
     private readonly medicamentoService: MedicamentoService,
-    private readonly notificacion: NotificacionService,
-    private readonly formBuilder: FormBuilder,
-    private readonly router: Router
-  ) {}
+    private readonly mascotaService: MascotaService,
+    private readonly fb: FormBuilder
+  ) {
+    super({ sortBy: 'fecha', sortDir: 'desc' });
+  }
 
-  /** Inicializa filtros, combos y la primera página. */
   ngOnInit(): void {
-    this.filtrosForm = this.formBuilder.group({
-      texto: [''],
-      medicoId: [''],
-      medicamentoId: [''],
-      activo: [''],
-      fechaDesde: [''],
-      fechaHasta: ['']
+    this.inicializarFormulario();
+    this.clienteService.listarClientes().subscribe({
+      next: (d) => (this.clientes = d),
+      error: (e) => (this.error = mensajeDeError(e, 'No se pudieron cargar los clientes.'))
     });
-    this.medicoService.listarMedicos().subscribe({ next: (d) => (this.medicos = d), error: (e) => this.notificacion.error(mensajeDeError(e)) });
-    this.medicamentoService.listarMedicamentos().subscribe({ next: (d) => (this.medicamentos = d), error: (e) => this.notificacion.error(mensajeDeError(e)) });
+    this.medicoService.listarMedicos().subscribe({
+      next: (d) => (this.medicos = d),
+      error: (e) => (this.error = mensajeDeError(e, 'No se pudieron cargar los veterinarios.'))
+    });
+    this.medicamentoService.listarMedicamentos().subscribe({
+      next: (d) => (this.medicamentos = d),
+      error: (e) => (this.error = mensajeDeError(e, 'No se pudieron cargar los medicamentos.'))
+    });
     this.cargar();
   }
 
-  /** Consulta la página actual en el servidor. */
-  cargar(): void {
-    this.cargando = true;
-    this.formulaService.listar(this.filtro).subscribe({
-      next: (datos) => {
-        this.pagina = datos;
-        this.cargando = false;
+  ngOnDestroy(): void {
+    this.destruir();
+  }
+
+  protected consultar(pagina: ParametrosPagina): Observable<Pagina<FormulaResumen>> {
+    return this.formulaService.listarPaginado(pagina, this.filtro);
+  }
+
+  private filtroVacio(): FormulaFiltro {
+    return { texto: '', activo: '', clienteId: null, mascotaId: null, medicoId: null, medicamentoId: null, fechaDesde: '', fechaHasta: '' };
+  }
+
+  limpiarFiltros(): void {
+    this.mascotasFiltro = [];
+    this.limpiar(this.filtroVacio());
+  }
+
+  /** Combo dependiente del filtro: Cliente → Mascota. */
+  alCambiarClienteFiltro(): void {
+    this.filtro.mascotaId = null;
+    this.mascotasFiltro = [];
+    if (this.filtro.clienteId) {
+      this.mascotaService.buscarPorCliente(Number(this.filtro.clienteId)).subscribe({
+        next: (m) => (this.mascotasFiltro = m),
+        error: (e) => (this.error = mensajeDeError(e))
+      });
+    }
+    this.buscar();
+  }
+
+  /* ------------------------------ Formulario ------------------------------ */
+
+  private inicializarFormulario(): void {
+    this.form = this.fb.group({
+      clienteId: [null, Validators.required],
+      mascotaId: [{ value: null, disabled: true }, Validators.required],
+      citaId: [{ value: null, disabled: true }, Validators.required],
+      medicamentoId: [null, Validators.required],
+      dosis: ['', [Validators.required, Validators.maxLength(100), dosisValida]],
+      frecuencia: ['', [Validators.required, Validators.maxLength(100)]],
+      duracionDias: [null, [Validators.required, Validators.min(1), Validators.max(365), Validators.pattern(/^\d+$/)]],
+      indicaciones: ['', [Validators.required, Validators.minLength(3)]]
+    });
+    this.form.get('clienteId')!.valueChanges.subscribe((id) => this.cargarMascotas(id));
+    this.form.get('mascotaId')!.valueChanges.subscribe((id) => this.cargarCitas(id));
+  }
+
+  get f(): { [key: string]: AbstractControl } {
+    return this.form.controls;
+  }
+
+  /** Cliente → Mascota. */
+  private cargarMascotas(clienteId: number | null): void {
+    const m = this.form.get('mascotaId')!;
+    m.reset(null, { emitEvent: false });
+    this.mascotasForm = [];
+    this.limpiarCitas();
+    if (!clienteId) {
+      m.disable({ emitEvent: false });
+      return;
+    }
+    this.cargandoMascotas = true;
+    this.mascotaService.buscarPorCliente(Number(clienteId)).subscribe({
+      next: (lista) => { this.mascotasForm = lista; this.cargandoMascotas = false; m.enable({ emitEvent: false }); },
+      error: (e) => { this.cargandoMascotas = false; this.errorFormulario = mensajeDeError(e, 'No se pudieron cargar las mascotas.'); }
+    });
+  }
+
+  /** Mascota → Citas no canceladas (a una cita cancelada no se le emite fórmula). */
+  private cargarCitas(mascotaId: number | null): void {
+    this.limpiarCitas();
+    if (!mascotaId) {
+      return;
+    }
+    this.cargandoCitas = true;
+    this.citaService.listarPaginado(
+      { page: 0, size: 100, sortBy: 'fecha', sortDir: 'desc' },
+      { mascotaId: Number(mascotaId) }
+    ).subscribe({
+      next: (p) => {
+        this.citasForm = p.content.filter((c) => c.estado !== 'Cancelada');
+        this.cargandoCitas = false;
+        this.form.get('citaId')!.enable({ emitEvent: false });
       },
-      error: (error) => {
-        this.cargando = false;
-        this.notificacion.error(mensajeDeError(error));
+      error: (e) => { this.cargandoCitas = false; this.errorFormulario = mensajeDeError(e, 'No se pudieron cargar las citas.'); }
+    });
+  }
+
+  private limpiarCitas(): void {
+    this.citasForm = [];
+    this.form.get('citaId')!.reset(null, { emitEvent: false });
+    this.form.get('citaId')!.disable({ emitEvent: false });
+  }
+
+  /** Abre el modal para emitir una fórmula nueva. */
+  nueva(): void {
+    this.modo = 'C';
+    this.formulaEnEdicion = null;
+    this.errorFormulario = '';
+    this.mascotasForm = [];
+    this.form.reset({ dosis: '', frecuencia: '', indicaciones: '' });
+    this.form.get('clienteId')!.enable({ emitEvent: false });
+    this.form.get('medicamentoId')!.enable({ emitEvent: false });
+    this.limpiarCitas();
+    this.form.get('mascotaId')!.disable({ emitEvent: false });
+    abrirModal('modalFormula');
+  }
+
+  /** Abre el modal para editar dosis, frecuencia, duración e indicaciones de una fórmula activa. */
+  editar(fila: FormulaResumen): void {
+    this.modo = 'E';
+    this.errorFormulario = '';
+    this.cargandoFormula = true;
+    abrirModal('modalFormula');
+    this.formulaService.consultar(fila.id).subscribe({
+      next: (fm) => {
+        this.formulaEnEdicion = fm;
+        const { fecha, hora } = separarFechaHora(fm.cita?.fechaHora);
+        this.mascotasForm = fm.cita?.mascota ? [fm.cita.mascota] : [];
+        this.citasForm = [{
+          id: fm.cita.id, fecha, hora, fechaHora: fm.cita.fechaHora, clienteId: fm.cita.cliente?.id ?? 0,
+          clienteNombre: '', mascotaId: fm.cita.mascota?.mascotaId ?? 0, mascotaNombre: fm.cita.mascota?.nombreMascota ?? '',
+          medicoId: fm.cita.medico?.id ?? 0, medicoNombre: `${fm.cita.medico?.nombres ?? ''} ${fm.cita.medico?.apellidos ?? ''}`.trim(),
+          estado: fm.cita.estado, motivo: fm.cita.motivo
+        }];
+        ['clienteId', 'mascotaId', 'citaId', 'medicamentoId'].forEach((c) => this.form.get(c)!.disable({ emitEvent: false }));
+        this.form.patchValue({
+          clienteId: fm.cita?.cliente?.id ?? null,
+          mascotaId: fm.cita?.mascota?.mascotaId ?? null,
+          citaId: fm.cita?.id ?? null,
+          medicamentoId: fm.medicamento?.id ?? null,
+          dosis: fm.dosis, frecuencia: fm.frecuencia, duracionDias: fm.duracionDias, indicaciones: fm.indicaciones
+        }, { emitEvent: false });
+        this.cargandoFormula = false;
+      },
+      error: (e) => {
+        this.cargandoFormula = false;
+        cerrarModal('modalFormula');
+        alertaError(mensajeDeError(e, 'No se pudo cargar la fórmula.'));
       }
     });
   }
 
-  /** Aplica los filtros del formulario y vuelve a la primera página. */
-  buscar(): void {
-    const v = this.filtrosForm.getRawValue();
-    this.filtro = {
-      ...this.filtro,
-      page: 0,
-      texto: v.texto?.trim() || undefined,
-      medicoId: v.medicoId ? Number(v.medicoId) : undefined,
-      medicamentoId: v.medicamentoId ? Number(v.medicamentoId) : undefined,
-      activo: v.activo === '' ? undefined : v.activo === 'true',
-      fechaDesde: v.fechaDesde || undefined,
-      fechaHasta: v.fechaHasta || undefined
-    };
-    this.cargar();
-  }
-
-  /** Limpia filtros y restablece el orden inicial (creación descendente). */
-  limpiar(): void {
-    this.filtrosForm.reset({ texto: '', medicoId: '', medicamentoId: '', activo: '', fechaDesde: '', fechaHasta: '' });
-    this.filtro = { page: 0, size: this.filtro.size, sortBy: 'fechaCreacion', sortDir: 'desc' };
-    this.cargar();
-  }
-
-  /** @param alias Alias de columna entendido por el backend. */
-  ordenar(alias: string): void {
-    if (this.filtro.sortBy === alias) {
-      this.filtro = { ...this.filtro, page: 0, sortDir: this.filtro.sortDir === 'asc' ? 'desc' : 'asc' };
-    } else {
-      this.filtro = { ...this.filtro, page: 0, sortBy: alias, sortDir: 'asc' };
-    }
-    this.cargar();
-  }
-
-  /** @param pagina Página destino (base 0). */
-  cambiarPagina(pagina: number): void {
-    this.filtro = { ...this.filtro, page: pagina };
-    this.cargar();
-  }
-
-  /** @param tamanio Nuevo tamaño de página. */
-  cambiarTamanio(tamanio: number): void {
-    this.filtro = { ...this.filtro, page: 0, size: tamanio };
-    this.cargar();
-  }
-
-  /** Navega al formulario de creación. */
-  irANuevo(): void {
-    void this.router.navigate(['/inicio/formulas-medicas/nuevo']);
-  }
-
-  /**
-   * Navega al formulario de edición.
-   *
-   * @param formula Fórmula de la fila.
-   */
-  editarFormula(formula: FormulaResumen): void {
-    void this.router.navigate(['/inicio/formulas-medicas/editar', formula.id]);
-  }
-
-  /**
-   * Carga y muestra el detalle completo de la fórmula.
-   *
-   * @param formula Fórmula de la fila.
-   */
-  verDetalle(formula: FormulaResumen): void {
-    this.formulaService.consultar(formula.id).subscribe({
-      next: (datos) => {
-        this.detalle = datos;
-        abrirModal(this.modalId);
-      },
-      error: (error) => this.notificacion.error(mensajeDeError(error))
-    });
-  }
-
-  /**
-   * Inactiva (o reactiva) la fórmula previa confirmación. Nunca se elimina físicamente.
-   *
-   * @param formula Fórmula de la fila.
-   */
-  async cambiarActivo(formula: FormulaResumen): Promise<void> {
-    const accion = formula.activo ? 'inactivar' : 'activar';
-    const confirmado = await this.notificacion.confirmar(`¿Desea ${accion} la fórmula de ${formula.mascotaNombre}?`);
-    if (!confirmado) {
+  /** Crea o actualiza la fórmula. */
+  guardar(): void {
+    if (this.enviando) {
       return;
     }
-    const solicitud = formula.activo ? this.formulaService.inactivar(formula.id) : this.formulaService.activar(formula.id);
-    solicitud.subscribe({
-      next: () => {
-        this.notificacion.exito(formula.activo ? 'La fórmula fue inactivada.' : 'La fórmula fue activada.');
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const v = this.form.getRawValue();
+    const rq: FormulaRq = {
+      citaId: Number(v.citaId),
+      medicamentoId: Number(v.medicamentoId),
+      dosis: String(v.dosis).trim(),
+      frecuencia: String(v.frecuencia).trim(),
+      duracionDias: Number(v.duracionDias),
+      indicaciones: String(v.indicaciones).trim()
+    };
+    this.enviando = true;
+    this.errorFormulario = '';
+    const peticion = this.modo === 'C'
+      ? this.formulaService.crear(rq)
+      : this.formulaService.actualizar(this.formulaEnEdicion!.id, rq);
+    peticion.subscribe({
+      next: (r) => {
+        this.enviando = false;
+        cerrarModal('modalFormula');
+        alertaExito(r.message || (this.modo === 'C' ? 'Fórmula registrada correctamente.' : 'Fórmula actualizada correctamente.'));
         this.cargar();
       },
-      error: (error) => this.notificacion.error(mensajeDeError(error))
+      error: (e) => {
+        this.enviando = false;
+        this.errorFormulario = mensajeDeError(e, 'No se pudo guardar la fórmula.');
+      }
     });
+  }
+
+  /* ------------------------------ Acciones de fila ------------------------------ */
+
+  /** Modal "Ver": detalle completo. */
+  ver(fila: FormulaResumen): void {
+    this.formulaDetalle = null;
+    this.errorDetalle = '';
+    this.cargandoDetalle = true;
+    abrirModal('modalVerFormula');
+    this.formulaService.consultar(fila.id).subscribe({
+      next: (fm) => { this.formulaDetalle = fm; this.cargandoDetalle = false; },
+      error: (e) => { this.cargandoDetalle = false; this.errorDetalle = mensajeDeError(e, 'No se pudo cargar la fórmula.'); }
+    });
+  }
+
+  async inactivar(fila: FormulaResumen): Promise<void> {
+    const ok = await confirmar('Inactivar fórmula',
+      `La fórmula de ${fila.medicamentoNombre} para ${fila.mascotaNombre} quedará inactiva y ya no se podrá modificar. No se elimina del historial.`,
+      'Sí, inactivar');
+    if (!ok) { return; }
+    this.formulaService.inactivar(fila.id).subscribe({
+      next: (r) => { alertaExito(r.message || 'Fórmula inactivada.'); this.cargar(); },
+      error: (e) => alertaError(mensajeDeError(e, 'No se pudo inactivar la fórmula.'))
+    });
+  }
+
+  nombreCompleto(p?: { nombres?: string; apellidos?: string } | null): string {
+    return p ? `${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim() : '';
   }
 }

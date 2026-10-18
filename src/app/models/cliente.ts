@@ -1,17 +1,10 @@
-/**
- * Cliente (dueño de las mascotas).
- */
+/** Cliente (propietario de mascotas) tal como lo devuelve el backend. */
 export class Cliente {
-  /** Identificador del cliente. */
-  id?: number;
-  /** Tipo de documento. */
-  tipoDocumento?: string;
-  /** Número de documento. */
-  numeroDocumento?: string;
-  /** Nombres. */
-  nombres?: string;
-  /** Apellidos. */
-  apellidos?: string;
-  /** Dirección. */
-  direccion?: string;
+   id?: number;
+   tipoDocumento?: string;
+   numeroDocumento?: string;
+   nombres?: string;
+   apellidos?: string;
+   telefono?: string;
+   direccion?: string;
 }

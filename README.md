@@ -1,111 +1,58 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Price](https://img.shields.io/badge/price-FREE-0098f7.svg)](https://codedthemes.com/item/datta-able-angular-lite/)
-[![GitHub package version](https://img.shields.io/github/package-json/v/codedthemes/datta-able-free-angular-admin-template)](https://github.com/codedthemes/datta-able-free-angular-admin-template/)
+# Frontend – Centro Veterinario (Segundo Parcial de Programación Web)
 
-| -------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
-| **9** Demo pages                                                                                   | **45+** demo pages                                                |
-| -                                                                                                  | ✓ Multi-language                                                  |
-| -                                                                                                  | ✓ Dark/Light Mode 🌓                                              |
-| -                                                                                                  | ✓ TypeScript version                                              |
-| -                                                                                                  | ✓ 6+ color Options                                                |
-| -                                                                                                  | ✓ RTL                                                             |
-| ✓ MIT License                                                                                      | ✓ [Pro License](https://codedthemes.com/item/datta-able-angular/?utm_source=free_demo&utm_medium=codedthemes&utm_campaign=button_download_premium) |
+Este paquete contiene la carpeta **`src/`** del proyecto Angular corregida y completada. Reemplace/combine su `src/` con esta
+(el `package.json` y `angular.json` del proyecto no cambian; no se agregan dependencias nuevas). Requiere el backend
+corregido corriendo en `http://localhost:8080/clinica/v1`.
 
-#### Preview
+## 1. Módulos del parcial
 
-- [Demo](https://codedthemes.com/demos/admin-templates/datta-able/angular/free/dashboard)
+| Pantalla | Ruta (menú) | Componente |
+|---|---|---|
+| Citas | `/citas` | `demo/pages/cita` |
+| Historias clínicas (+ anotaciones) | `/historias-clinicas` | `demo/pages/historia-clinica` y su hijo `anotaciones-historia` |
+| Fórmulas médicas | `/formulas-medicas` | `demo/pages/formula-medica` |
 
-#### Download
+Cada módulo cumple los puntos del parcial:
 
-- [Download from GitHub](https://github.com/codedthemes/datta-able-free-angular-admin-template)
+* **DataTable con paginación, filtros y orden en el servidor** (clase base `utils/tabla-servidor.ts`; controles
+  `shared/paginador` y `shared/orden-th`). Los filtros de texto usan *debounce* de 350 ms y una respuesta vieja nunca
+  reemplaza a una más reciente.
+* **Listado resumido vs. detalle**: la tabla usa `GET .../paginado` (datos resumidos); el botón **Ver** abre un modal que pide
+  `GET .../consultar/{id}`. En historias, el modal incluye el DataTable de **anotaciones** (paginado, filtrable y ordenable).
+* **Formularios reactivos** (`FormBuilder`) con validaciones y mensajes por campo; el backend sigue siendo la autoridad y su
+  mensaje exacto se muestra en el formulario si rechaza algo (disponibilidad del veterinario, cita duplicada, estados, etc.).
+* **Combos dependientes**: Cliente → Mascota (citas, historias, fórmulas y filtros) y Mascota → Cita (historias: solo citas
+  *Atendidas*; fórmulas: citas no canceladas). Los combos hijos permanecen deshabilitados hasta elegir el padre.
+* **Estados de carga** (spinner en tabla, detalle, combos y botón de guardar, que además evita envíos dobles) y **mensajes
+  claros** de éxito/error (SweetAlert2 para acciones; alerta dentro del modal para errores de formulario; "Reintentar" si
+  falla un listado; mensaje específico si no hay conexión).
+* **Acciones explícitas**: citas se *cancelan/reactivan* (no se borran), fórmulas se *inactivan*, historias se *cierran*;
+  todas piden confirmación. Las anotaciones solo se agregan (no se editan ni eliminan).
 
-## Datta Able Pro version
-
-#### Preview
-
-- [Demo](https://codedthemes.com/demos/admin-templates/datta-able/angular/default/)
-
-#### Purchase
-
-- [Purchase from CodedThemes](https://codedthemes.com/item/datta-able-angular/?utm_source=free_demo&utm_medium=codedthemes&utm_campaign=button_download_premium)
-
-## Table of contents
-
-- [Getting Started](#getting-started)
-- [Documentation](#documentation)
-- [Technology Stack](#technology-stack)
-- [Author](#author)
-- [Issues?](#issues)
-- [License](#license)
-- [More Free Angular Templates](#more-free-angular-dashboard-templates)
-- [More Pro Angular Templates](#more-premium-angular-dashboard-templates)
-- [Follow us](#follow-us)
-
-## Getting Started
-
-1. Clone from Github
+## 2. Arquitectura
 
 ```
-git clone https://github.com/codedthemes/datta-able-free-angular-admin-template.git
+app/
+  models/      Tipos TypeScript de cada entidad, filtros, Pagina<T> y RespuestaEscritura (cita, historia, anotación, fórmula...)
+  services/    Un servicio por recurso del backend; BackendService ahora incluye patch()
+  utils/       tabla-servidor, params, error, fecha, alertas, modal (lógica reutilizable sin duplicar)
+  shared/      paginador y encabezado ordenable (componentes standalone)
+  demo/pages/  Pantallas: cita, historia-clinica (+ anotaciones-historia), formula-medica, mascota, usuario...
 ```
 
-2. Install packages
+## 3. Cambios respecto al código original
 
-```
-yarn
-```
+* Eliminadas las pantallas antiguas `app/views/*` (paginación en el cliente, formularios con IDs a mano, `confirm()`).
+* `app-routing.module.ts` / `navigation.ts`: nuevas rutas y menú (`/citas`, `/historias-clinicas`, `/formulas-medicas`);
+  `/formula-medica` redirige a la nueva ruta.
+* Servicios ajustados al nuevo contrato del backend: `PUT /cita/actualizar/{id}`, `PATCH /cita/cancelar/{id}`,
+  `PATCH /formula-medica/inactivar/{id}`, `PUT /mascota/actualizar/{id}`, etc.
+* `MascotaService.actualizarMascota` usa `PUT .../actualizar/{id}`; el error de guardado de mascotas muestra el mensaje del backend.
+* `environment.prod.ts` ahora define `apiUrl` y `apiUrlAuth` (antes faltaban y fallaba la build de producción).
+* Se agregó `GET /raza/listar` al backend (el combo de razas lo necesitaba y no existía).
 
-3. Run project
+## 4. Verificación
 
-```
-yarn start
-```
-
-## Documentation
-
-[Datta Able Angular Documentation](https://codedthemes.gitbook.io/datta-angular/) helps you with installation, deployment, and troubleshooting.
-
-## Technology Stack
-
-- Bootstrap 5
-- Angular 18
-
-## Author
-
-Datta Able is developed by Team [CodedThemes](https://codedthemes.com).
-
-## Issues
-
-To report a bug, please submit an [issue](https://github.com/codedthemes/datta-able-free-angular-admin-template/issues) on Github. We will respond as soon as possible to resolve the issue.
-
-## License
-
-- Licensed cover under [MIT](https://github.com/codedthemes/datta-able-free-angular-admin-template/blob/master/LICENSE)
-
-## Datta Able - React version
-
-- [Free](https://lite.codedthemes.com/datta-able/react/default/dashboard/default)
-- [Premium](https://codedthemes.com/item/datta-able-react-admin-template/?utm_source=free_demo&utm_medium=codedthemes&utm_campaign=button_download_premium)
-
-## More Free Angular Dashboard Templates
-
-- [Mantis Angular](https://codedthemes.com/item/mantis-angular-free-admin-template/)
-- [Gradient Able Angular](https://codedthemes.com/item/gradient-able-angular-free-admin-template/)
-- [Next Angular](https://codedthemes.com/item/next-free-admin-template/)
-- [Berry Angular](https://codedthemes.com/item/berry-angular-free-admin-template/)
-
-## More Premium Angular Dashboard Templates
-
-- [Mantis Angular Pro](https://codedthemes.com/item/mantis-angular-admin-template/?utm_source=free_demo&utm_medium=codedthemes&utm_campaign=button_download_premium)
-- [Gradient Able Angular Pro](https://codedthemes.com/item/gradient-able-angular-admin-template/?utm_source=free_demo&utm_medium=codedthemes&utm_campaign=button_download_premium)
-- [Next Angular Pro](https://codedthemes.com/item/next-angular-admin-template/)
-- [Berry Angular Pro](https://codedthemes.com/item/berry-angular-admin-dashboard-template/?utm_source=free_demo&utm_medium=codedthemes&utm_campaign=button_download_premium)
-
-## Follow us
-
-- Website [https://codedthemes.com/demos/admin-templates/datta-able/angular/default](https://codedthemes.com/demos/admin-templates/datta-able/angular/default)
-- Blog [https://blog.codedthemes.com/](https://blog.codedthemes.com/)
-- CodedThemes [https://codedthemes.com](https://codedthemes.com)
-- Dribbble [https://dribbble.com/codedthemes](https://dribbble.com/codedthemes)
-- Facebook [https://www.facebook.com/codedthemes](https://www.facebook.com/codedthemes)
-- Twitter [https://twitter.com/codedthemes](https://twitter.com/codedthemes)
+No fue posible instalar Angular en el entorno de preparación (el registro de paquetes npm estaba bloqueado), por lo que **el
+proyecto no se compiló**. Se verificó la sintaxis TypeScript de todos los archivos y la coherencia plantilla ↔ componente.
+Compile con `ng build` o `ng serve`; si aparece algún error de tipos de plantilla, suele resolverse en una línea.
