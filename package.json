@@ -31,6 +31,7 @@
     "@popperjs/core": "2.11.8",
     "apexcharts": "3.49.2",
     "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.13.1",
     "ngx-bootstrap": "^19.0.2",
     "ngx-scrollbar": "16.1.1",
     "rxjs": "~7.8.1",

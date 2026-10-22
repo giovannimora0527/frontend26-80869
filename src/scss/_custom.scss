@@ -64,3 +64,52 @@ pre code {
   bottom: 50px;
   opacity: 1;
 }
+
+@media only screen and (min-width: 992px) {
+  .pcoded-navbar.navbar-collapsed {
+    &,
+    &:hover {
+      width: $Menu-collapsed-width !important;
+    }
+
+    .header-logo,
+    &:hover .header-logo {
+      width: $Menu-collapsed-width;
+      justify-content: center;
+
+      .b-brand {
+        display: none;
+      }
+
+      .mobile-menu {
+        position: static;
+        transform: none;
+        opacity: 1;
+      }
+    }
+
+    .pcoded-menu-caption > label,
+    .pcoded-inner-navbar .pcoded-mtext {
+      display: none;
+    }
+
+    .pcoded-inner-navbar {
+      app-nav-item > li > a,
+      > app-nav-group > app-nav-collapse > li > a {
+        display: flex;
+        justify-content: center;
+        width: $Menu-collapsed-width;
+        padding: 7px 0;
+
+        > .pcoded-micon {
+          margin-right: 0;
+        }
+      }
+    }
+
+    ~ .pcoded-header .pc-menu-overlay,
+    ~ .pcoded-main-container .pc-menu-overlay {
+      display: none;
+    }
+  }
+}

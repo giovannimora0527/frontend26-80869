@@ -1,0 +1,417 @@
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="row align-items-center g-2">
+                <div class="col-md-9">
+                    <h2 class="h5">Historias médicas</h2>
+                    <input class="form-control" placeholder="Buscar historia médica" aria-label="Buscar historia médica"
+                        type="search" (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col-md-3 text-end">
+                    <button type="button"
+                        class="btn btn-md btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                        [disabled]="guardando" (click)="abrirNuevaHistoria(formularioHistoria)">
+                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;Nueva historia
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body" [attr.aria-busy]="cargandoHistorias">
+            <p class="text-muted">
+                El veterinario, el diagnóstico y las observaciones corresponden a la anotación más reciente.
+                El motivo de consulta corresponde a la cita asociada a esa anotación y el estado indica si la mascota está activa.
+                La búsqueda por diagnóstico y observaciones incluye todas las anotaciones.
+            </p>
+            <div class="alert alert-danger" *ngIf="errorHistorias" role="alert">
+                {{ errorHistorias }}
+                <button type="button" class="btn btn-link" (click)="listarHistorias()"
+                    [disabled]="cargandoHistorias">Reintentar</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-condensed">
+                    <caption class="visually-hidden">Listado de historias médicas</caption>
+                    <thead>
+                        <tr>
+                            <th *ngFor="let columna of columnas" scope="col" class="text-center"
+                                [attr.aria-sort]="columnaOrden === columna.clave ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                    (click)="ordenarPor(columna.clave)">
+                                    {{ columna.titulo }}
+                                    <i class="fa"
+                                        [ngClass]="columnaOrden === columna.clave ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                        aria-hidden="true"></i>
+                                </button>
+                            </th>
+                            <th scope="col" class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="cargandoHistorias">
+                            <td [attr.colspan]="columnas.length + 1" class="text-center" role="status">Cargando historias médicas...</td>
+                        </tr>
+                        <tr *ngIf="!cargandoHistorias && !errorHistorias && listHistorias.length === 0">
+                            <td [attr.colspan]="columnas.length + 1" class="text-center">No hay historias médicas registradas</td>
+                        </tr>
+                        <tr *ngIf="!cargandoHistorias && !errorHistorias && listHistorias.length > 0 && historiasFiltradas.length === 0">
+                            <td [attr.colspan]="columnas.length + 1" class="text-center">No se encontraron historias médicas</td>
+                        </tr>
+                        <ng-container *ngIf="!cargandoHistorias && !errorHistorias">
+                            <tr *ngFor="let historia of historiasPaginadas">
+                                <td class="text-center">{{ historia.fecha }}</td>
+                                <td class="text-center">{{ historia.mascota }}</td>
+                                <td class="text-center">{{ historia.cliente }}</td>
+                                <td class="text-center">{{ historia.veterinario }}</td>
+                                <td>{{ historia.motivo }}</td>
+                                <td class="text-break descripcion-anotacion">{{ historia.diagnostico }}</td>
+                                <td class="text-break descripcion-anotacion">{{ historia.observaciones }}</td>
+                                <td class="text-center">
+                                    <span class="badge" [class.bg-success]="historia.estado === 'Activo'"
+                                        [class.bg-secondary]="historia.estado !== 'Activo'">{{ historia.estado }}</span>
+                                </td>
+                                <td class="text-center text-nowrap">
+                                    <button type="button" class="btn btn-outline-primary text-nowrap"
+                                        (click)="verDetalle(historia.detalle, detalleHistoria)"
+                                        [attr.aria-label]="'Ver detalle de la historia de ' + historia.mascota">
+                                        <i class="fa fa-eye" aria-hidden="true"></i>&nbsp;Ver
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success text-nowrap ms-1"
+                                        [disabled]="guardando"
+                                        (click)="abrirNuevaAnotacion(historia.detalle, formularioAnotacion)"
+                                        [attr.aria-label]="'Crear anotación en la historia de ' + historia.mascota">
+                                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;Crear anotación
+                                    </button>
+                                </td>
+                            </tr>
+                        </ng-container>
+                    </tbody>
+                </table>
+            </div>
+
+            <ng-template #detalleHistoria let-modal>
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="detalleHistoriaTitulo">Detalle de la historia médica</h2>
+                    <button type="button" class="btn-close" aria-label="Cerrar detalle" (click)="modal.close()"></button>
+                </div>
+                <div class="modal-body" *ngIf="historiaDetalle as detalle">
+                    <h3 class="h6">Datos de la historia</h3>
+                    <dl class="row">
+                        <dt class="col-sm-4">Número de historia</dt>
+                        <dd class="col-sm-8">{{ detalle.historia.id }}</dd>
+                        <dt class="col-sm-4">Fecha de creación</dt>
+                        <dd class="col-sm-8">{{ detalle.historia.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</dd>
+                        <dt class="col-sm-4">Anotaciones registradas</dt>
+                        <dd class="col-sm-8">{{ detalle.anotaciones.length }}</dd>
+                    </dl>
+                    <hr>
+                    <ng-container *ngIf="detalle.historia.mascota as mascota">
+                        <h3 class="h6">Datos de la mascota</h3>
+                        <dl class="row">                           
+                            <dt class="col-sm-4">Nombre</dt>
+                            <dd class="col-sm-8">{{ mascota.nombreMascota || mascota.nombre || 'No informado' }}</dd>
+                            <dt class="col-sm-4">Edad</dt>
+                            <dd class="col-sm-8">{{ mascota.edad ?? 'No informado' }}</dd>
+                            <dt class="col-sm-4">Especie</dt>
+                            <dd class="col-sm-8">{{ mascota.raza?.especie || 'No informado' }}</dd>
+                            <dt class="col-sm-4">Raza</dt>
+                            <dd class="col-sm-8">{{ mascota.raza?.nombre || 'No informado' }}</dd>
+                            <dt class="col-sm-4">Estado</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge" [class.bg-success]="mascota.activo === true"
+                                    [class.bg-secondary]="mascota.activo !== true">
+                                    {{ mascota.activo == null ? 'No informado' : mascota.activo ? 'Activo' : 'Inactivo' }}
+                                </span>
+                            </dd>
+                            <dt class="col-sm-4">Fecha de registro</dt>
+                            <dd class="col-sm-8">{{ (mascota.fechaRegistro | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                            <dt class="col-sm-4">Última modificación</dt>
+                            <dd class="col-sm-8">{{ (mascota.fechaModificacion | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                        </dl>
+                        <hr>
+                        <h3 class="h6">Datos del cliente</h3>
+                        <ng-container *ngIf="mascota.cliente as cliente; else sinCliente">
+                            <ng-container *ngTemplateOutlet="datosCliente; context: { $implicit: cliente }"></ng-container>
+                        </ng-container>
+                        <ng-template #sinCliente><p>No hay datos del cliente registrados.</p></ng-template>
+                    </ng-container>
+                    <hr>
+                    <h3 class="h6">Anotaciones y consultas</h3>
+                    <p *ngIf="detalle.anotaciones.length === 0">Esta historia no tiene anotaciones registradas.</p>
+                    <section *ngFor="let anotacion of detalle.anotaciones; let indice = index" class="border rounded p-3 mb-3">
+                        <h4 class="h6">Anotación {{ indice + 1 }}</h4>
+                        <dl class="row">
+                            <dt class="col-sm-4">Número de anotación</dt>
+                            <dd class="col-sm-8">{{ anotacion.id }}</dd>
+                            <dt class="col-sm-4">Fecha</dt>
+                            <dd class="col-sm-8">{{ anotacion.fecha | date:'yyyy-MM-dd HH:mm' }}</dd>
+                            <dt class="col-sm-4">Descripción</dt>
+                            <dd class="col-sm-8 text-break descripcion-anotacion">{{ anotacion.descripcion || 'No informado' }}</dd>
+                            <dt class="col-sm-4">Diagnóstico</dt>
+                            <dd class="col-sm-8 text-break descripcion-anotacion">{{ anotacion.diagnostico?.trim() || 'No informado' }}</dd>
+                            <dt class="col-sm-4">Observaciones</dt>
+                            <dd class="col-sm-8 text-break descripcion-anotacion">{{ anotacion.observaciones?.trim() || 'No informado' }}</dd>
+                        </dl>
+                        <h5 class="h6">Datos del veterinario de la anotación</h5>
+                        <ng-container *ngTemplateOutlet="datosVeterinario; context: { $implicit: anotacion.medico }"></ng-container>
+                        <h5 class="h6">Datos de la cita</h5>
+                        <ng-container *ngIf="anotacion.cita as cita; else sinCita">
+                            <dl class="row">
+                                <dt class="col-sm-4">Número de cita</dt>
+                                <dd class="col-sm-8">{{ cita.id ?? 'No informado' }}</dd>
+                                <dt class="col-sm-4">Fecha y hora</dt>
+                                <dd class="col-sm-8">{{ (cita.fechaHora | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                                <dt class="col-sm-4">Motivo de consulta</dt>
+                                <dd class="col-sm-8 text-break">{{ cita.motivo || 'No informado' }}</dd>
+                                <dt class="col-sm-4">Estado de la cita</dt>
+                                <dd class="col-sm-8">{{ cita.estado || 'No informado' }}</dd>
+                                <dt class="col-sm-4">Mascota de la cita</dt>
+                                <dd class="col-sm-8">{{ cita.mascota?.nombreMascota || cita.mascota?.nombre || 'No informado' }}</dd>
+                            </dl>                                                  
+                        </ng-container>
+                        <ng-template #sinCita><p>No hay una cita asociada a esta anotación.</p></ng-template>
+                        <h5 class="h6">Fórmulas médicas</h5>
+                        <ng-container *ngIf="anotacion.formulasMedicas?.length; else sinFormulas">
+                            <article *ngFor="let formula of anotacion.formulasMedicas; let indiceFormula = index" class="border rounded p-3 mb-3 formula-medica">
+                                <h6 class="h6">Fórmula médica {{ indiceFormula + 1 }}</h6>
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Medicamento</dt>
+                                    <dd class="col-sm-8">{{ formula.medicamento.nombre || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Descripción del medicamento</dt>
+                                    <dd class="col-sm-8 text-break">{{ formula.medicamento.descripcion || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Presentación</dt>
+                                    <dd class="col-sm-8">{{ formula.medicamento.presentacion || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Dosis</dt>
+                                    <dd class="col-sm-8 text-break">{{ formula.dosis || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Frecuencia</dt>
+                                    <dd class="col-sm-8 text-break">{{ formula.frecuencia || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Duración</dt>
+                                    <dd class="col-sm-8 text-break">{{ formula.duracion || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Indicaciones</dt>
+                                    <dd class="col-sm-8 text-break descripcion-anotacion">{{ formula.indicaciones || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Fecha de creación de la fórmula</dt>
+                                    <dd class="col-sm-8">{{ (formula.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Última actualización de la fórmula</dt>
+                                    <dd class="col-sm-8">{{ ((formula.fechaActualizacionRegistro ?? formula.fecha_actualizacion_registro) | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Fecha de compra del medicamento</dt>
+                                    <dd class="col-sm-8">{{ ((formula.medicamento.fechaCompra ?? formula.medicamento.fecha_compra) | date:'yyyy-MM-dd') || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Fecha de vencimiento del medicamento</dt>
+                                    <dd class="col-sm-8">{{ ((formula.medicamento.fechaVence ?? formula.medicamento.fecha_vence) | date:'yyyy-MM-dd') || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Registro del medicamento</dt>
+                                    <dd class="col-sm-8">{{ ((formula.medicamento.fechaCreacionRegistro ?? formula.medicamento.fecha_creacion_registro) | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Modificación del medicamento</dt>
+                                    <dd class="col-sm-8">{{ ((formula.medicamento.fechaModificacionRegistro ?? formula.medicamento.fecha_modificacion_registro) | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                                    <dt class="col-sm-4">Cita de la fórmula</dt>
+                                    <dd class="col-sm-8">{{ formula.cita.id ?? 'No informado' }} — {{ (formula.cita.fechaHora | date:'yyyy-MM-dd HH:mm') || 'No informado' }}</dd>
+                                </dl>
+                            </article>
+                        </ng-container>
+                        <ng-template #sinFormulas><p>No hay fórmulas médicas asociadas a esta anotación.</p></ng-template>
+                    </section>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="modal.close()">Cerrar</button>
+                </div>
+            </ng-template>
+
+            <ng-template #datosCliente let-cliente>
+                <dl class="row">                    
+                    <dt class="col-sm-4">Nombre completo</dt>
+                    <dd class="col-sm-8">{{ cliente.nombres }} {{ cliente.apellidos }}
+                        <span *ngIf="!cliente.nombres && !cliente.apellidos">No informado</span>
+                    </dd>
+                    <dt class="col-sm-4">Documento</dt>
+                    <dd class="col-sm-8">{{ cliente.tipoDocumento || '' }} {{ cliente.numeroDocumento || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Teléfono</dt>
+                    <dd class="col-sm-8">{{ cliente.telefono || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Dirección</dt>
+                    <dd class="col-sm-8 text-break">{{ cliente.direccion || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Fecha de nacimiento</dt>
+                    <dd class="col-sm-8">{{ (cliente.fechaNacimiento | date:'yyyy-MM-dd') || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Género</dt>
+                    <dd class="col-sm-8">{{ cliente.genero || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Estado del cliente</dt>
+                    <dd class="col-sm-8">{{ cliente.activo == null ? 'No informado' : cliente.activo ? 'Activo' : 'Inactivo' }}</dd>                    
+                </dl>
+            </ng-template>
+
+            <ng-template #datosVeterinario let-medico>
+                <dl class="row">                    
+                    <dt class="col-sm-4">Nombre completo</dt>
+                    <dd class="col-sm-8">{{ medico?.nombres }} {{ medico?.apellidos }}
+                        <span *ngIf="!medico?.nombres && !medico?.apellidos">No informado</span>
+                    </dd>
+                    <dt class="col-sm-4">Documento</dt>
+                    <dd class="col-sm-8">{{ medico?.tipoDocumento || '' }} {{ medico?.numeroDocumento || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Teléfono</dt>
+                    <dd class="col-sm-8">{{ medico?.telefono || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Registro profesional</dt>
+                    <dd class="col-sm-8">{{ medico?.registroProfesional || 'No informado' }}</dd>
+                    <dt class="col-sm-4">Especialización</dt>
+                    <dd class="col-sm-8">{{ medico?.especializacion?.nombre || medico?.especializacionId || 'No informado' }}</dd>
+                </dl>
+            </ng-template>
+
+            <ng-template #formularioHistoria>
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="formHistoriaTitulo">Crear historia médica</h2>
+                    <button type="button" class="btn-close" aria-label="Cerrar" [disabled]="guardando"
+                        (click)="cerrarFormulario()"></button>
+                </div>
+                <form [formGroup]="formHistoria" (ngSubmit)="guardarHistoria()">
+                    <div class="modal-body">
+                        <div *ngIf="respuestaError" class="alert alert-danger" role="alert">{{ respuestaError }}</div>
+                        <div *ngIf="errorCatalogos" class="alert alert-danger" role="alert">{{ errorCatalogos }}</div>
+                        <fieldset [disabled]="guardando">
+                            <label for="historia-mascota" class="form-label">Mascota</label>
+                            <select id="historia-mascota" class="form-select" formControlName="mascotaId" required
+                                [class.is-invalid]="formHistoria.controls.mascotaId.touched && formHistoria.controls.mascotaId.invalid"
+                                aria-describedby="error-historia-mascota">
+                                <option [ngValue]="null" disabled>
+                                    {{ cargandoCatalogos ? 'Cargando mascotas...' : 'Selecciona una mascota' }}
+                                </option>
+                                <option *ngFor="let mascota of mascotasDisponibles" [ngValue]="mascota.mascotaId">
+                                    {{ mascota.nombreMascota || mascota.nombre }} - {{ nombreCompleto(mascota.cliente) }}
+                                </option>
+                            </select>
+                            <div class="invalid-feedback" id="error-historia-mascota">Selecciona una mascota.</div>
+                            <p *ngIf="!cargandoCatalogos && !errorCatalogos && mascotasDisponibles.length === 0"
+                                class="text-muted mt-2">No hay mascotas activas sin historia médica.</p>
+                        </fieldset>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" [disabled]="guardando"
+                            (click)="cerrarFormulario()">Cerrar</button>
+                        <button type="submit" class="btn btn-primary"
+                            [disabled]="guardando || cargandoCatalogos || !!errorCatalogos || mascotasDisponibles.length === 0">
+                            {{ guardando ? 'Guardando...' : 'Crear' }}
+                        </button>
+                    </div>
+                </form>
+            </ng-template>
+
+            <ng-template #formularioAnotacion>
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="formAnotacionTitulo">Crear anotaciones</h2>
+                    <button type="button" class="btn-close" aria-label="Cerrar" [disabled]="guardando"
+                        (click)="cerrarFormulario()"></button>
+                </div>
+                <form [formGroup]="formAnotacion" (ngSubmit)="guardarAnotacion()">
+                    <div class="modal-body">
+                        <p *ngIf="historiaAnotacion as historia" class="text-muted">
+                            Historia N.° {{ historia.historia.id }} -
+                            {{ historia.historia.mascota.nombreMascota || historia.historia.mascota.nombre || 'Mascota' }}
+                            ({{ nombreCompleto(historia.historia.mascota.cliente) }})
+                        </p>
+                        <div *ngIf="respuestaError" class="alert alert-danger" role="alert">{{ respuestaError }}</div>
+                        <div *ngIf="errorCatalogos" class="alert alert-danger" role="alert">{{ errorCatalogos }}</div>
+                        <fieldset [disabled]="guardando" formArrayName="anotaciones">
+                            <p *ngIf="!cargandoCatalogos && !errorCatalogos && citasDisponibles.length === 0"
+                                class="text-muted">La mascota no tiene citas asignadas.</p>
+                            <div class="border rounded p-3 mb-3" *ngFor="let fila of anotacionesForm.controls; let i = index"
+                                [formGroupName]="i" role="group" [attr.aria-labelledby]="'anotacion-titulo-' + i">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h3 class="h6 mb-0" [id]="'anotacion-titulo-' + i">Anotación {{ i + 1 }}</h3>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" *ngIf="anotacionesForm.length > 1"
+                                        (click)="quitarAnotacion(i)" [attr.aria-label]="'Quitar anotación ' + (i + 1)">
+                                        <i class="fa fa-trash" aria-hidden="true"></i>&nbsp;Quitar
+                                    </button>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label [for]="'anotacion-cita-' + i" class="form-label">Cita</label>
+                                        <select [id]="'anotacion-cita-' + i" class="form-select" formControlName="citaId" required
+                                            [class.is-invalid]="fila.controls.citaId.touched && fila.controls.citaId.invalid"
+                                            [attr.aria-describedby]="'error-anotacion-cita-' + i">
+                                            <option [ngValue]="null" disabled>
+                                                {{ cargandoCatalogos ? 'Cargando citas...' : 'Selecciona una cita' }}
+                                            </option>
+                                            <option *ngFor="let cita of citasDisponibles" [ngValue]="cita.id">
+                                                {{ cita.fechaHora | date:'yyyy-MM-dd HH:mm' }} - {{ cita.motivo || 'Sin motivo' }}
+                                                ({{ cita.estado }}){{ citaConAnotacion(cita) ? ' - ya tiene anotación' : '' }}
+                                            </option>
+                                        </select>
+                                        <div class="invalid-feedback" [id]="'error-anotacion-cita-' + i">Selecciona una cita.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label [for]="'anotacion-medico-' + i" class="form-label">Veterinario</label>
+                                        <select [id]="'anotacion-medico-' + i" class="form-select" formControlName="medicoId" required
+                                            [class.is-invalid]="fila.controls.medicoId.touched && fila.controls.medicoId.invalid"
+                                            [attr.aria-describedby]="'error-anotacion-medico-' + i">
+                                            <option [ngValue]="null" disabled>
+                                                {{ fila.controls.citaId.value == null ? 'Selecciona primero una cita' : 'La cita no tiene veterinario asignado' }}
+                                            </option>
+                                            <option *ngFor="let medico of medicosDeCita(fila.controls.citaId.value)" [ngValue]="medico.id">
+                                                {{ nombreCompleto(medico) }}{{ medico.especializacion?.nombre ? ' - ' + medico.especializacion?.nombre : '' }}
+                                            </option>
+                                        </select>
+                                        <div class="invalid-feedback" [id]="'error-anotacion-medico-' + i">
+                                            {{ fila.controls.citaId.value == null ? 'Selecciona primero una cita.' : 'La cita seleccionada no tiene veterinario asignado.' }}
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label [for]="'anotacion-descripcion-' + i" class="form-label">Descripción</label>
+                                        <textarea [id]="'anotacion-descripcion-' + i" class="form-control" rows="3" required
+                                            formControlName="descripcion"
+                                            [class.is-invalid]="fila.controls.descripcion.touched && fila.controls.descripcion.invalid"
+                                            [attr.aria-describedby]="'error-anotacion-descripcion-' + i"></textarea>
+                                        <div class="invalid-feedback" [id]="'error-anotacion-descripcion-' + i">
+                                            La descripción es obligatoria y no puede contener solo espacios.
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label [for]="'anotacion-diagnostico-' + i" class="form-label">Diagnóstico</label>
+                                        <textarea [id]="'anotacion-diagnostico-' + i" class="form-control" rows="3" required
+                                            formControlName="diagnostico"
+                                            [class.is-invalid]="fila.controls.diagnostico.touched && fila.controls.diagnostico.invalid"
+                                            [attr.aria-describedby]="'error-anotacion-diagnostico-' + i"></textarea>
+                                        <div class="invalid-feedback" [id]="'error-anotacion-diagnostico-' + i">
+                                            El diagnóstico es obligatorio y no puede contener solo espacios.
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label [for]="'anotacion-observaciones-' + i" class="form-label">Observaciones</label>
+                                        <textarea [id]="'anotacion-observaciones-' + i" class="form-control" rows="3" required
+                                            formControlName="observaciones"
+                                            [class.is-invalid]="fila.controls.observaciones.touched && fila.controls.observaciones.invalid"
+                                            [attr.aria-describedby]="'error-anotacion-observaciones-' + i"></textarea>
+                                        <div class="invalid-feedback" [id]="'error-anotacion-observaciones-' + i">
+                                            Las observaciones son obligatorias y no pueden contener solo espacios.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" (click)="agregarAnotacion()"
+                                [disabled]="cargandoCatalogos || !!errorCatalogos || citasDisponibles.length === 0">
+                                <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;Agregar otra anotación
+                            </button>
+                        </fieldset>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" [disabled]="guardando"
+                            (click)="cerrarFormulario()">Cerrar</button>
+                        <button type="submit" class="btn btn-primary"
+                            [disabled]="guardando || cargandoCatalogos || !!errorCatalogos || citasDisponibles.length === 0">
+                            {{ guardando ? 'Guardando...' : (anotacionesForm.length > 1 ? 'Crear ' + anotacionesForm.length + ' anotaciones' : 'Crear') }}
+                        </button>
+                    </div>
+                </form>
+            </ng-template>
+            <nav *ngIf="!cargandoHistorias && !errorHistorias && totalPaginas > 1" aria-label="Paginación de historias médicas">
+                <ul class="pagination justify-content-end mb-0">
+                    <li class="page-item" [class.disabled]="paginaActual === 1">
+                        <button class="page-link" type="button" [disabled]="paginaActual === 1"
+                            (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
+                    </li>
+                    <li class="page-item" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual">
+                        <button class="page-link" type="button"
+                            [attr.aria-current]="pagina === paginaActual ? 'page' : null"
+                            (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+                        <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas"
+                            (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>

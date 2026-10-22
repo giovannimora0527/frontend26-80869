@@ -1,7 +1,22 @@
 @if (!item().hidden) {
   @if (item().url && !item().external) {
     <li [ngClass]="item().classes" [routerLinkActive]="['active']">
-      <a class="nav-link" [target]="item().target ? '_blank' : '_self'" [routerLink]="[item().url]" (click)="closeOtherMenu($event)">
+      <a
+        class="nav-link"
+        [target]="item().target ? '_blank' : '_self'"
+        [routerLink]="[item().url]"
+        [attr.aria-label]="item().title"
+        [ngbTooltip]="item().title"
+        #menuTooltip="ngbTooltip"
+        triggers="manual"
+        placement="right"
+        container="body"
+        (mouseenter)="showMenuTooltip(menuTooltip)"
+        (mouseleave)="menuTooltip.close()"
+        (focus)="showMenuTooltip(menuTooltip)"
+        (blur)="menuTooltip.close()"
+        (click)="menuTooltip.close(); closeOtherMenu($event)"
+      >
         <ng-container *ngTemplateOutlet="itemIcon"></ng-container>
 
         @if (item().icon) {
@@ -17,7 +32,21 @@
   }
   @if (item().url && item().external) {
     <li [ngClass]="item().classes">
-      <a [target]="item().target ? '_blank' : '_self'" [href]="item().url">
+      <a
+        [target]="item().target ? '_blank' : '_self'"
+        [href]="item().url"
+        [attr.aria-label]="item().title"
+        [ngbTooltip]="item().title"
+        #menuTooltip="ngbTooltip"
+        triggers="manual"
+        placement="right"
+        container="body"
+        (mouseenter)="showMenuTooltip(menuTooltip)"
+        (mouseleave)="menuTooltip.close()"
+        (focus)="showMenuTooltip(menuTooltip)"
+        (blur)="menuTooltip.close()"
+        (click)="menuTooltip.close()"
+      >
         <ng-container *ngTemplateOutlet="itemIcon"></ng-container>
         @if (item().icon) {
           <span class="pcoded-mtext">{{ item().title }}</span>
@@ -32,7 +61,7 @@
   }
   <ng-template #itemIcon>
     @if (item().icon) {
-      <span class="pcoded-micon"><i class="feather" [ngClass]="item().icon"></i></span>
+      <span class="pcoded-micon"><i [ngClass]="item().icon" aria-hidden="true"></i></span>
     }
   </ng-template>
 }

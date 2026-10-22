@@ -3,8 +3,9 @@
 @import 'scss/variables';
 
 /* fonts-icon */
-@import 'scss/fonts/fontawesome/scss/fontawesome';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
 @import 'scss/fonts/feather/iconfont';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
 
 @import 'scss/general';
 @import 'scss/generic';
@@ -21,7 +22,9 @@
 
 @import 'scss/custom';
 
-
+body .swal2-container {
+	z-index: 1100;
+}
 
 /* Mis estilos personalizados que pueden usar todos los componentes */
 
