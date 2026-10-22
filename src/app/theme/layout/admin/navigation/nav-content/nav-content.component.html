@@ -1,0 +1,12 @@
+<!--  vertical layouts -->
+<ng-scrollbar style="height: calc(100vh - 70px)" exclude="'#mobile-collapse1'" visibility="hover">
+  <div class="navbar-content">
+    <ul class="nav pcoded-inner-navbar" (clickOutside)="fireOutClick()">
+      @for (item of navigations; track item) {
+        @if (item.type === 'group') {
+          <app-nav-group [item]="item" />
+        }
+      }
+    </ul>   
+  </div>
+</ng-scrollbar>

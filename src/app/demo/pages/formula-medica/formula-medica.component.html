@@ -1,0 +1,227 @@
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col col-md-9">
+                    <input class="form-control" placeholder="Buscar fórmula" type="text"
+                        (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col col-md-3 text-end">
+                    <button type="button" class="btn btn-outline-primary" (click)="nuevaFormula('C')">
+                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva fórmula
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="table table-responsive table-condensed col col-md-12">
+                    <table class="table table-stripped table-condensed table-responsive">
+                        <thead>
+                            <tr>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'medicamento' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('medicamento')">
+                                        Medicamento <i class="fa"
+                                            [ngClass]="columnaOrden === 'medicamento' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'dosis' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('dosis')">
+                                        Dosis <i class="fa"
+                                            [ngClass]="columnaOrden === 'dosis' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'duracion' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('duracion')">
+                                        Duración <i class="fa"
+                                            [ngClass]="columnaOrden === 'duracion' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'frecuencia' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('frecuencia')">
+                                        Frecuencia <i class="fa"
+                                            [ngClass]="columnaOrden === 'frecuencia' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'indicaciones' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('indicaciones')">
+                                        Indicaciones <i class="fa"
+                                            [ngClass]="columnaOrden === 'indicaciones' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'cliente' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('cliente')">
+                                        Cliente <i class="fa"
+                                            [ngClass]="columnaOrden === 'cliente' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center"
+                                    [attr.aria-sort]="columnaOrden === 'fechaCreacionRegistro' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                                        (click)="ordenarPor('fechaCreacionRegistro')">
+                                        Fecha de creación <i class="fa"
+                                            [ngClass]="columnaOrden === 'fechaCreacionRegistro' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
+                                            aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody *ngIf="listFormulas.length === 0">
+                            <tr>
+                                <td colspan="8" class="text-center">No hay fórmulas registradas</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="listFormulas.length > 0 && formulasFiltradas.length === 0">
+                            <tr>
+                                <td colspan="8" class="text-center">No se encontraron fórmulas</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="formulasFiltradas.length > 0">
+                            <tr *ngFor="let formula of formulasPaginadas">
+                                <td class="text-center">{{ formula.medicamento?.nombre }}</td>
+                                <td class="text-center">{{ formula.dosis }}</td>
+                                <td class="text-center">{{ formula.duracion }}</td>
+                                <td class="text-center">{{ formula.frecuencia }}</td>
+                                <td class="text-center">{{ formula.indicaciones }}</td>
+                                <td class="text-center">{{ formula.cita?.cliente?.nombres }} {{ formula.cita?.cliente?.apellidos }}</td>
+                                <td class="text-center">{{ formula.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-info" (click)="abrirEdicion(formula)"
+                                        ngbTooltip="Editar fórmula" tooltipClass="tooltip-info" triggers="hover focus"
+                                        placement="top" container="body">
+                                        <i class="fa fa-edit" aria-hidden="true"></i>&nbsp;Editar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <nav *ngIf="totalPaginas > 1" aria-label="Paginación de fórmulas">
+                <ul class="pagination justify-content-end mb-0">
+                    <li class="page-item" [class.disabled]="paginaActual === 1">
+                        <button class="page-link" type="button" [disabled]="paginaActual === 1"
+                            (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
+                    </li>
+                    <li class="page-item" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual">
+                        <button class="page-link" type="button"
+                            [attr.aria-current]="pagina === paginaActual ? 'page' : null"
+                            (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+                        <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas"
+                            (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="modalCrearFormula" tabindex="-1" aria-labelledby="modalCrearFormulaLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalCrearFormulaLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                    (click)="closeModal()"></button>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="guardarFormula()">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="cita" class="form-label">Cita</label>
+                            <select id="cita" class="form-select" formControlName="cita" [compareWith]="compararCitas">
+                                <option [ngValue]="null" disabled>Selecciona una cita</option>
+                                <option *ngFor="let cita of listCitas" [ngValue]="cita">
+                                    {{ cita.fechaHora | date:'yyyy-MM-dd HH:mm' }} -
+                                    {{ cita.cliente?.nombres }} {{ cita.cliente?.apellidos }}
+                                    ({{ cita.mascota?.nombreMascota }})
+                                </option>
+                            </select>
+                            <div class="text-danger" *ngIf="f['cita'].touched && f['cita'].invalid">
+                                Selecciona una cita.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="medicamento" class="form-label">Medicamento</label>
+                            <select id="medicamento" class="form-select" formControlName="medicamento"
+                                [compareWith]="compararMedicamentos">
+                                <option [ngValue]="null" disabled>
+                                    {{ cargandoMedicamentos ? 'Cargando medicamentos...' :
+                                        errorMedicamentos ? 'No se pudieron cargar los medicamentos' :
+                                        listMedicamentos.length ? 'Selecciona un medicamento' : 'No hay medicamentos disponibles' }}
+                                </option>
+                                <option *ngFor="let medicamento of listMedicamentos" [ngValue]="medicamento">
+                                    {{ medicamento.nombre }} {{ medicamento.presentacion ? ' - ' + medicamento.presentacion : '' }}
+                                </option>
+                            </select>
+                            <div class="text-danger" *ngIf="errorMedicamentos" role="alert">{{ errorMedicamentos }}</div>
+                            <div class="text-danger" *ngIf="f['medicamento'].touched && f['medicamento'].invalid">
+                                Selecciona un medicamento.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="dosis" class="form-label">Dosis</label>
+                            <input id="dosis" class="form-control" formControlName="dosis">
+                            <div class="text-danger" *ngIf="f['dosis'].touched && f['dosis'].invalid">
+                                Ingresa la dosis.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="frecuencia" class="form-label">Frecuencia</label>
+                            <input id="frecuencia" class="form-control" formControlName="frecuencia">
+                            <div class="text-danger" *ngIf="f['frecuencia'].touched && f['frecuencia'].invalid">
+                                Ingresa la frecuencia.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="duracion" class="form-label">Duración</label>
+                            <input id="duracion" class="form-control" formControlName="duracion">
+                            <div class="text-danger" *ngIf="f['duracion'].touched && f['duracion'].invalid">
+                                Ingresa la duración.
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label for="indicaciones" class="form-label">Indicaciones</label>
+                            <textarea id="indicaciones" class="form-control" rows="3"
+                                formControlName="indicaciones"></textarea>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger mt-3 mb-0" *ngIf="respuestaError" role="alert">{{ respuestaError }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        (click)="closeModal()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="enviando">
+                        {{ enviando ? 'Enviando...' : titleBoton }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
