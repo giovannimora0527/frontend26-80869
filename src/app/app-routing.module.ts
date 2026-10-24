@@ -10,17 +10,22 @@ import { ClienteComponent } from './demo/pages/cliente/cliente.component';
 import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.component';
 import { HistoriaComponent } from './demo/pages/historia/historia.component';
 import { EspecializacionComponent } from './demo/pages/especializacion/especializacion.component';
+import { LoginComponent } from './demo/pages/login/login.component';
+import { authGuard } from './guards/auth.guard';
 
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'inicio',
+    redirectTo: 'login',
     pathMatch: 'full'
-  },  
+  },
+  { path: 'login', component: LoginComponent, data: { title: 'Login' } },
   {
     path: 'inicio',
     component: AdminComponent,
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
     data: { title: 'Inicio' },
     children: [      
       { path: 'usuarios', component: UsuarioComponent, data: { title: 'Usuarios' }},
@@ -35,7 +40,7 @@ export const routes: Routes = [
       { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' }}
     ]
   },
-  { path: '**', redirectTo: 'inicio' }
+  { path: '**', redirectTo: 'login' }
 ];
 
 @NgModule({

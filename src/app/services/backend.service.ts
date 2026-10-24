@@ -9,8 +9,8 @@ export class BackendService {
   constructor(private http: HttpClient) { }
 
   construirHeader() {
-    // Aqui obtenemos el token desde el local storage
-    const tokenRecuperado = localStorage.getItem('token');
+    // Aqui obtenemos el token desde el session storage
+    const tokenRecuperado = sessionStorage.getItem('token');
     if (tokenRecuperado != '') {
       const headers = new HttpHeaders({
         'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ export class BackendService {
     service: string,
     routerParams?: HttpParams
   ) {
-    const tokenRecuperado = localStorage.getItem('token') || ''; // Evita `null`
+    const tokenRecuperado = sessionStorage.getItem('token') || ''; // Evita `null`
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
@@ -56,7 +56,7 @@ export class BackendService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any
   ): Observable<T> {
-    const tokenRecuperado = localStorage.getItem('token') || ''; // Evita `null`
+    const tokenRecuperado = sessionStorage.getItem('token') || ''; // Evita `null`
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
@@ -74,7 +74,7 @@ export class BackendService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any
   ): Observable<T> {
-    const tokenRecuperado = localStorage.getItem('token') || ''; // Evita `null`
+    const tokenRecuperado = sessionStorage.getItem('token') || ''; // Evita `null`
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
@@ -92,7 +92,7 @@ export class BackendService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any
   ): Observable<T> {
-    const tokenRecuperado = localStorage.getItem('token') || ''; // Evita `null`
+    const tokenRecuperado = sessionStorage.getItem('token') || ''; // Evita `null`
     const headers = new HttpHeaders({
       mimeType: 'multipart/form-data',
       Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
