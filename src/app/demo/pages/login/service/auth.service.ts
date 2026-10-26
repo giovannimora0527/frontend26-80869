@@ -1,6 +1,8 @@
 ﻿import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { AuthRs } from 'src/app/models/auth-rs';
+import { LoginRs } from 'src/app/models/login-rs';
+import { TokenRq } from 'src/app/models/token-rq';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
@@ -31,6 +33,12 @@ export class AuthService {
 
   login(data: LoginRequest): Observable<AuthRs> {
     return this.backendService.post(environment.apiUrlAuth, this.api, 'login', data);
+  }
+
+  validateOtp(data: TokenRq): Observable<LoginRs> {
+    return this.backendService
+      .post<LoginRs>(environment.apiUrlAuth, this.api, 'validate-token', data)
+      .pipe(tap((resp) => this.guardarToken({ token: resp?.token })));
   }
 
   validateToken(data: ValidateTokenRequest): Observable<JwtResponse> {
