@@ -111,4 +111,155 @@
       </div>
     </div>
   </li> -->
+  <li class="d-flex align-items-center">
+    <div class="dropdown menu-usuario" ngbDropdown placement="bottom-end">
+      <button type="button" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2"
+        ngbDropdownToggle id="menuUsuario" aria-label="Menú del usuario">
+        <i class="feather icon-user"></i>
+        <span>{{ usuario?.username }}@if (usuario?.perfil) { <small class="text-muted">({{ usuario?.perfil }})</small> }</span>
+      </button>
+      <div ngbDropdownMenu aria-labelledby="menuUsuario" class="dropdown-menu dropdown-menu-end shadow">
+        <div class="px-3 py-2 border-bottom">
+          <div class="fw-semibold">{{ usuario?.username }}</div>
+          <small class="text-muted">{{ usuario?.email }}</small>
+        </div>
+        <button type="button" ngbDropdownItem (click)="abrirCambiar(modalCambiar)">
+          <i class="feather icon-lock me-2"></i> Cambiar contraseña
+        </button>
+        <button type="button" ngbDropdownItem (click)="abrirOlvide(modalOlvide)">
+          <i class="feather icon-help-circle me-2"></i> Olvidé mi contraseña
+        </button>
+        <div class="dropdown-divider"></div>
+        <button type="button" ngbDropdownItem class="text-danger" (click)="cerrarSesion()">
+          <i class="feather icon-log-out me-2"></i> Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </li>
 </ul>
+
+<!-- Modal: cambiar contraseña (con sesión iniciada) -->
+<ng-template #modalCambiar>
+  <form [formGroup]="formCambiar" (ngSubmit)="cambiarPassword()" autocomplete="off">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="feather icon-lock me-2"></i>Cambiar contraseña</h5>
+      <button type="button" class="btn-close" aria-label="Cerrar" [disabled]="enviando" (click)="cerrarModal()"></button>
+    </div>
+    <div class="modal-body">
+      <div class="mb-3">
+        <label class="form-label" for="passwordActual">Contraseña actual</label>
+        <input id="passwordActual" class="form-control" [type]="verClaves ? 'text' : 'password'"
+          formControlName="passwordActual" autocomplete="current-password" />
+        @if (formCambiar.controls.passwordActual.touched && formCambiar.controls.passwordActual.invalid) {
+          <div class="text-danger small">Escribe tu contraseña actual.</div>
+        }
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="nuevaPassword">Contraseña nueva</label>
+        <input id="nuevaPassword" class="form-control" [type]="verClaves ? 'text' : 'password'"
+          formControlName="nuevaPassword" autocomplete="new-password" />
+        <div class="form-text">De 8 a 64 caracteres, con al menos una letra y un número.</div>
+        @if (formCambiar.controls.nuevaPassword.touched && formCambiar.controls.nuevaPassword.invalid) {
+          <div class="text-danger small">La contraseña no cumple el formato.</div>
+        }
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="confirmar">Confirmar contraseña nueva</label>
+        <input id="confirmar" class="form-control" [type]="verClaves ? 'text' : 'password'"
+          formControlName="confirmar" autocomplete="new-password" />
+        @if (formCambiar.touched && formCambiar.hasError('noCoincide')) {
+          <div class="text-danger small">Las contraseñas no coinciden.</div>
+        }
+      </div>
+      <div class="form-check">
+        <input id="verClavesCambiar" type="checkbox" class="form-check-input" [(ngModel)]="verClaves"
+          [ngModelOptions]="{ standalone: true }" />
+        <label class="form-check-label" for="verClavesCambiar">Mostrar contraseñas</label>
+      </div>
+      @if (error) {
+        <div class="alert alert-danger mt-3 mb-0" role="alert">{{ error }}</div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarModal()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="enviando">
+        {{ enviando ? 'Guardando...' : 'Cambiar contraseña' }}
+      </button>
+    </div>
+  </form>
+</ng-template>
+
+<!-- Modal: olvidé mi contraseña (2 pasos) -->
+<ng-template #modalOlvide>
+  <div class="modal-header">
+    <h5 class="modal-title"><i class="feather icon-help-circle me-2"></i>Olvidé mi contraseña</h5>
+    <button type="button" class="btn-close" aria-label="Cerrar" [disabled]="enviando" (click)="cerrarModal()"></button>
+  </div>
+  @if (pasoOlvide === 1) {
+    <form [formGroup]="formOlvide" (ngSubmit)="enviarCodigo()" autocomplete="off">
+      <div class="modal-body">
+        <p class="text-muted">Escribe tu usuario y te enviaremos un código de recuperación al correo registrado.</p>
+        <label class="form-label" for="usernameOlvide">Usuario</label>
+        <input id="usernameOlvide" class="form-control" formControlName="username" autocomplete="username" />
+        @if (formOlvide.controls.username.touched && formOlvide.controls.username.invalid) {
+          <div class="text-danger small">Escribe tu usuario.</div>
+        }
+        @if (error) {
+          <div class="alert alert-danger mt-3 mb-0" role="alert">{{ error }}</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="enviando">
+          {{ enviando ? 'Enviando...' : 'Enviar código' }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <form [formGroup]="formRestablecer" (ngSubmit)="restablecer()" autocomplete="off">
+      <div class="modal-body">
+        <div class="alert alert-success py-2">Te enviamos un código de 6 números a tu correo.</div>
+        <div class="mb-3">
+          <label class="form-label" for="codigoOlvide">Código</label>
+          <input id="codigoOlvide" class="form-control text-center" inputmode="numeric" maxlength="6"
+            placeholder="000000" formControlName="codigo" (input)="soloNumeros()" />
+          @if (formRestablecer.controls.codigo.touched && formRestablecer.controls.codigo.invalid) {
+            <div class="text-danger small">El código tiene 6 números.</div>
+          }
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="nuevaOlvide">Contraseña nueva</label>
+          <input id="nuevaOlvide" class="form-control" [type]="verClaves ? 'text' : 'password'"
+            formControlName="nuevaPassword" autocomplete="new-password" />
+          <div class="form-text">De 8 a 64 caracteres, con al menos una letra y un número.</div>
+          @if (formRestablecer.controls.nuevaPassword.touched && formRestablecer.controls.nuevaPassword.invalid) {
+            <div class="text-danger small">La contraseña no cumple el formato.</div>
+          }
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="confirmarOlvide">Confirmar contraseña nueva</label>
+          <input id="confirmarOlvide" class="form-control" [type]="verClaves ? 'text' : 'password'"
+            formControlName="confirmar" autocomplete="new-password" />
+          @if (formRestablecer.touched && formRestablecer.hasError('noCoincide')) {
+            <div class="text-danger small">Las contraseñas no coinciden.</div>
+          }
+        </div>
+        <div class="form-check">
+          <input id="verClavesOlvide" type="checkbox" class="form-check-input" [(ngModel)]="verClaves"
+            [ngModelOptions]="{ standalone: true }" />
+          <label class="form-check-label" for="verClavesOlvide">Mostrar contraseñas</label>
+        </div>
+        @if (error) {
+          <div class="alert alert-danger mt-3 mb-0" role="alert">{{ error }}</div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link me-auto" [disabled]="enviando" (click)="pasoOlvide = 1">Volver</button>
+        <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="enviando">
+          {{ enviando ? 'Guardando...' : 'Restablecer contraseña' }}
+        </button>
+      </div>
+    </form>
+  }
+</ng-template>

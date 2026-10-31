@@ -1,4 +1,170 @@
-<div class="container">
-   <label>Usuario Component Funciona</label>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <input class="form-control" type="text" placeholder="Buscar por usuario, correo o perfil"
+                        (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" aria-label="Filtrar por estado" (change)="cambiarFiltroEstado($event)">
+                        <option value="todos">Todos los estados</option>
+                        <option value="activos">Solo activos</option>
+                        <option value="inactivos">Solo inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-md btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                        (click)="abrirCreacion()" title="Agregar usuario">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        &nbsp; Nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div *ngIf="errorListado" class="alert alert-danger" role="alert">
+                {{ errorListado }}
+                <button type="button" class="btn btn-link" (click)="listar()">Reintentar</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Usuario</th>
+                            <th class="text-center">Correo</th>
+                            <th class="text-center">Perfil</th>
+                            <th class="text-center">Creado</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="cargando">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                &nbsp;Cargando usuarios...
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && !errorListado && usuarios.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No hay usuarios registrados</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && usuarios.length > 0 && usuariosFiltrados.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No se encontraron usuarios con ese criterio</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && usuariosFiltrados.length > 0">
+                        <tr *ngFor="let usuario of usuariosPaginados">
+                            <td class="text-center">
+                                {{ usuario.username }}
+                                <span *ngIf="esUsuarioActual(usuario)" class="badge bg-light text-dark border ms-1">Tú</span>
+                            </td>
+                            <td class="text-center">{{ usuario.email }}</td>
+                            <td class="text-center">
+                                <span class="badge" [ngClass]="claseBadgePerfil(usuario.rol)">{{ usuario.perfil || '—' }}</span>
+                            </td>
+                            <td class="text-center">{{ usuario.fechaCreacion | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">
+                                <span class="badge" [class.bg-success]="usuario.activo"
+                                    [class.bg-secondary]="!usuario.activo">{{ usuario.activo ? 'Activo' : 'Inactivo' }}</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-info btn-sm me-1" (click)="abrirEdicion(usuario)">
+                                    <i class="fa fa-edit"></i>&nbsp;Editar
+                                </button>
+                                <button class="btn btn-sm"
+                                    [class.btn-outline-danger]="usuario.activo"
+                                    [class.btn-outline-success]="!usuario.activo"
+                                    [disabled]="cambiandoEstadoId === usuario.id || esUsuarioActual(usuario)"
+                                    [attr.title]="esUsuarioActual(usuario) ? 'No puedes cambiar el estado de tu propio usuario' : null"
+                                    (click)="confirmarCambioEstado(usuario)">
+                                    {{ usuario.activo ? 'Desactivar' : 'Activar' }}
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <app-paginacion [paginaActual]="paginaActual" [totalPaginas]="totalPaginas"
+                (paginaCambiada)="cambiarPagina($event)"></app-paginacion>
+        </div>
+    </div>
 </div>
 
+<!-- Modal crear / editar -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalUsuarioLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" [disabled]="enviando" aria-label="Cerrar"
+                    (click)="cerrarModal()"></button>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+                <div class="modal-body">
+                    <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+                    <fieldset [disabled]="enviando">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="usuario-username" class="form-label">Nombre de usuario</label>
+                                <input id="usuario-username" class="form-control" type="text" formControlName="username"
+                                    maxlength="50" autocomplete="off" [class.is-invalid]="invalido('username')">
+                                <div class="invalid-feedback">{{ mensajeError('username') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="usuario-email" class="form-label">Correo electrónico</label>
+                                <input id="usuario-email" class="form-control" type="email" formControlName="email"
+                                    maxlength="255" autocomplete="off" [class.is-invalid]="invalido('email')">
+                                <div class="invalid-feedback">{{ mensajeError('email') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="usuario-rol" class="form-label">Perfil</label>
+                                <select id="usuario-rol" class="form-select" formControlName="rol"
+                                    [class.is-invalid]="invalido('rol')">
+                                    <option [ngValue]="0" disabled>Selecciona un perfil</option>
+                                    <option *ngFor="let perfil of perfiles" [ngValue]="perfil.valor">{{ perfil.etiqueta }}</option>
+                                </select>
+                                <div class="invalid-feedback">{{ mensajeError('rol') }}</div>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <div class="form-check">
+                                    <input id="usuario-verPassword" class="form-check-input" type="checkbox"
+                                        [checked]="verPassword" (change)="verPassword = !verPassword">
+                                    <label for="usuario-verPassword" class="form-check-label">Mostrar contraseñas</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="usuario-password" class="form-label">
+                                    {{ editando ? 'Nueva contraseña' : 'Contraseña' }}
+                                    <small *ngIf="editando" class="text-muted">(opcional)</small>
+                                </label>
+                                <input id="usuario-password" class="form-control" formControlName="password"
+                                    [type]="verPassword ? 'text' : 'password'" autocomplete="new-password"
+                                    [class.is-invalid]="invalido('password')">
+                                <div class="invalid-feedback">{{ mensajeError('password') }}</div>
+                                <div *ngIf="editando" class="form-text">Déjala vacía para conservar la contraseña actual.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="usuario-confirmarPassword" class="form-label">Confirmar contraseña</label>
+                                <input id="usuario-confirmarPassword" class="form-control" formControlName="confirmarPassword"
+                                    [type]="verPassword ? 'text' : 'password'" autocomplete="new-password"
+                                    [class.is-invalid]="invalido('confirmarPassword')">
+                                <div class="invalid-feedback">{{ mensajeError('confirmarPassword') }}</div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarModal()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="enviando">
+                        {{ enviando ? 'Guardando...' : titleBoton }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

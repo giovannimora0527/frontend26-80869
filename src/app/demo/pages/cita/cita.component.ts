@@ -1,239 +1,172 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription } from 'rxjs';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CommonModule, formatDate } from '@angular/common';
-import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
-
+import { CommonModule } from '@angular/common';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { NgbDropdownModule, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import Swal from 'sweetalert2';
+
 import { Cita } from 'src/app/models/cita';
-import { CitaService } from './service/cita.service';
+import { Cliente } from 'src/app/models/cliente';
 import { Mascota } from 'src/app/models/mascota';
 import { Medico } from 'src/app/models/medico';
+import { CitaRq, CitaResumen } from 'src/app/models/resumenes';
+import { FiltroPaginado } from 'src/app/models/pagina';
+import { aFechaBackend, aInputFechaHora, ahoraInput, mensajeError } from 'src/app/utils/http-utils';
+import { ClienteService } from '../cliente/service/cliente.service';
 import { MascotaService } from '../mascota/service/mascota.service';
 import { MedicoService } from '../medico/service/medico.service';
+import { CitaService } from './service/cita.service';
 
-type ColumnaOrden = 'mascota' | 'medico' | 'fechaHora' | 'motivo' | 'estado';
 type ModalBootstrap = { show(): void; hide(): void };
 type WindowBootstrap = Window & { bootstrap: { Modal: new (element: Element) => ModalBootstrap } };
 
+/** Columnas por las que el backend sabe ordenar. */
+type ColumnaOrden = 'fecha' | 'cliente' | 'mascota' | 'veterinario' | 'motivo' | 'estado';
 
+/** Estados con los que una cita todavía está "viva". */
+const ESTADOS_ACTIVOS = ['PENDIENTE', 'PROGRAMADA', 'CONFIRMADA'];
 
+/** Valida que la fecha y hora sea un valor real y que no esté en el pasado (solo al crear). */
+function fechaValida(control: AbstractControl): ValidationErrors | null {
+  if (!control.value) {
+    return null;
+  }
+  return Number.isNaN(new Date(control.value).getTime()) ? { fechaInvalida: true } : null;
+}
+
+/**
+ * Gestión de citas: listado paginado en el servidor (orden inicial fecha/hora descendente),
+ * filtros, creación y edición con combos dependientes Cliente → Mascota, y acciones por estado.
+ */
 @Component({
   selector: 'app-cita',
-  imports: [CommonModule, ReactiveFormsModule, NgbTooltipModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgbDropdownModule, NgbTooltipModule],
   templateUrl: './cita.component.html',
   styleUrl: './cita.component.scss'
 })
-export class CitaComponent {
-
-  // Variables para el modal.
-  modalInstance: ModalBootstrap | null = null;
-  modalDetalleInstance: ModalBootstrap | null = null;
-  citaDetalle: Cita | null = null;
-  titleModal: string = "";
-  modoFormulario: string = "";
-  titleBoton: string = "";
-
-
-  // Variables para la paginación, ordenamiento y búsqueda en la datatable.
-  listEspecializaciones: Cita[] = [];
-  listMascotas: Mascota[] = [];
-  listMedicos: Medico[] = [];
-  cargandoMascotas = false;
-  cargandoMedicos = false;
-  errorMascotas = '';
-  errorMedicos = '';
-  errorCitas = '';
-  disponibilidadConsultada = false;
-  private consultaMedicos?: Subscription;
+export class CitaComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  terminoBusqueda = '';
-  paginaActual = 1;
-  readonly registrosPorPagina = 5;
-  columnaOrden: ColumnaOrden = 'mascota';
-  direccionOrden: 'asc' | 'desc' = 'asc';
+  private readonly busqueda$ = new Subject<string>();
 
-  // Formulario para crear o editar especializacion.
+  // ---- listado ----
+  filas: CitaResumen[] = [];
+  totalElementos = 0;
+  totalPaginas = 0;
+  pagina = 0;
+  tamanio = 10;
+  readonly tamanios = [5, 10, 20, 50];
+  columnaOrden: ColumnaOrden = 'fecha';
+  direccionOrden: 'asc' | 'desc' = 'desc';
+  q = '';
+  estadoFiltro = '';
+  desde = '';
+  hasta = '';
+  cargando = false;
+  errorCitas = '';
+  readonly estados = ['PENDIENTE', 'PROGRAMADA', 'CONFIRMADA', 'ATENDIDA', 'CANCELADA'];
+
+  // ---- formulario ----
   form!: FormGroup;
-  citaSelected: Cita | null = null;
+  modoFormulario: 'C' | 'E' = 'C';
+  titleModal = '';
+  titleBoton = '';
+  citaSelected: CitaResumen | null = null;
   enviando = false;
   respuestaError = '';
+  minFechaHora = ahoraInput();
+  clientes: Cliente[] = [];
+  mascotas: Mascota[] = [];
+  medicos: Medico[] = [];
+  cargandoMascotas = false;
+  cargandoMedicos = false;
+  soloDisponibles = false;
+  errorCombos = '';
+  readonly estadosFormulario = ['PENDIENTE', 'PROGRAMADA', 'CONFIRMADA'];
 
-  constructor(private readonly citaService: CitaService,    
-    private readonly formBuilder: FormBuilder,
+  // ---- detalle ----
+  citaDetalle: Cita | null = null;
+  private modalForm: ModalBootstrap | null = null;
+  private modalDetalle: ModalBootstrap | null = null;
+
+  constructor(
+    private readonly citaService: CitaService,
+    private readonly clienteService: ClienteService,
     private readonly mascotaService: MascotaService,
-    private readonly medicoService: MedicoService) {
+    private readonly medicoService: MedicoService,
+    private readonly fb: FormBuilder
+  ) {
     this.inicializarFormulario();
-    this.listarCitas();
-    this.listarMascotas();
+    // Combo dependiente: cada vez que cambia el cliente se vuelven a consultar sus mascotas.
+    this.f['clienteId'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.alCambiarCliente());
   }
 
-  inicializarFormulario() {
-    this.form = this.formBuilder.group({
-      mascota: [null, Validators.required],
-      medico: [null, Validators.required],
-      fechaHora: [null, [
-        Validators.required,
-        (control: AbstractControl) => control.value && Number.isNaN(new Date(control.value).getTime())
-          ? { fechaInvalida: true } : null
-      ]],
-      motivo: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(255)]],
-      estado: ['', Validators.required],
-    });
-    this.form.controls['fechaHora'].valueChanges.pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(() => {
-      this.consultaMedicos?.unsubscribe();
-      this.cargandoMedicos = false;
-      this.disponibilidadConsultada = false;
-      this.errorMedicos = '';
-      this.listMedicos = [];
-      this.form.controls['medico'].reset();
-    });
+  ngOnInit(): void {
+    this.busqueda$.pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((texto) => {
+        this.q = texto;
+        this.pagina = 0;
+        this.cargar();
+      });
+    this.cargar();
   }
 
-  listarCitas() {
+  // =====================  LISTADO  =====================
+
+  /** Pide al backend la página actual con los filtros y el orden elegidos. */
+  cargar(): void {
+    const filtro: FiltroPaginado = {
+      page: this.pagina,
+      size: this.tamanio,
+      sort: this.columnaOrden,
+      dir: this.direccionOrden,
+      q: this.q.trim(),
+      estado: this.estadoFiltro,
+      desde: this.desde,
+      hasta: this.hasta
+    };
+    this.cargando = true;
     this.errorCitas = '';
-    this.citaService.listarCitas().subscribe({
-      next: (citas) => {
-        this.listEspecializaciones = citas;
-        this.paginaActual = Math.min(this.paginaActual, this.totalPaginas || 1);
+    this.citaService.listarPaginado(filtro).subscribe({
+      next: (rs) => {
+        this.filas = rs.content;
+        this.totalElementos = rs.totalElements;
+        this.totalPaginas = rs.totalPages;
+        this.cargando = false;
       },
       error: (err) => {
-        this.errorCitas = 'No fue posible cargar las citas.';
-        console.error('Error al listar citas:', err);
+        this.cargando = false;
+        this.filas = [];
+        this.errorCitas = mensajeError(err, 'No fue posible cargar las citas.');
       }
     });
   }
 
-  listarMascotas(): void {
-    this.cargandoMascotas = true;
-    this.errorMascotas = '';
-    this.mascotaService.listarMascotas().subscribe({
-      next: (mascotas) => {
-        this.listMascotas = mascotas;
-        this.cargandoMascotas = false;
-      },
-      error: (error) => {
-        this.cargandoMascotas = false;
-        this.errorMascotas = 'No fue posible cargar las mascotas.';
-        console.error('Error al listar mascotas:', error);
-      }
-    });
+  buscar(event: Event): void {
+    this.busqueda$.next((event.target as HTMLInputElement).value);
   }
 
-  get fechaInicio(): Date | null {
-    const control = this.form.controls['fechaHora'];
-    return control.valid && control.value ? new Date(control.value) : null;
-  }
-
-  get fechaFin(): Date | null {
-    const inicio = this.fechaInicio;
-    return inicio ? new Date(inicio.getTime() + 15 * 60 * 1000) : null;
-  }
-
-  consultarMedicosDisponibles(): void {
-    const inicio = this.fechaInicio;
-    const fin = this.fechaFin;
-    if (!inicio || !fin) {
-      this.form.controls['fechaHora'].markAsTouched();
+  /** Aplica un filtro (estado o fechas) y vuelve a la primera página. */
+  aplicarFiltros(): void {
+    if (this.desde && this.hasta && this.desde > this.hasta) {
+      Swal.fire('Rango inválido', 'La fecha "desde" no puede ser posterior a "hasta".', 'warning');
       return;
     }
-    if (this.cargandoMedicos || this.enviando) {
-      return;
-    }
-    this.listarMedicosDisponiblesPorFecha(inicio, fin);
+    this.pagina = 0;
+    this.cargar();
   }
 
-  listarMedicosDisponiblesPorFecha(fechaInicio: Date, fechaFin: Date): void {
-    this.consultaMedicos?.unsubscribe();
-    this.listMedicos = [];
-    this.form.controls['medico'].reset();
-    this.disponibilidadConsultada = false;
-    this.cargandoMedicos = true;
-    this.errorMedicos = '';
-    this.consultaMedicos = this.medicoService
-      .listarMedicosDisponiblesPorFecha(fechaInicio, fechaFin)
-      .pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe({
-      next: (medicos) => {
-        this.listMedicos = medicos;
-        this.cargandoMedicos = false;
-        this.disponibilidadConsultada = true;
-      },
-      error: (error) => {
-        this.cargandoMedicos = false;
-        this.errorMedicos = 'No fue posible cargar los médicos disponibles.';
-        console.error('Error al listar médicos disponibles:', error);
-      }
-    });
-  }
-
-  compararMascotas(mascotaA: Mascota | null, mascotaB: Mascota | null): boolean {
-    return mascotaA === mascotaB ||
-      (mascotaA?.mascotaId != null && mascotaA.mascotaId === mascotaB?.mascotaId);
-  }
-
-  compararMedicos(medicoA: Medico | null, medicoB: Medico | null): boolean {
-    return medicoA === medicoB || (medicoA?.id != null && medicoA.id === medicoB?.id);
-  }
-
-  // Obtiene los controles del formulario para facilitar el acceso a sus propiedades y métodos.
-  get f(): { [key: string]: AbstractControl } {
-    return this.form.controls;
-  }
-
-  /**
-   * Filtra la lista de citas según el término de búsqueda ingresado por el usuario.
-   * @returns Un arreglo de citas filtradas.
-   */
-  get citasFiltradas(): Cita[] {
-    const termino = this.normalizarTexto(this.terminoBusqueda.trim());
-    const filtradas = this.listEspecializaciones.filter((cita) => {
-      if (!termino) {
-        return true;
-      }
-
-      const valores = [
-        this.obtenerValorOrden(cita, 'mascota'),
-        this.obtenerValorOrden(cita, 'medico'),
-        this.obtenerValorOrden(cita, 'fechaHora'),
-        cita.motivo,
-        cita.estado
-      ];
-
-      return valores.some((valor) =>
-        this.normalizarTexto(String(valor ?? '')).includes(termino)
-      );
-    });
-
-    return [...filtradas].sort((citaA, citaB) => {
-      const valorA = this.obtenerValorOrden(citaA, this.columnaOrden);
-      const valorB = this.obtenerValorOrden(citaB, this.columnaOrden);
-      const comparacion = typeof valorA === 'number' && typeof valorB === 'number'
-        ? valorA - valorB
-        : String(valorA).localeCompare(String(valorB), 'es', { numeric: true, sensitivity: 'base' });
-
-      return this.direccionOrden === 'asc' ? comparacion : -comparacion;
-    });
-  }
-
-  private obtenerValorOrden(cita: Cita, columna: ColumnaOrden): string | number {
-    switch (columna) {
-      case 'mascota':
-        return cita.mascota?.nombreMascota ?? cita.mascota?.nombre ?? '';
-      case 'medico':
-        return  `${cita.medico?.nombres ?? ''} ${cita.medico?.apellidos ?? ''}`;
-      case 'fechaHora':
-        return cita.fechaHora ? formatDate(cita.fechaHora, 'yyyy-MM-dd HH:mm', 'en-US')
-          : '';
-      case 'motivo':
-        return cita.motivo ?? '';
-      case 'estado':
-        return cita.estado ?? '';
-    }
+  limpiarFiltros(): void {
+    this.q = '';
+    this.estadoFiltro = '';
+    this.desde = '';
+    this.hasta = '';
+    this.pagina = 0;
+    this.columnaOrden = 'fecha';
+    this.direccionOrden = 'desc';
+    this.cargar();
   }
 
   ordenarPor(columna: ColumnaOrden): void {
@@ -243,181 +176,326 @@ export class CitaComponent {
       this.columnaOrden = columna;
       this.direccionOrden = 'asc';
     }
-    this.paginaActual = 1;
+    this.pagina = 0;
+    this.cargar();
   }
 
-  get citasPaginadas(): Cita[] {
-    const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
-    return this.citasFiltradas.slice(inicio, inicio + this.registrosPorPagina);
+  cambiarPagina(pagina: number): void {
+    if (pagina >= 0 && pagina < this.totalPaginas && pagina !== this.pagina) {
+      this.pagina = pagina;
+      this.cargar();
+    }
   }
 
-  get totalPaginas(): number {
-    return Math.ceil(this.citasFiltradas.length / this.registrosPorPagina);
+  cambiarTamanio(): void {
+    this.pagina = 0;
+    this.cargar();
   }
 
   get paginas(): number[] {
-    return Array.from({ length: this.totalPaginas }, (_, indice) => indice + 1);
+    const inicio = Math.max(0, Math.min(this.pagina - 2, this.totalPaginas - 5));
+    const fin = Math.min(this.totalPaginas, inicio + 5);
+    return Array.from({ length: fin - inicio }, (_, i) => inicio + i);
   }
 
-  // Metodo que actualiza el termino de busqueda y reinicia la pagina actual a 1.
-  actualizarBusqueda(event: Event) {
-    this.terminoBusqueda = (event.target as HTMLInputElement).value;
-    this.paginaActual = 1;
+  get desdeRegistro(): number {
+    return this.totalElementos === 0 ? 0 : this.pagina * this.tamanio + 1;
   }
 
-  // Cambia paginacion.
-  cambiarPagina(pagina: number) {
-    if (pagina >= 1 && pagina <= this.totalPaginas) {
-      this.paginaActual = pagina;
-    }
+  get hastaRegistro(): number {
+    return Math.min((this.pagina + 1) * this.tamanio, this.totalElementos);
   }
 
-  // Metodo privado para normalizar el texto, eliminando acentos y convirtiendo a minúsculas.
-  private normalizarTexto(texto: string): string {
-    return texto
-      .toLocaleLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+  iconoOrden(columna: ColumnaOrden): string {
+    if (this.columnaOrden !== columna) {
+      return 'fa-sort';
+    }
+    return this.direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
   }
 
-   /**
-     * Metodos para la gestion de especializaciones (crear, editar, guardar).
-     */
-  
-    // Evento para abrir el modal de crear o editar especializacion, dependiendo del modo recibido.
-    nuevaCita(modo: string) {
-      this.titleModal = modo === 'C' ? 'Crear Cita' : 'Editar Cita';
-      this.modoFormulario = modo;
-      this.citaSelected = null;
-      this.resetFormulario();
-      this.form.controls['estado'].setValue('programada');
-      this.openModal(modo);
-    }  
-   
-  
-    verCita(cita: Cita): void {
-      this.citaDetalle = cita;
-      const modalElement = document.getElementById('modalVerCita');
-      if (modalElement) {
-        this.modalDetalleInstance ??= new (window as unknown as WindowBootstrap).bootstrap.Modal(modalElement);
-        this.modalDetalleInstance.show();
-      }
-    }
+  // =====================  REGLAS DE LA PANTALLA POR ESTADO  =====================
 
-    cerrarDetalle(): void {
-      this.modalDetalleInstance?.hide();
-    }
+  esActiva(estado: string | undefined): boolean {
+    return ESTADOS_ACTIVOS.includes((estado ?? '').toUpperCase());
+  }
 
-    esCitaCancelada(cita: Cita | null): boolean {
-      return cita?.estado?.trim().toLowerCase() === 'cancelada';
-    }
+  /** Solo las citas pendientes o programadas se pueden confirmar. */
+  puedeConfirmar(estado: string): boolean {
+    return ['PENDIENTE', 'PROGRAMADA'].includes(estado.toUpperCase());
+  }
 
-    abrirEdicion(cita: Cita) {
-      if (this.esCitaCancelada(cita)) {
-        Swal.fire('Cita cancelada', 'No se puede editar una cita cancelada.', 'warning');
-        return;
+  /** Una cita solo se atiende si ya ocurrió (el backend lo vuelve a validar). */
+  puedeAtender(cita: CitaResumen): boolean {
+    return this.esActiva(cita.estado) && new Date(cita.fechaHora).getTime() <= Date.now();
+  }
+
+  esCancelada(estado: string | undefined): boolean {
+    return (estado ?? '').toUpperCase() === 'CANCELADA';
+  }
+
+  // =====================  ACCIONES POR FILA  =====================
+
+  confirmar(cita: CitaResumen): void {
+    this.cambiarEstado(cita, 'CONFIRMADA', '¿Confirmar la cita?', 'Quedará como Confirmada.');
+  }
+
+  atender(cita: CitaResumen): void {
+    this.cambiarEstado(cita, 'ATENDIDA', '¿Marcar como atendida?',
+      'Se creará su historia clínica y la cita ya no podrá modificarse.');
+  }
+
+  cancelar(cita: CitaResumen): void {
+    this.cambiarEstado(cita, 'CANCELADA', '¿Cancelar la cita?',
+      'Una cita cancelada no se puede editar; solo se puede reactivar.');
+  }
+
+  reactivar(cita: CitaResumen): void {
+    Swal.fire({
+      title: '¿Reactivar la cita?',
+      text: 'Se vuelve a validar la agenda y quedará como Programada.',
+      icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, reactivar', cancelButtonText: 'No'
+    }).then((r) => {
+      if (r.isConfirmed) {
+        this.citaService.reactivar(cita.id).subscribe({
+          next: (rs) => this.exito(rs?.message ?? 'La cita fue reactivada.'),
+          error: (err) => Swal.fire('No se pudo reactivar', mensajeError(err), 'error')
+        });
       }
-      this.resetFormulario();
-      this.citaSelected = cita;
-      this.modoFormulario = 'E';
-      this.form.patchValue({
-        fechaHora: cita.fechaHora ? formatDate(cita.fechaHora, "yyyy-MM-dd'T'HH:mm", 'en-US') : null,
-        mascota: cita.mascota,
-        medico: cita.medico,
-        motivo: cita.motivo ?? null,
-        estado: cita.estado?.trim().toLowerCase() ?? null
-      });
-      this.listMedicos = cita.medico ? [cita.medico] : [];
-      this.openModal(this.modoFormulario);
+    });
+  }
+
+  private cambiarEstado(cita: CitaResumen, estado: string, titulo: string, texto: string): void {
+    Swal.fire({
+      title: titulo, text: texto, icon: 'question', showCancelButton: true,
+      confirmButtonText: 'Sí', cancelButtonText: 'No'
+    }).then((r) => {
+      if (r.isConfirmed) {
+        this.citaService.cambiarEstado(cita.id, estado).subscribe({
+          next: (rs) => this.exito(rs?.message ?? 'La cita fue actualizada.'),
+          error: (err) => Swal.fire('No se pudo cambiar el estado', mensajeError(err), 'error')
+        });
+      }
+    });
+  }
+
+  private exito(mensaje: string): void {
+    this.cargar();
+    Swal.fire('Operación exitosa', mensaje, 'success');
+  }
+
+  // =====================  DETALLE  =====================
+
+  verCita(cita: CitaResumen): void {
+    this.citaService.buscarPorId(cita.id).subscribe({
+      next: (detalle) => {
+        this.citaDetalle = detalle;
+        this.abrir('modalVerCita', 'D');
+      },
+      error: (err) => Swal.fire('No se pudo consultar', mensajeError(err, 'Registro no encontrado.'), 'error')
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.modalDetalle?.hide();
+  }
+
+  // =====================  FORMULARIO  =====================
+
+  private inicializarFormulario(): void {
+    this.form = this.fb.group({
+      clienteId: [null, Validators.required],
+      mascotaId: [{ value: null, disabled: true }, Validators.required],
+      medicoId: [null, Validators.required],
+      fechaHora: [null, [Validators.required, fechaValida]],
+      motivo: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(255)]],
+      estado: ['PROGRAMADA', Validators.required]
+    });
+  }
+
+  get f(): { [key: string]: AbstractControl } {
+    return this.form.controls;
+  }
+
+  nuevaCita(): void {
+    this.modoFormulario = 'C';
+    this.titleModal = 'Crear cita';
+    this.titleBoton = 'Guardar cita';
+    this.citaSelected = null;
+    this.minFechaHora = ahoraInput();
+    this.reiniciar();
+    this.f['clienteId'].enable();
+    this.f['estado'].setValue('PROGRAMADA');
+    this.cargarCombos();
+    this.abrir('modalCrearCita', 'F');
+  }
+
+  abrirEdicion(cita: CitaResumen): void {
+    if (!this.esActiva(cita.estado)) {
+      Swal.fire(this.esCancelada(cita.estado) ? 'Cita cancelada' : 'Cita atendida',
+        this.esCancelada(cita.estado)
+          ? 'Una cita cancelada no se puede editar. Usa la opción de reactivar.'
+          : 'Una cita atendida no se puede modificar porque hace parte del historial clínico.',
+        'warning');
+      return;
     }
-  
-    /**
-     * 
-     * @returns Acción realizada sobre la cita (crear o actualizar).
-     */
-    guardarCita() {
-      if (this.modoFormulario === 'E' && this.esCitaCancelada(this.citaSelected)) {
-        this.respuestaError = 'No se puede actualizar una cita cancelada.';
-        return;
+    this.modoFormulario = 'E';
+    this.titleModal = 'Editar cita';
+    this.titleBoton = 'Actualizar cita';
+    this.citaSelected = cita;
+    this.reiniciar();
+    this.cargarCombos();
+    this.citaService.buscarPorId(cita.id).subscribe({
+      next: (detalle) => {
+        const clienteId = detalle.cliente?.id ?? detalle.mascota?.cliente?.id ?? null;
+        this.mascotas = detalle.mascota ? [detalle.mascota] : [];
+        this.form.patchValue({
+          clienteId,
+          mascotaId: detalle.mascota?.mascotaId ?? null,
+          medicoId: detalle.medico?.id ?? null,
+          fechaHora: aInputFechaHora(detalle.fechaHora),
+          motivo: detalle.motivo ?? '',
+          estado: (detalle.estado ?? 'PROGRAMADA').toUpperCase()
+        }, { emitEvent: false });
+        // Cliente y mascota no cambian en una cita existente (el backend también lo impide).
+        this.f['clienteId'].disable();
+        this.f['mascotaId'].disable();
+        this.abrir('modalCrearCita', 'F');
+      },
+      error: (err) => Swal.fire('No se pudo cargar la cita', mensajeError(err), 'error')
+    });
+  }
+
+  /** Combo dependiente: al elegir cliente se consultan únicamente sus mascotas. */
+  private alCambiarCliente(): void {
+    const clienteId = this.f['clienteId'].value as number | null;
+    this.mascotas = [];
+    this.f['mascotaId'].reset();
+    if (!clienteId) {
+      this.f['mascotaId'].disable();
+      return;
+    }
+    this.cargandoMascotas = true;
+    this.mascotaService.listarPorCliente(Number(clienteId)).subscribe({
+      next: (lista) => {
+        this.mascotas = lista.filter((m) => m.activo !== false);
+        this.cargandoMascotas = false;
+        this.f['mascotaId'].enable();
+      },
+      error: (err) => {
+        this.cargandoMascotas = false;
+        this.errorCombos = mensajeError(err, 'No fue posible cargar las mascotas del cliente.');
       }
-      if (this.form.invalid || this.enviando) {
-        this.form.markAllAsTouched();
-        return;
-      }
-  
-      const valores = this.form.getRawValue();
-      const cita: Cita = {
-        id: this.citaSelected?.id,
-        mascotaId: valores.mascota.mascotaId,
-        medicoId: valores.medico.id,
-        fechaHora: valores.fechaHora,
-        motivo: valores.motivo ?? null,
-        estado: this.modoFormulario === 'C' ? 'programada' : valores.estado
-      };
-  
-      this.enviando = true;
-      this.respuestaError = '';
-      const solicitud = this.modoFormulario === 'C'
-        ? this.citaService.guardarCita(cita)
-        : this.citaService.actualizarCita(cita);
-  
-      solicitud.subscribe({
-        next: (respuesta) => {
-          this.enviando = false;
-          const mensaje = this.obtenerMensajeRespuesta(
-            respuesta,
-            this.modoFormulario === 'C' ? 'La cita fue creada correctamente.' : 'La cita fue actualizada correctamente.'
-          );
-          this.closeModal();
-          this.listarCitas();
-          Swal.fire('Operación exitosa', mensaje, 'success');
-        },
-        error: (error) => {
-          this.enviando = false;
-          console.error('Error al guardar la cita:', error);
-          this.respuestaError = error.error?.mensaje ?? error.error?.message ?? error.message ??
-            'No fue posible guardar la cita.';
+    });
+  }
+
+  /** Muestra solo los veterinarios libres en la hora elegida (ventana de 15 min). */
+  consultarDisponibles(): void {
+    const valor = this.f['fechaHora'].value as string | null;
+    if (!valor || this.f['fechaHora'].invalid) {
+      this.f['fechaHora'].markAsTouched();
+      return;
+    }
+    const inicio = new Date(valor);
+    const fin = new Date(inicio.getTime() + 15 * 60 * 1000);
+    this.cargandoMedicos = true;
+    this.medicoService.listarMedicosDisponiblesPorFecha(inicio, fin).subscribe({
+      next: (lista) => {
+        this.medicos = lista;
+        this.soloDisponibles = true;
+        this.cargandoMedicos = false;
+        if (!lista.some((m) => m.id === this.f['medicoId'].value)) {
+          this.f['medicoId'].reset();
         }
-      });
-    }
-  
-    private obtenerMensajeRespuesta(respuesta: unknown, mensajePredeterminado: string): string {
-      if (respuesta && typeof respuesta === 'object') {
-        const cuerpo = respuesta as { mensaje?: unknown; message?: unknown };
-        const mensaje = cuerpo.mensaje ?? cuerpo.message;
-        if (typeof mensaje === 'string') {
-          return mensaje;
-        }
+      },
+      error: (err) => {
+        this.cargandoMedicos = false;
+        this.errorCombos = mensajeError(err, 'No fue posible consultar los veterinarios disponibles.');
       }
-      return mensajePredeterminado;
+    });
+  }
+
+  verTodosLosMedicos(): void {
+    this.soloDisponibles = false;
+    this.cargarMedicos();
+  }
+
+  guardarCita(): void {
+    if (this.form.invalid || this.enviando) {
+      this.form.markAllAsTouched();
+      return;
     }
-
-
-  resetFormulario() {
-    this.form.reset();
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
+    const v = this.form.getRawValue();
+    if (this.modoFormulario === 'C' && new Date(v.fechaHora).getTime() < Date.now()) {
+      this.respuestaError = 'La fecha y hora de la cita no puede ser anterior a la actual.';
+      return;
+    }
+    const cita: CitaRq = {
+      clienteId: Number(v.clienteId),
+      mascotaId: Number(v.mascotaId),
+      medicoId: Number(v.medicoId),
+      fechaHora: aFechaBackend(v.fechaHora),
+      motivo: String(v.motivo).trim(),
+      estado: v.estado
+    };
+    this.enviando = true;
     this.respuestaError = '';
+    const solicitud = this.modoFormulario === 'C'
+      ? this.citaService.guardarCita(cita)
+      : this.citaService.actualizarCita(this.citaSelected?.id as number, cita);
+    solicitud.subscribe({
+      next: (rs) => {
+        this.enviando = false;
+        this.cerrarFormulario();
+        this.exito(rs?.message ?? (this.modoFormulario === 'C' ? 'La cita fue creada.' : 'La cita fue actualizada.'));
+      },
+      error: (err) => {
+        this.enviando = false;
+        this.respuestaError = mensajeError(err, 'No fue posible guardar la cita.');
+      }
+    });
   }
 
+  cerrarFormulario(): void {
+    this.modalForm?.hide();
+    this.reiniciar();
+  }
 
-  closeModal() {
-    if (this.modalInstance) {
-      this.modalInstance.hide();
+  private reiniciar(): void {
+    this.form.reset({ estado: 'PROGRAMADA' });
+    this.f['mascotaId'].disable();
+    this.mascotas = [];
+    this.soloDisponibles = false;
+    this.respuestaError = '';
+    this.errorCombos = '';
+  }
+
+  private cargarCombos(): void {
+    this.clienteService.listarClientesActivos().subscribe({
+      next: (lista) => (this.clientes = lista),
+      error: (err) => (this.errorCombos = mensajeError(err, 'No fue posible cargar los clientes.'))
+    });
+    this.cargarMedicos();
+  }
+
+  private cargarMedicos(): void {
+    this.medicoService.listar().subscribe({
+      next: (lista) => (this.medicos = lista.filter((m) => m.estado !== false)),
+      error: (err) => (this.errorCombos = mensajeError(err, 'No fue posible cargar los veterinarios.'))
+    });
+  }
+
+  private abrir(id: string, cual: 'F' | 'D'): void {
+    const el = document.getElementById(id);
+    if (!el) {
+      return;
     }
-    this.resetFormulario();
-  }
-
-  openModal(modo: string) {
-    this.titleModal = modo === 'C' ? 'Crear Cita' : 'Editar Cita';
-    this.titleBoton = modo === 'C' ? 'Guardar Cita' : 'Actualizar Cita';
-    this.modoFormulario = modo;
-    const modalElement = document.getElementById('modalCrearCita');
-    if (modalElement) {
-      // Verificar si ya existe una instancia del modal
-      this.modalInstance ??= new (window as unknown as WindowBootstrap).bootstrap.Modal(modalElement);
-      this.modalInstance.show();
+    const Modal = (window as unknown as WindowBootstrap).bootstrap.Modal;
+    if (cual === 'F') {
+      this.modalForm ??= new Modal(el);
+      this.modalForm.show();
+    } else {
+      this.modalDetalle ??= new Modal(el);
+      this.modalDetalle.show();
     }
   }
-
 }

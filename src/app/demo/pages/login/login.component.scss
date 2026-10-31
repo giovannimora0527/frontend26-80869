@@ -1,0 +1,164 @@
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.login-hero {
+  flex: 1 1 60%;
+  display: flex;
+  align-items: flex-end;
+  padding: 4rem;
+  color: #fff;
+  // Foto de la clínica con un degradado azul encima: oscuro abajo (donde va el texto) y más
+  // suave arriba para que se siga viendo la foto. El color sólido es el respaldo si la imagen no carga.
+  background:
+    linear-gradient(to top, rgba(8, 40, 100, 0.88) 0%, rgba(8, 40, 100, 0.5) 42%, rgba(8, 40, 100, 0) 72%),
+    linear-gradient(135deg, rgba(11, 61, 145, 0.62) 0%, rgba(31, 111, 209, 0.38) 55%, rgba(90, 169, 230, 0.2) 100%),
+    url('../../../../assets/images/login-hero.jpg') center 20% / cover no-repeat,
+    #0b3d91;
+
+  .hero-content {
+    max-width: 520px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+
+  .hero-logo {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 1.5rem;
+    border-radius: 50%;
+    background: #fff;
+    padding: 8px;
+  }
+
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 0.75rem;
+    color: #fff;
+  }
+
+  p {
+    font-size: 1.05rem;
+    opacity: 0.95;
+    margin-bottom: 1.5rem;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .chip {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    font-size: 0.85rem;
+
+    i {
+      margin-right: 0.35rem;
+    }
+  }
+}
+
+.login-panel {
+  flex: 1 1 40%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #fff;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+
+  .card-logo {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitulo {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  form {
+    text-align: left;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0.75rem 0 0.25rem;
+  }
+
+  .input-clave {
+    position: relative;
+
+    .ojo {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #6c757d;
+    }
+  }
+
+  .alert {
+    margin: 1rem 0 0;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-primary {
+    margin-top: 1.25rem;
+  }
+
+  .otp-input {
+    text-align: center;
+    font-size: 1.8rem;
+    letter-spacing: 0.5rem;
+    font-weight: 600;
+  }
+
+  .acciones-otp {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+
+  .btn-link {
+    border: 0;
+    background: transparent;
+    color: #1f6fd1;
+    font-size: 0.85rem;
+    padding: 0;
+
+    &:disabled {
+      color: #9aa5b1;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .login-hero {
+    display: none;
+  }
+}

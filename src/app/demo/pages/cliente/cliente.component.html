@@ -1,1 +1,172 @@
-<p>cliente works!</p>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <input class="form-control" type="text" placeholder="Buscar por nombre, documento o teléfono"
+                        (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" aria-label="Filtrar por estado" (change)="cambiarFiltroEstado($event)">
+                        <option value="todos">Todos los estados</option>
+                        <option value="activos">Solo activos</option>
+                        <option value="inactivos">Solo inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-md btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                        (click)="abrirCreacion()" title="Agregar cliente">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        &nbsp; Nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div *ngIf="errorListado" class="alert alert-danger" role="alert">
+                {{ errorListado }}
+                <button type="button" class="btn btn-link" (click)="listar()">Reintentar</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Documento</th>
+                            <th class="text-center">Nombre completo</th>
+                            <th class="text-center">Nacimiento</th>
+                            <th class="text-center">Teléfono</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="cargando">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                &nbsp;Cargando clientes...
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && !errorListado && clientes.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No hay clientes registrados</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && clientes.length > 0 && clientesFiltrados.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No se encontraron clientes con ese criterio</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && clientesFiltrados.length > 0">
+                        <tr *ngFor="let cliente of clientesPaginados">
+                            <td class="text-center">{{ cliente.tipoDocumento }} {{ cliente.numeroDocumento }}</td>
+                            <td class="text-center">{{ nombreCompleto(cliente) }}</td>
+                            <td class="text-center">{{ cliente.fechaNacimiento | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">{{ cliente.telefono || '—' }}</td>
+                            <td class="text-center">
+                                <span class="badge" [class.bg-success]="cliente.activo"
+                                    [class.bg-secondary]="!cliente.activo">{{ cliente.activo ? 'Activo' : 'Inactivo' }}</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-info btn-sm me-1" (click)="abrirEdicion(cliente)">
+                                    <i class="fa fa-edit"></i>&nbsp;Editar
+                                </button>
+                                <button class="btn btn-sm"
+                                    [class.btn-outline-danger]="cliente.activo"
+                                    [class.btn-outline-success]="!cliente.activo"
+                                    [disabled]="cambiandoEstadoId === cliente.id"
+                                    (click)="confirmarCambioEstado(cliente)">
+                                    {{ cliente.activo ? 'Desactivar' : 'Activar' }}
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <app-paginacion [paginaActual]="paginaActual" [totalPaginas]="totalPaginas"
+                (paginaCambiada)="cambiarPagina($event)"></app-paginacion>
+        </div>
+    </div>
+</div>
+
+<!-- Modal crear / editar -->
+<div class="modal fade" id="modalCliente" tabindex="-1" aria-labelledby="modalClienteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalClienteLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" [disabled]="enviando" aria-label="Cerrar"
+                    (click)="cerrarModal()"></button>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+                <div class="modal-body">
+                    <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+                    <fieldset [disabled]="enviando">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="cliente-tipoDocumento" class="form-label">Tipo de documento</label>
+                                <select id="cliente-tipoDocumento" class="form-select" formControlName="tipoDocumento"
+                                    [class.is-invalid]="invalido('tipoDocumento')">
+                                    <option value="" disabled>Selecciona un tipo de documento</option>
+                                    <option *ngFor="let tipo of tiposDocumento" [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+                                </select>
+                                <div class="invalid-feedback">{{ mensajeError('tipoDocumento') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-numeroDocumento" class="form-label">Número de documento</label>
+                                <input id="cliente-numeroDocumento" class="form-control" type="text"
+                                    formControlName="numeroDocumento" maxlength="20"
+                                    [class.is-invalid]="invalido('numeroDocumento')">
+                                <div class="invalid-feedback">{{ mensajeError('numeroDocumento') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-nombres" class="form-label">Nombres</label>
+                                <input id="cliente-nombres" class="form-control" type="text" formControlName="nombres"
+                                    [class.is-invalid]="invalido('nombres')">
+                                <div class="invalid-feedback">{{ mensajeError('nombres') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-apellidos" class="form-label">Apellidos</label>
+                                <input id="cliente-apellidos" class="form-control" type="text" formControlName="apellidos"
+                                    [class.is-invalid]="invalido('apellidos')">
+                                <div class="invalid-feedback">{{ mensajeError('apellidos') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                                <input id="cliente-fechaNacimiento" class="form-control" type="date"
+                                    formControlName="fechaNacimiento" [max]="hoy"
+                                    [class.is-invalid]="invalido('fechaNacimiento')">
+                                <div class="invalid-feedback">{{ mensajeError('fechaNacimiento') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-genero" class="form-label">Género <small class="text-muted">(opcional)</small></label>
+                                <select id="cliente-genero" class="form-select" formControlName="genero">
+                                    <option value="">Sin especificar</option>
+                                    <option *ngFor="let genero of generos" [value]="genero.valor">{{ genero.etiqueta }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-telefono" class="form-label">Teléfono <small class="text-muted">(opcional)</small></label>
+                                <input id="cliente-telefono" class="form-control" type="tel" formControlName="telefono"
+                                    maxlength="20" [class.is-invalid]="invalido('telefono')">
+                                <div class="invalid-feedback">{{ mensajeError('telefono') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cliente-direccion" class="form-label">Dirección <small class="text-muted">(opcional)</small></label>
+                                <input id="cliente-direccion" class="form-control" type="text" formControlName="direccion"
+                                    maxlength="500" [class.is-invalid]="invalido('direccion')">
+                                <div class="invalid-feedback">{{ mensajeError('direccion') }}</div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarModal()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="enviando">
+                        {{ enviando ? 'Guardando...' : titleBoton }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

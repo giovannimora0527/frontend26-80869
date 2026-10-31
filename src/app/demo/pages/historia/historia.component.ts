@@ -1,175 +1,178 @@
-import { CommonModule, formatDate } from '@angular/common';
-import { Component, DestroyRef, inject, TemplateRef } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgbModal, NgbModalModule, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { concatMap, finalize, forkJoin, from, Observable } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { AbstractControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgbDropdownModule, NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import Swal from 'sweetalert2';
-import { HistoriaService } from './service/historia.service';
-import { AnotacionHistoriaService } from './service/anotacion-historia.service';
-import { MascotaService } from '../mascota/service/mascota.service';
-import { CitaService } from '../cita/service/cita.service';
+
+import { AnotacionHistoria } from 'src/app/models/anotacion-historia';
+import { Cita } from 'src/app/models/cita';
+import { Cliente } from 'src/app/models/cliente';
 import { HistoriaMedica } from 'src/app/models/historia-medica';
 import { Mascota } from 'src/app/models/mascota';
 import { Medico } from 'src/app/models/medico';
-import { Cita } from 'src/app/models/cita';
-import { HistoriaRq } from 'src/app/models/historia-rq';
-import { AnotacionHistoriaRq } from 'src/app/models/anotacion-historia-rq';
+import { FiltroPaginado } from 'src/app/models/pagina';
+import { AnotacionRq, HistoriaClinicaRq, HistoriaResumen } from 'src/app/models/resumenes';
+import { aFechaBackend, aInputFechaHora, ahoraInput, mensajeError } from 'src/app/utils/http-utils';
+import { CitaService } from '../cita/service/cita.service';
+import { ClienteService } from '../cliente/service/cliente.service';
+import { MascotaService } from '../mascota/service/mascota.service';
+import { MedicoService } from '../medico/service/medico.service';
+import { AnotacionHistoriaService } from './service/anotacion-historia.service';
+import { HistoriaService } from './service/historia.service';
 
-type ColumnaOrden = 'fecha' | 'mascota' | 'cliente' | 'veterinario' | 'motivo' | 'diagnostico' | 'observaciones' | 'estado';
-type FilaHistoria = Record<ColumnaOrden, string> & { fechaOrden: number; detalle: HistoriaMedica };
+type ModalBootstrap = { show(): void; hide(): void };
+type WindowBootstrap = Window & { bootstrap: { Modal: new (element: Element) => ModalBootstrap } };
+type ColumnaOrden = 'fecha' | 'mascota' | 'cliente' | 'veterinario' | 'motivo' | 'estado';
+type ColumnaAnotacion = 'fecha' | 'veterinario' | 'descripcion' | 'diagnostico' | 'observaciones';
 
+/**
+ * Gestión de historias clínicas (una por consulta): listado paginado en el servidor (orden inicial
+ * fecha de consulta descendente), registro con combos dependientes Cliente → Mascota → Cita,
+ * edición del contenido clínico y modal de detalle con el histórico de anotaciones
+ * (filtrable, ordenable y paginado) más la creación de nuevas anotaciones.
+ */
 @Component({
   selector: 'app-historia',
-  imports: [CommonModule, NgbModalModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, NgbDropdownModule, NgbTooltipModule],
   templateUrl: './historia.component.html',
   styleUrl: './historia.component.scss'
 })
-export class HistoriaComponent {
+export class HistoriaComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly busqueda$ = new Subject<string>();
+  private readonly busquedaAnotacion$ = new Subject<string>();
 
-  listHistorias: HistoriaMedica[] = [];
-  cargandoHistorias = false;
-  errorHistorias = '';
-  terminoBusqueda = '';
-  paginaActual = 1;
-  readonly registrosPorPagina = 5;
-  readonly columnas: { clave: ColumnaOrden; titulo: string }[] = [
-    { clave: 'fecha', titulo: 'Fecha de creación' },
-    { clave: 'mascota', titulo: 'Mascota' },
-    { clave: 'cliente', titulo: 'Cliente' },
-    { clave: 'veterinario', titulo: 'Veterinario' },
-    { clave: 'motivo', titulo: 'Motivo de consulta' },
-    { clave: 'diagnostico', titulo: 'Diagnóstico' },
-    { clave: 'observaciones', titulo: 'Observaciones' },
-    { clave: 'estado', titulo: 'Estado' }
-  ];
+  // ---- listado ----
+  filas: HistoriaResumen[] = [];
+  totalElementos = 0;
+  totalPaginas = 0;
+  pagina = 0;
+  tamanio = 10;
+  readonly tamanios = [5, 10, 20, 50];
   columnaOrden: ColumnaOrden = 'fecha';
   direccionOrden: 'asc' | 'desc' = 'desc';
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly modalService = inject(NgbModal);
-  private modalDetalle?: NgbModalRef;
-  private modalFormulario?: NgbModalRef;
-  historiaDetalle: HistoriaMedica | null = null;
+  q = '';
+  estadoFiltro = '';
+  desde = '';
+  hasta = '';
+  cargando = false;
+  errorHistorias = '';
+  readonly estados = ['PENDIENTE', 'PROGRAMADA', 'CONFIRMADA', 'ATENDIDA'];
 
-  private readonly formBuilder = inject(FormBuilder);
-  private readonly anotacionHistoriaService = inject(AnotacionHistoriaService);
-  private readonly mascotaService = inject(MascotaService);
-  private readonly citaService = inject(CitaService);
-  readonly formHistoria = this.formBuilder.group({
-    mascotaId: this.formBuilder.control<number | null>(null, Validators.required)
-  });
-  readonly formAnotacion = this.formBuilder.nonNullable.group({
-    anotaciones: this.formBuilder.array([this.crearFilaAnotacion()])
-  });
-  historiaAnotacion: HistoriaMedica | null = null;
-  listMascotas: Mascota[] = [];
-  listCitas: Cita[] = [];
-  cargandoCatalogos = false;
-  errorCatalogos = '';
+  // ---- formulario de historia ----
+  form!: FormGroup;
+  modoFormulario: 'C' | 'E' = 'C';
+  titleModal = '';
+  titleBoton = '';
+  historiaSelected: HistoriaResumen | null = null;
+  enviando = false;
   respuestaError = '';
-  guardando = false;
+  errorCombos = '';
+  clientes: Cliente[] = [];
+  mascotas: Mascota[] = [];
+  citas: Cita[] = [];
+  medicos: Medico[] = [];
+  cargandoMascotas = false;
+  cargandoCitas = false;
+  maxFechaConsulta = ahoraInput();
 
-  constructor(private readonly historiaService: HistoriaService) {
-    this.destroyRef.onDestroy(() => {
-      this.modalDetalle?.dismiss();
-      this.modalFormulario?.dismiss();
-    });
-    this.listarHistorias();
+  // ---- detalle + anotaciones ----
+  detalle: HistoriaMedica | null = null;
+  anotaciones: AnotacionHistoria[] = [];
+  anotacionesTotal = 0;
+  anotacionesPaginas = 0;
+  anotacionesPagina = 0;
+  anotacionesTamanio = 5;
+  anotacionesQ = '';
+  anotacionesDir: 'asc' | 'desc' = 'desc';
+  anotacionesColumna: ColumnaAnotacion = 'fecha';
+  cargandoAnotaciones = false;
+  errorAnotaciones = '';
+  anotacionDetalle: AnotacionHistoria | null = null;
+
+  // ---- formulario de anotación ----
+  formAnotacion!: FormGroup;
+  enviandoAnotacion = false;
+  errorAnotacion = '';
+  private historiaAnotacion: HistoriaResumen | null = null;
+  private reabrirDetalle = false;
+
+  private modalForm: ModalBootstrap | null = null;
+  private modalDetalle: ModalBootstrap | null = null;
+  private modalAnotacion: ModalBootstrap | null = null;
+
+  constructor(
+    private readonly historiaService: HistoriaService,
+    private readonly anotacionService: AnotacionHistoriaService,
+    private readonly clienteService: ClienteService,
+    private readonly mascotaService: MascotaService,
+    private readonly citaService: CitaService,
+    private readonly medicoService: MedicoService,
+    private readonly fb: FormBuilder
+  ) {
+    this.inicializarFormularios();
+    this.f['clienteId'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.alCambiarCliente());
+    this.f['mascotaId'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.alCambiarMascota());
+    this.f['citaId'].valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.alCambiarCita());
   }
 
-  get anotacionesForm() {
-    return this.formAnotacion.controls.anotaciones;
+  ngOnInit(): void {
+    this.busqueda$.pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((t) => { this.q = t; this.pagina = 0; this.cargar(); });
+    this.busquedaAnotacion$.pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((t) => { this.anotacionesQ = t; this.anotacionesPagina = 0; this.cargarAnotaciones(); });
+    this.cargar();
   }
 
-  agregarAnotacion(): void {
-    if (!this.guardando) {
-      this.anotacionesForm.push(this.crearFilaAnotacion());
-    }
-  }
+  // =====================  LISTADO  =====================
 
-  quitarAnotacion(indice: number): void {
-    if (!this.guardando && this.anotacionesForm.length > 1) {
-      this.anotacionesForm.removeAt(indice);
-    }
-  }
-
-  private crearFilaAnotacion() {
-    const fila = this.formBuilder.nonNullable.group({
-      citaId: this.formBuilder.control<number | null>(null, Validators.required),
-      medicoId: this.formBuilder.control<number | null>(null, Validators.required),
-      descripcion: ['', [Validators.required, Validators.pattern(/\S/)]],
-      diagnostico: ['', [Validators.required, Validators.pattern(/\S/)]],
-      observaciones: ['', [Validators.required, Validators.pattern(/\S/)]]
-    });
-    // El veterinario de la anotación es siempre el asignado a la cita seleccionada.
-    fila.controls.citaId.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(citaId => {
-      fila.controls.medicoId.setValue(this.medicosDeCita(citaId)[0]?.id ?? null);
-    });
-    return fila;
-  }
-
-  listarHistorias(): void {
-    if (this.cargandoHistorias) {
-      return;
-    }
-    this.cargandoHistorias = true;
+  cargar(): void {
+    const filtro: FiltroPaginado = {
+      page: this.pagina, size: this.tamanio, sort: this.columnaOrden, dir: this.direccionOrden,
+      q: this.q.trim(), estado: this.estadoFiltro, desde: this.desde, hasta: this.hasta
+    };
+    this.cargando = true;
     this.errorHistorias = '';
-    this.historiaService.listar().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (historias) => {
-        this.listHistorias = historias;
-        this.cargandoHistorias = false;
-        this.paginaActual = Math.min(this.paginaActual, this.totalPaginas || 1);
+    this.historiaService.listarPaginado(filtro).subscribe({
+      next: (rs) => {
+        this.filas = rs.content;
+        this.totalElementos = rs.totalElements;
+        this.totalPaginas = rs.totalPages;
+        this.cargando = false;
       },
       error: (err) => {
-        this.cargandoHistorias = false;
-        this.errorHistorias = 'No fue posible cargar las historias médicas.';
-        console.error('Error al listar historias médicas:', err);
+        this.cargando = false;
+        this.filas = [];
+        this.errorHistorias = mensajeError(err, 'No fue posible cargar las historias clínicas.');
       }
     });
   }
 
-  get historiasFiltradas(): FilaHistoria[] {
-    const termino = this.normalizarTexto(this.terminoBusqueda.trim());
-    const filas = this.listHistorias.map((detalle): FilaHistoria => {
-      const { historia, anotaciones } = detalle;
-      const ultimaAnotacion = anotaciones.reduce<typeof anotaciones[number] | undefined>(
-        (ultima, anotacion) => !ultima || new Date(anotacion.fecha).getTime() > new Date(ultima.fecha).getTime()
-          ? anotacion : ultima,
-        undefined
-      );
-      const mascota = historia.mascota;
-      const cliente = mascota.cliente;
-      const medico = ultimaAnotacion?.medico;
-      const cita = ultimaAnotacion?.cita;
+  buscar(event: Event): void {
+    this.busqueda$.next((event.target as HTMLInputElement).value);
+  }
 
-      return {
-        detalle,
-        fecha: formatDate(historia.fechaCreacion, 'yyyy-MM-dd', 'en-US'),
-        fechaOrden: new Date(historia.fechaCreacion).getTime(),
-        mascota: mascota.nombreMascota || mascota.nombre || 'No informado',
-        cliente: `${cliente?.nombres ?? ''} ${cliente?.apellidos ?? ''}`.trim() || 'No informado',
-        veterinario: `${medico?.nombres ?? ''} ${medico?.apellidos ?? ''}`.trim() || 'No informado',
-        motivo: cita?.motivo?.trim() || 'No informado',
-        diagnostico: ultimaAnotacion?.diagnostico?.trim() || 'No informado',
-        observaciones: ultimaAnotacion?.observaciones?.trim() || 'No informado',
-        estado: mascota.activo == null ? 'No informado' : mascota.activo ? 'Activo' : 'Inactivo'
-      };
-    });
-    const filtradas = filas.filter(fila =>
-      this.columnas.some(({ clave }) => this.normalizarTexto(fila[clave]).includes(termino)) ||
-      fila.detalle.anotaciones.some(anotacion =>
-        [anotacion.diagnostico, anotacion.observaciones].some(texto =>
-          this.normalizarTexto(texto ?? '').includes(termino)))
-    );
+  aplicarFiltros(): void {
+    if (this.desde && this.hasta && this.desde > this.hasta) {
+      Swal.fire('Rango inválido', 'La fecha "desde" no puede ser posterior a "hasta".', 'warning');
+      return;
+    }
+    this.pagina = 0;
+    this.cargar();
+  }
 
-    return filtradas.sort((filaA, filaB) => {
-      const comparacion = this.columnaOrden === 'fecha'
-        ? filaA.fechaOrden - filaB.fechaOrden
-        : filaA[this.columnaOrden].localeCompare(filaB[this.columnaOrden], 'es', {
-          numeric: true, sensitivity: 'base'
-        });
-      return this.direccionOrden === 'asc' ? comparacion : -comparacion;
-    });
+  limpiarFiltros(): void {
+    this.q = '';
+    this.estadoFiltro = '';
+    this.desde = '';
+    this.hasta = '';
+    this.pagina = 0;
+    this.columnaOrden = 'fecha';
+    this.direccionOrden = 'desc';
+    this.cargar();
   }
 
   ordenarPor(columna: ColumnaOrden): void {
@@ -179,237 +182,402 @@ export class HistoriaComponent {
       this.columnaOrden = columna;
       this.direccionOrden = 'asc';
     }
-    this.paginaActual = 1;
+    this.pagina = 0;
+    this.cargar();
   }
 
-  get historiasPaginadas(): FilaHistoria[] {
-    const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
-    return this.historiasFiltradas.slice(inicio, inicio + this.registrosPorPagina);
-  }
-
-  get totalPaginas(): number {
-    return Math.ceil(this.historiasFiltradas.length / this.registrosPorPagina);
-  }
-
-  get paginas(): number[] {
-    return Array.from({ length: this.totalPaginas }, (_, indice) => indice + 1);
-  }
-
-  actualizarBusqueda(event: Event): void {
-    if (event.target instanceof HTMLInputElement) {
-      this.terminoBusqueda = event.target.value;
-      this.paginaActual = 1;
-    }
+  iconoOrden(columna: ColumnaOrden): string {
+    return this.columnaOrden !== columna ? 'fa-sort' : (this.direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
   }
 
   cambiarPagina(pagina: number): void {
-    if (pagina >= 1 && pagina <= this.totalPaginas) {
-      this.paginaActual = pagina;
+    if (pagina >= 0 && pagina < this.totalPaginas && pagina !== this.pagina) {
+      this.pagina = pagina;
+      this.cargar();
     }
   }
 
-  verDetalle(historia: HistoriaMedica, contenido: TemplateRef<unknown>): void {
-    this.historiaDetalle = historia;
-    this.modalDetalle = this.modalService.open(contenido, {
-      size: 'lg',
-      scrollable: true,
-      ariaLabelledBy: 'detalleHistoriaTitulo'
+  cambiarTamanio(): void {
+    this.pagina = 0;
+    this.cargar();
+  }
+
+  get paginas(): number[] {
+    const inicio = Math.max(0, Math.min(this.pagina - 2, this.totalPaginas - 5));
+    const fin = Math.min(this.totalPaginas, inicio + 5);
+    return Array.from({ length: fin - inicio }, (_, i) => inicio + i);
+  }
+
+  get desdeRegistro(): number {
+    return this.totalElementos === 0 ? 0 : this.pagina * this.tamanio + 1;
+  }
+
+  get hastaRegistro(): number {
+    return Math.min((this.pagina + 1) * this.tamanio, this.totalElementos);
+  }
+
+  // =====================  FORMULARIOS  =====================
+
+  private inicializarFormularios(): void {
+    this.form = this.fb.group({
+      clienteId: [null, Validators.required],
+      mascotaId: [{ value: null, disabled: true }, Validators.required],
+      citaId: [{ value: null, disabled: true }, Validators.required],
+      medicoId: [{ value: null, disabled: true }, Validators.required],
+      fechaHora: [null, Validators.required],
+      motivo: ['', [Validators.required, Validators.maxLength(500)]],
+      diagnostico: ['', [Validators.required, Validators.maxLength(2000)]],
+      observaciones: ['', [Validators.required, Validators.maxLength(2000)]]
     });
-    this.modalDetalle.hidden.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.historiaDetalle = null;
-      this.modalDetalle = undefined;
+    this.formAnotacion = this.fb.group({
+      medicoId: [null, Validators.required],
+      descripcion: ['', [Validators.required, Validators.maxLength(2000)]],
+      diagnostico: ['', [Validators.required, Validators.maxLength(2000)]],
+      observaciones: ['', [Validators.required, Validators.maxLength(2000)]]
     });
   }
 
-  /** Mascotas activas que todavía no tienen historia médica. */
-  get mascotasDisponibles(): Mascota[] {
-    const conHistoria = new Set(this.listHistorias.map(({ historia }) => historia.mascota?.mascotaId));
-    return this.listMascotas.filter(mascota =>
-      mascota.mascotaId != null && mascota.activo !== false && !conHistoria.has(mascota.mascotaId));
+  get f(): { [key: string]: AbstractControl } {
+    return this.form.controls;
   }
 
-  /** Veterinario asignado a la cita indicada (lista vacía si no hay cita o no tiene médico). */
-  medicosDeCita(citaId: number | null | undefined): Medico[] {
-    const medico = citaId == null ? undefined : this.citasDisponibles.find(cita => cita.id === citaId)?.medico;
-    return medico?.id != null ? [medico] : [];
+  get fa(): { [key: string]: AbstractControl } {
+    return this.formAnotacion.controls;
   }
 
-  /** Citas asignadas a la mascota de la historia (el backend ya las filtra por mascota). */
-  get citasDisponibles(): Cita[] {
-    return this.historiaAnotacion ? this.listCitas.filter(cita => cita.id != null) : [];
+  nuevaHistoria(): void {
+    this.modoFormulario = 'C';
+    this.titleModal = 'Nueva historia clínica';
+    this.titleBoton = 'Guardar historia';
+    this.historiaSelected = null;
+    this.maxFechaConsulta = ahoraInput();
+    this.reiniciar();
+    this.f['clienteId'].enable();
+    this.cargarCombos();
+    this.abrir('modalCrearHistoria', 'F');
   }
 
-  /** Indica si la cita ya está asociada a alguna anotación de la historia seleccionada. */
-  citaConAnotacion(cita: Cita): boolean {
-    return !!this.historiaAnotacion?.anotaciones.some(anotacion => anotacion.cita?.id === cita.id);
+  abrirEdicion(fila: HistoriaResumen): void {
+    this.modoFormulario = 'E';
+    this.titleModal = 'Editar historia clínica';
+    this.titleBoton = 'Actualizar historia';
+    this.historiaSelected = fila;
+    this.reiniciar();
+    this.historiaService.buscarPorId(fila.id).subscribe({
+      next: (rs) => {
+        const h = rs.historia;
+        this.clientes = h.mascota?.cliente ? [h.mascota.cliente] : [];
+        this.mascotas = h.mascota ? [h.mascota] : [];
+        this.citas = h.cita ? [h.cita] : [];
+        this.medicos = h.medico ? [h.medico] : [];
+        this.form.patchValue({
+          clienteId: h.mascota?.cliente?.id ?? null,
+          mascotaId: h.mascota?.mascotaId ?? null,
+          citaId: h.cita?.id ?? null,
+          medicoId: h.medico?.id ?? null,
+          fechaHora: aInputFechaHora(h.fechaConsulta),
+          motivo: h.motivo ?? '',
+          diagnostico: h.diagnostico ?? '',
+          observaciones: h.observaciones ?? ''
+        }, { emitEvent: false });
+        // Solo el contenido clínico se edita; cliente, mascota, cita, veterinario y fecha quedan fijos.
+        ['clienteId', 'mascotaId', 'citaId', 'medicoId', 'fechaHora'].forEach((c) => this.f[c].disable());
+        this.abrir('modalCrearHistoria', 'F');
+      },
+      error: (err) => Swal.fire('No se pudo cargar la historia', mensajeError(err), 'error')
+    });
   }
 
-  nombreCompleto(persona?: { nombres?: string; apellidos?: string } | null): string {
-    return `${persona?.nombres ?? ''} ${persona?.apellidos ?? ''}`.trim() || 'No informado';
-  }
-
-  abrirNuevaHistoria(contenido: TemplateRef<unknown>): void {
-    if (this.guardando) {
+  /** Combo dependiente 1: cliente → sus mascotas. */
+  private alCambiarCliente(): void {
+    const clienteId = this.f['clienteId'].value as number | null;
+    this.mascotas = [];
+    this.citas = [];
+    this.f['mascotaId'].reset();
+    this.f['citaId'].reset();
+    this.f['citaId'].disable();
+    if (!clienteId) {
+      this.f['mascotaId'].disable();
       return;
     }
-    this.formHistoria.reset({ mascotaId: null });
-    this.historiaAnotacion = null;
-    this.abrirFormulario(contenido, 'formHistoriaTitulo');
-    this.cargarCatalogos(forkJoin({ mascotas: this.mascotaService.listarMascotas() }));
+    this.cargandoMascotas = true;
+    this.mascotaService.listarPorCliente(Number(clienteId)).subscribe({
+      next: (lista) => {
+        this.mascotas = lista.filter((m) => m.activo !== false);
+        this.cargandoMascotas = false;
+        this.f['mascotaId'].enable();
+      },
+      error: (err) => {
+        this.cargandoMascotas = false;
+        this.errorCombos = mensajeError(err, 'No fue posible cargar las mascotas del cliente.');
+      }
+    });
   }
 
-  abrirNuevaAnotacion(historia: HistoriaMedica, contenido: TemplateRef<unknown>): void {
-    if (this.guardando) {
+  /** Combo dependiente 2: mascota → sus citas ya ocurridas y no canceladas. */
+  private alCambiarMascota(): void {
+    const mascotaId = this.f['mascotaId'].value as number | null;
+    this.citas = [];
+    this.f['citaId'].reset();
+    if (!mascotaId) {
+      this.f['citaId'].disable();
       return;
     }
-    this.historiaAnotacion = historia;
-    this.listCitas = [];
-    this.anotacionesForm.clear();
-    this.anotacionesForm.push(this.crearFilaAnotacion());
-
-    const mascotaId = historia.historia.mascota?.mascotaId;
-    if (mascotaId == null) {
-      this.errorCatalogos = 'La historia no tiene una mascota asociada para consultar sus citas.';
-      return;
-    }
-    this.cargarCatalogos(forkJoin({ citas: this.citaService.listarCitasPorMascota(mascotaId) }));
-    this.abrirFormulario(contenido, 'formAnotacionTitulo');
+    this.cargandoCitas = true;
+    this.citaService.listarCitasPorMascota(Number(mascotaId)).subscribe({
+      next: (lista) => {
+        this.citas = lista.filter((c) => (c.estado ?? '').toUpperCase() !== 'CANCELADA'
+          && new Date(c.fechaHora).getTime() <= Date.now());
+        this.cargandoCitas = false;
+        this.f['citaId'].enable();
+      },
+      error: (err) => {
+        this.cargandoCitas = false;
+        this.errorCombos = mensajeError(err, 'No fue posible cargar las citas de la mascota.');
+      }
+    });
   }
 
-  cerrarFormulario(): void {
-    if (!this.guardando) {
-      this.modalFormulario?.close();
+  /** Al elegir la cita se completan veterinario, fecha y motivo (el veterinario debe ser el de la cita). */
+  private alCambiarCita(): void {
+    const cita = this.citas.find((c) => c.id === this.f['citaId'].value);
+    if (!cita || this.modoFormulario !== 'C') {
+      return;
     }
+    this.medicos = cita.medico ? [cita.medico] : [];
+    this.f['medicoId'].setValue(cita.medico?.id ?? null, { emitEvent: false });
+    this.f['fechaHora'].setValue(aInputFechaHora(cita.fechaHora), { emitEvent: false });
+    this.f['motivo'].setValue(cita.motivo ?? '', { emitEvent: false });
+  }
+
+  etiquetaCita(c: Cita): string {
+    return `${(c.fechaHora as string).toString().replace('T', ' ').slice(0, 16)} · ${c.motivo ?? ''}`;
   }
 
   guardarHistoria(): void {
-    if (this.guardando) {
+    if (this.form.invalid || this.enviando) {
+      this.form.markAllAsTouched();
       return;
     }
-    this.formHistoria.markAllAsTouched();
-    const mascotaId = this.formHistoria.controls.mascotaId.value;
-    if (mascotaId == null || !this.mascotasDisponibles.some(mascota => mascota.mascotaId === mascotaId)) {
-      this.respuestaError = 'Selecciona una mascota disponible.';
+    const v = this.form.getRawValue();
+    const rq: HistoriaClinicaRq = {
+      clienteId: Number(v.clienteId),
+      mascotaId: Number(v.mascotaId),
+      citaId: Number(v.citaId),
+      medicoId: Number(v.medicoId),
+      fechaHora: aFechaBackend(v.fechaHora),
+      motivo: String(v.motivo).trim(),
+      diagnostico: String(v.diagnostico).trim(),
+      observaciones: String(v.observaciones).trim()
+    };
+    this.enviando = true;
+    this.respuestaError = '';
+    const solicitud = this.modoFormulario === 'C'
+      ? this.historiaService.crearHistoria(rq)
+      : this.historiaService.actualizarHistoria(this.historiaSelected?.id as number, rq);
+    solicitud.subscribe({
+      next: (rs) => {
+        this.enviando = false;
+        this.cerrarFormulario();
+        this.cargar();
+        Swal.fire('Operación exitosa', rs?.message ?? 'Historia clínica guardada.', 'success');
+      },
+      error: (err) => {
+        this.enviando = false;
+        this.respuestaError = mensajeError(err, 'No fue posible guardar la historia clínica.');
+      }
+    });
+  }
+
+  cerrarFormulario(): void {
+    this.modalForm?.hide();
+    this.reiniciar();
+  }
+
+  private reiniciar(): void {
+    this.form.reset({ motivo: '', diagnostico: '', observaciones: '' });
+    this.f['mascotaId'].disable();
+    this.f['citaId'].disable();
+    this.f['medicoId'].disable();
+    this.f['fechaHora'].enable();
+    this.mascotas = [];
+    this.citas = [];
+    this.respuestaError = '';
+    this.errorCombos = '';
+  }
+
+  private cargarCombos(): void {
+    this.clienteService.listarClientesActivos().subscribe({
+      next: (l) => (this.clientes = l),
+      error: (err) => (this.errorCombos = mensajeError(err, 'No fue posible cargar los clientes.'))
+    });
+  }
+
+  // =====================  DETALLE Y ANOTACIONES  =====================
+
+  /** Abre el detalle de la historia con el histórico de anotaciones. */
+  verHistoria(fila: HistoriaResumen): void {
+    this.historiaService.buscarPorId(fila.id).subscribe({
+      next: (rs) => {
+        this.detalle = rs;
+        this.historiaAnotacion = fila;
+        this.anotacionesQ = '';
+        this.anotacionesPagina = 0;
+        this.anotacionesDir = 'desc';
+        this.anotacionesColumna = 'fecha';
+        this.anotacionDetalle = null;
+        this.cargarAnotaciones();
+        this.abrir('modalVerHistoria', 'D');
+      },
+      error: (err) => Swal.fire('No se pudo consultar', mensajeError(err, 'Registro no encontrado.'), 'error')
+    });
+  }
+
+  cargarAnotaciones(): void {
+    const id = this.detalle?.historia.id;
+    if (!id) {
       return;
     }
-    const solicitud: HistoriaRq = { mascotaId };
-    this.enviar(this.historiaService.crearHistoria(solicitud), 'La historia médica fue creada correctamente.');
+    const filtro: FiltroPaginado = {
+      page: this.anotacionesPagina, size: this.anotacionesTamanio, sort: this.anotacionesColumna,
+      dir: this.anotacionesDir, q: this.anotacionesQ.trim()
+    };
+    this.cargandoAnotaciones = true;
+    this.errorAnotaciones = '';
+    this.anotacionService.listarPorHistoria(id, filtro).subscribe({
+      next: (rs) => {
+        this.anotaciones = rs.content;
+        this.anotacionesTotal = rs.totalElements;
+        this.anotacionesPaginas = rs.totalPages;
+        this.cargandoAnotaciones = false;
+      },
+      error: (err) => {
+        this.cargandoAnotaciones = false;
+        this.anotaciones = [];
+        this.errorAnotaciones = mensajeError(err, 'No fue posible cargar las anotaciones.');
+      }
+    });
+  }
+
+  buscarAnotacion(event: Event): void {
+    this.busquedaAnotacion$.next((event.target as HTMLInputElement).value);
+  }
+
+  ordenarAnotaciones(columna: ColumnaAnotacion): void {
+    if (this.anotacionesColumna === columna) {
+      this.anotacionesDir = this.anotacionesDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.anotacionesColumna = columna;
+      this.anotacionesDir = columna === 'fecha' ? 'desc' : 'asc';
+    }
+    this.anotacionesPagina = 0;
+    this.cargarAnotaciones();
+  }
+
+  iconoOrdenAnotacion(columna: ColumnaAnotacion): string {
+    return this.anotacionesColumna !== columna ? 'fa-sort' : (this.anotacionesDir === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+  }
+
+  cambiarPaginaAnotaciones(pagina: number): void {
+    if (pagina >= 0 && pagina < this.anotacionesPaginas && pagina !== this.anotacionesPagina) {
+      this.anotacionesPagina = pagina;
+      this.cargarAnotaciones();
+    }
+  }
+
+  /** Detalle de una anotación (con las fórmulas de su consulta). */
+  verAnotacion(a: AnotacionHistoria): void {
+    this.anotacionService.buscarPorId(a.id).subscribe({
+      next: (rs) => (this.anotacionDetalle = rs),
+      error: (err) => Swal.fire('No se pudo consultar', mensajeError(err, 'Registro no encontrado.'), 'error')
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.modalDetalle?.hide();
+    this.anotacionDetalle = null;
+  }
+
+  // ---- nueva anotación ----
+
+  /** Abre el formulario de anotación; si viene desde el detalle, lo cierra y lo reabre al terminar. */
+  nuevaAnotacion(fila: HistoriaResumen, desdeDetalle = false): void {
+    this.historiaAnotacion = fila;
+    this.reabrirDetalle = desdeDetalle;
+    this.errorAnotacion = '';
+    this.formAnotacion.reset({ descripcion: '', diagnostico: '', observaciones: '', medicoId: fila.medicoId ?? null });
+    this.medicoService.listar().subscribe({
+      next: (l) => (this.medicos = l.filter((m) => m.estado !== false)),
+      error: (err) => (this.errorAnotacion = mensajeError(err, 'No fue posible cargar los veterinarios.'))
+    });
+    if (desdeDetalle) {
+      this.modalDetalle?.hide();
+    }
+    this.abrir('modalAnotacion', 'A');
+  }
+
+  /** Atajo: agregar anotación a la historia que se está viendo. */
+  nuevaAnotacionDelDetalle(): void {
+    if (this.historiaAnotacion) {
+      this.nuevaAnotacion(this.historiaAnotacion, true);
+    }
   }
 
   guardarAnotacion(): void {
-    if (this.guardando) {
+    if (this.formAnotacion.invalid || this.enviandoAnotacion || !this.historiaAnotacion) {
+      this.formAnotacion.markAllAsTouched();
       return;
     }
-    this.formAnotacion.markAllAsTouched();
-    const historiaId = this.historiaAnotacion?.historia.id;
-    const filas = this.anotacionesForm.getRawValue();
-    if (this.formAnotacion.invalid || historiaId == null || filas.length === 0) {
-      this.respuestaError = 'Completa los campos obligatorios de todas las anotaciones.';
+    const v = this.formAnotacion.getRawValue();
+    const rq: AnotacionRq = {
+      historiaId: this.historiaAnotacion.id,
+      medicoId: Number(v.medicoId),
+      descripcion: String(v.descripcion).trim(),
+      diagnostico: String(v.diagnostico).trim(),
+      observaciones: String(v.observaciones).trim()
+    };
+    this.enviandoAnotacion = true;
+    this.errorAnotacion = '';
+    this.anotacionService.crearAnotacion(rq).subscribe({
+      next: (rs) => {
+        this.enviandoAnotacion = false;
+        this.modalAnotacion?.hide();
+        this.cargar();
+        Swal.fire('Operación exitosa', rs?.message ?? 'Anotación creada.', 'success').then(() => {
+          if (this.reabrirDetalle && this.historiaAnotacion) {
+            this.verHistoria(this.historiaAnotacion);
+          }
+        });
+      },
+      error: (err) => {
+        this.enviandoAnotacion = false;
+        this.errorAnotacion = mensajeError(err, 'No fue posible guardar la anotación.');
+      }
+    });
+  }
+
+  cancelarAnotacion(): void {
+    this.modalAnotacion?.hide();
+    if (this.reabrirDetalle && this.historiaAnotacion) {
+      this.verHistoria(this.historiaAnotacion);
+    }
+  }
+
+  private abrir(id: string, cual: 'F' | 'D' | 'A'): void {
+    const el = document.getElementById(id);
+    if (!el) {
       return;
     }
-    const solicitudes: AnotacionHistoriaRq[] = [];
-    for (const { medicoId, citaId, descripcion, diagnostico, observaciones } of filas) {
-      if (medicoId == null || citaId == null ||
-        !this.medicosDeCita(citaId).some(medico => medico.id === medicoId)) {
-        this.respuestaError = 'Cada anotación debe tener una cita con su veterinario asignado.';
-        return;
-      }
-      solicitudes.push({
-        historiaId, medicoId, citaId, descripcion: descripcion.trim(),
-        diagnostico: diagnostico.trim(), observaciones: observaciones.trim()
-      });
+    const Modal = (window as unknown as WindowBootstrap).bootstrap.Modal;
+    if (cual === 'F') {
+      this.modalForm ??= new Modal(el);
+      this.modalForm.show();
+    } else if (cual === 'D') {
+      this.modalDetalle ??= new Modal(el);
+      this.modalDetalle.show();
+    } else {
+      this.modalAnotacion ??= new Modal(el);
+      this.modalAnotacion.show();
     }
-
-    // Se guardan en orden; si una falla, se retiran del formulario las ya creadas para no duplicarlas al reintentar.
-    let guardadas = 0;
-    this.guardando = true;
-    this.respuestaError = '';
-    from(solicitudes).pipe(
-      concatMap(solicitud => this.anotacionHistoriaService.crearAnotacionHistoria(solicitud)),
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.guardando = false)
-    ).subscribe({
-      next: () => guardadas++,
-      complete: () => {
-        this.guardando = false;
-        this.cerrarFormulario();
-        this.listarHistorias();
-        void Swal.fire('Operación exitosa', guardadas === 1
-          ? 'La anotación fue creada correctamente.'
-          : `Se crearon ${guardadas} anotaciones correctamente.`, 'success');
-      },
-      error: error => {
-        for (let i = 0; i < guardadas; i++) {
-          this.anotacionesForm.removeAt(0);
-        }
-        const detalle = error?.error?.message || 'No fue posible guardar la anotación. Intenta nuevamente.';
-        this.respuestaError = guardadas > 0
-          ? `Se guardaron ${guardadas} anotación(es); las restantes no se guardaron: ${detalle}`
-          : detalle;
-        if (guardadas > 0) {
-          this.listarHistorias();
-        }
-        console.error('Error al guardar anotaciones de historia médica:', error);
-      }
-    });
-  }
-
-  private abrirFormulario(contenido: TemplateRef<unknown>, titulo: string): void {
-    this.respuestaError = '';
-    const modal = this.modalService.open(contenido, {
-      size: 'lg',
-      backdrop: 'static',
-      keyboard: false,
-      ariaLabelledBy: titulo
-    });
-    this.modalFormulario = modal;
-    modal.hidden.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      if (this.modalFormulario === modal) {
-        this.modalFormulario = undefined;
-        this.historiaAnotacion = null;
-      }
-    });
-  }
-
-  private cargarCatalogos(peticion: Observable<{ mascotas?: Mascota[]; citas?: Cita[] }>): void {
-    this.cargandoCatalogos = true;
-    this.errorCatalogos = '';
-    peticion.pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.cargandoCatalogos = false)
-    ).subscribe({
-      next: ({ mascotas, citas }) => {
-        this.listMascotas = mascotas ?? this.listMascotas;
-        this.listCitas = citas ?? this.listCitas;
-      },
-      error: error => {
-        this.errorCatalogos = 'No fue posible cargar la información del formulario.';
-        console.error('Error al cargar catálogos de historia médica:', error);
-      }
-    });
-  }
-
-  private enviar(solicitud: Observable<unknown>, mensaje: string): void {
-    this.guardando = true;
-    this.respuestaError = '';
-    solicitud.pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.guardando = false)
-    ).subscribe({
-      next: () => {
-        this.guardando = false;
-        this.cerrarFormulario();
-        this.listarHistorias();
-        void Swal.fire('Operación exitosa', mensaje, 'success');
-      },
-      error: error => {
-        this.respuestaError = error?.error?.message || 'No fue posible guardar la información. Intenta nuevamente.';
-        console.error('Error al guardar en historia médica:', error);
-      }
-    });
-  }
-
-  private normalizarTexto(texto: string): string {
-    return texto.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 }

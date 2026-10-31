@@ -84,6 +84,24 @@ export class BackendService {
     });
   }
 
+  // Servicio generico para realizar peticiones PATCH al backend (cambios parciales, por ejemplo activar/desactivar).
+  patch<T>(
+    urlApi: string,
+    endpoint: string,
+    service: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any
+  ): Observable<T> {
+    const tokenRecuperado = localStorage.getItem('token') || ''; // Evita `null`
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
+    });
+    return this.http.patch<T>(`${urlApi}/${endpoint}/${service}`, data, {
+      headers: headers,
+    });
+  }
+
   // Servicio generico para realizar peticiones POST al backend con archivos.
   postFile<T>(
     urlApi: string,

@@ -25,13 +25,41 @@
                     <table class="table table-stripped table-condensed table-responsive">
                         <thead>
                             <tr>
-                                <th class="text-center">Nombres</th>
-                                <th class="text-center">Apellidos</th>
-                                <th class="text-center">Especialización</th>
-                                <th class="text-center">Registro Profesional</th>
-                                <th class="text-center">Tipo de doc</th>
-                                <th class="text-center">Número de doc.</th>
-                                <th class="text-center">Estado</th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'nombres' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('nombres')">
+                                        Nombres <i class="fa" [ngClass]="iconoOrden('nombres')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'apellidos' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('apellidos')">
+                                        Apellidos <i class="fa" [ngClass]="iconoOrden('apellidos')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'especializacion' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('especializacion')">
+                                        Especialización <i class="fa" [ngClass]="iconoOrden('especializacion')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'registro' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('registro')">
+                                        Registro Profesional <i class="fa" [ngClass]="iconoOrden('registro')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'tipoDocumento' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('tipoDocumento')">
+                                        Tipo de doc <i class="fa" [ngClass]="iconoOrden('tipoDocumento')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'numeroDocumento' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('numeroDocumento')">
+                                        Número de doc. <i class="fa" [ngClass]="iconoOrden('numeroDocumento')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center" [attr.aria-sort]="columnaOrden === 'estado' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('estado')">
+                                        Estado <i class="fa" [ngClass]="iconoOrden('estado')" aria-hidden="true"></i>
+                                    </button>
+                                </th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>

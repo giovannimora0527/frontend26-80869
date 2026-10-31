@@ -1,3 +1,22 @@
 .descripcion-anotacion {
     white-space: pre-wrap;
 }
+
+.estado-cita {
+  background-color: #e9ecef;
+  color: #212529;
+
+  &[data-estado='programada'] { background-color: #ffc107; }
+  &[data-estado='pendiente'] { background-color: #fd7e14; }
+  &[data-estado='cancelada'] { background-color: #dc3545; color: #fff; }
+  &[data-estado='confirmada'],
+  &[data-estado='atendida'] { background-color: #198754; color: #fff; }
+}
+
+.acciones {
+  white-space: nowrap;
+
+  .btn {
+    margin: 0 2px 2px 0;
+  }
+}

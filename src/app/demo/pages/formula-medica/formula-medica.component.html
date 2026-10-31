@@ -1,227 +1,275 @@
 <div class="container-fluid">
-    <div class="card">
-        <div class="card-header">
-            <div class="row">
-                <div class="col col-md-9">
-                    <input class="form-control" placeholder="Buscar fórmula" type="text"
-                        (input)="actualizarBusqueda($event)" />
-                </div>
-                <div class="col col-md-3 text-end">
-                    <button type="button" class="btn btn-outline-primary" (click)="nuevaFormula('C')">
-                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva fórmula
-                    </button>
-                </div>
-            </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="limpiarFiltros()">
+            <i class="fa fa-eraser me-1" aria-hidden="true"></i>Limpiar filtros
+          </button>
+          <button type="button" class="btn btn-outline-info" (click)="cargar()">
+            <i class="fa fa-rotate me-1" aria-hidden="true"></i>Actualizar
+          </button>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="table table-responsive table-condensed col col-md-12">
-                    <table class="table table-stripped table-condensed table-responsive">
-                        <thead>
-                            <tr>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'medicamento' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('medicamento')">
-                                        Medicamento <i class="fa"
-                                            [ngClass]="columnaOrden === 'medicamento' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'dosis' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('dosis')">
-                                        Dosis <i class="fa"
-                                            [ngClass]="columnaOrden === 'dosis' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'duracion' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('duracion')">
-                                        Duración <i class="fa"
-                                            [ngClass]="columnaOrden === 'duracion' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'frecuencia' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('frecuencia')">
-                                        Frecuencia <i class="fa"
-                                            [ngClass]="columnaOrden === 'frecuencia' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'indicaciones' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('indicaciones')">
-                                        Indicaciones <i class="fa"
-                                            [ngClass]="columnaOrden === 'indicaciones' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'cliente' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('cliente')">
-                                        Cliente <i class="fa"
-                                            [ngClass]="columnaOrden === 'cliente' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center"
-                                    [attr.aria-sort]="columnaOrden === 'fechaCreacionRegistro' ? (direccionOrden === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
-                                        (click)="ordenarPor('fechaCreacionRegistro')">
-                                        Fecha de creación <i class="fa"
-                                            [ngClass]="columnaOrden === 'fechaCreacionRegistro' ? (direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"
-                                            aria-hidden="true"></i>
-                                    </button>
-                                </th>
-                                <th class="text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody *ngIf="listFormulas.length === 0">
-                            <tr>
-                                <td colspan="8" class="text-center">No hay fórmulas registradas</td>
-                            </tr>
-                        </tbody>
-                        <tbody *ngIf="listFormulas.length > 0 && formulasFiltradas.length === 0">
-                            <tr>
-                                <td colspan="8" class="text-center">No se encontraron fórmulas</td>
-                            </tr>
-                        </tbody>
-                        <tbody *ngIf="formulasFiltradas.length > 0">
-                            <tr *ngFor="let formula of formulasPaginadas">
-                                <td class="text-center">{{ formula.medicamento?.nombre }}</td>
-                                <td class="text-center">{{ formula.dosis }}</td>
-                                <td class="text-center">{{ formula.duracion }}</td>
-                                <td class="text-center">{{ formula.frecuencia }}</td>
-                                <td class="text-center">{{ formula.indicaciones }}</td>
-                                <td class="text-center">{{ formula.cita?.cliente?.nombres }} {{ formula.cita?.cliente?.apellidos }}</td>
-                                <td class="text-center">{{ formula.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-outline-info" (click)="abrirEdicion(formula)"
-                                        ngbTooltip="Editar fórmula" tooltipClass="tooltip-info" triggers="hover focus"
-                                        placement="top" container="body">
-                                        <i class="fa fa-edit" aria-hidden="true"></i>&nbsp;Editar
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <nav *ngIf="totalPaginas > 1" aria-label="Paginación de fórmulas">
-                <ul class="pagination justify-content-end mb-0">
-                    <li class="page-item" [class.disabled]="paginaActual === 1">
-                        <button class="page-link" type="button" [disabled]="paginaActual === 1"
-                            (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
-                    </li>
-                    <li class="page-item" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual">
-                        <button class="page-link" type="button"
-                            [attr.aria-current]="pagina === paginaActual ? 'page' : null"
-                            (click)="cambiarPagina(pagina)">{{ pagina }}</button>
-                    </li>
-                    <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
-                        <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas"
-                            (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
-                    </li>
-                </ul>
-            </nav>
+        <button type="button" class="btn btn-primary" (click)="nuevaFormula()">
+          <i class="fa fa-plus me-1" aria-hidden="true"></i>Nueva fórmula
+        </button>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+          <label class="form-label small text-muted mb-1" for="buscarFormula">Buscar</label>
+          <input id="buscarFormula" class="form-control" type="search" placeholder="Mascota, cliente, veterinario o medicamento"
+            aria-label="Buscar fórmula" [value]="q" (input)="buscar($event)" />
         </div>
+        <div class="col-lg-3 col-md-6">
+          <label class="form-label small text-muted mb-1" for="filtroMedicamento">Medicamento</label>
+          <select id="filtroMedicamento" class="form-select" [(ngModel)]="medicamentoFiltro" (change)="aplicarFiltros()">
+            <option [ngValue]="null">Todos</option>
+            @for (m of medicamentos; track m.id) { <option [ngValue]="m.id">{{ m.nombre }}</option> }
+          </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <label class="form-label small text-muted mb-1" for="filtroEstadoFormula">Estado</label>
+          <select id="filtroEstadoFormula" class="form-select" [(ngModel)]="estadoFiltro" (change)="aplicarFiltros()">
+            <option value="">Todas</option>
+            <option value="true">Activas</option>
+            <option value="false">Inactivas</option>
+          </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <label class="form-label small text-muted mb-1" for="desdeFormula">Emitida desde</label>
+          <input id="desdeFormula" type="date" class="form-control" [(ngModel)]="desde" (change)="aplicarFiltros()" />
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <label class="form-label small text-muted mb-1" for="hastaFormula">Hasta</label>
+          <input id="hastaFormula" type="date" class="form-control" [(ngModel)]="hasta" (change)="aplicarFiltros()" />
+        </div>
+      </div>
     </div>
+
+    <div class="card-body">
+      @if (errorFormulas) {
+        <div class="alert alert-danger" role="alert">
+          {{ errorFormulas }}
+          <button type="button" class="btn btn-link" (click)="cargar()">Reintentar</button>
+        </div>
+      }
+      <div class="table-responsive">
+        <table class="table table-striped table-condensed align-middle">
+          <thead>
+            <tr>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('fechaCreacion')">Creada <i class="fa" [ngClass]="iconoOrden('fechaCreacion')"></i></button></th>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('fechaEmision')">Emisión <i class="fa" [ngClass]="iconoOrden('fechaEmision')"></i></button></th>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('mascota')">Mascota <i class="fa" [ngClass]="iconoOrden('mascota')"></i></button></th>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('cliente')">Cliente <i class="fa" [ngClass]="iconoOrden('cliente')"></i></button></th>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('veterinario')">Veterinario <i class="fa" [ngClass]="iconoOrden('veterinario')"></i></button></th>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('medicamento')">Medicamento <i class="fa" [ngClass]="iconoOrden('medicamento')"></i></button></th>
+              <th class="text-center"><button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('estado')">Estado <i class="fa" [ngClass]="iconoOrden('estado')"></i></button></th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (cargando) {
+              <tr><td colspan="8" class="text-center text-muted"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando fórmulas...</td></tr>
+            } @else if (!errorFormulas && filas.length === 0) {
+              <tr><td colspan="8" class="text-center">No se encontraron fórmulas</td></tr>
+            }
+            @for (f of filas; track f.id) {
+              <tr>
+                <td class="text-center">{{ f.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
+                <td class="text-center">{{ f.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</td>
+                <td class="text-center">{{ f.mascotaNombre }}</td>
+                <td class="text-center">{{ f.clienteNombre }}</td>
+                <td class="text-center">{{ f.medicoNombre }}</td>
+                <td class="text-center">{{ f.medicamentoNombre }}</td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="f.activo ? 'bg-success' : 'bg-secondary'">{{ f.activo ? 'Activa' : 'Inactiva' }}</span>
+                </td>
+                <td class="text-center acciones">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="verFormula(f)">
+                    <i class="fa fa-eye me-1" aria-hidden="true"></i>Ver
+                  </button>
+                  <div ngbDropdown container="body" class="d-inline-block" placement="bottom-end">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" ngbDropdownToggle [attr.aria-label]="'Acciones de la fórmula de ' + f.mascotaNombre">
+                      Acciones
+                    </button>
+                    <div ngbDropdownMenu class="menu-acciones shadow">
+                      <button type="button" ngbDropdownItem [disabled]="!f.activo" (click)="abrirEdicion(f)">
+                        <i class="fa fa-edit text-info" aria-hidden="true"></i>
+                        <span><span class="accion-titulo">Editar fórmula</span>
+                          <span class="accion-ayuda">{{ f.activo ? 'Cambiar medicamento, dosis, frecuencia o indicaciones' : 'Una fórmula inactiva no se puede editar' }}</span></span>
+                      </button>
+                      <div class="dropdown-divider"></div>
+                      <button type="button" ngbDropdownItem [class.text-danger]="f.activo" (click)="cambiarEstado(f)">
+                        <i class="fa" [ngClass]="f.activo ? 'fa-toggle-off' : 'fa-toggle-on text-success'" aria-hidden="true"></i>
+                        <span><span class="accion-titulo">{{ f.activo ? 'Inactivar fórmula' : 'Activar fórmula' }}</span>
+                          <span class="accion-ayuda">{{ f.activo ? 'No se borra: queda guardada en el historial' : 'Vuelve a poder editarse' }}</span></span>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 small text-muted">
+          <span>Mostrar</span>
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="tamanio" (change)="cambiarTamanio()" aria-label="Registros por página">
+            @for (t of tamanios; track t) { <option [ngValue]="t">{{ t }}</option> }
+          </select>
+          <span>{{ desdeRegistro }}–{{ hastaRegistro }} de {{ totalElementos }}</span>
+        </div>
+        @if (totalPaginas > 1) {
+          <nav aria-label="Paginación de fórmulas">
+            <ul class="pagination mb-0">
+              <li class="page-item" [class.disabled]="pagina === 0"><button class="page-link" type="button" [disabled]="pagina === 0" (click)="cambiarPagina(pagina - 1)">Anterior</button></li>
+              @for (p of paginas; track p) {
+                <li class="page-item" [class.active]="p === pagina"><button class="page-link" type="button" (click)="cambiarPagina(p)">{{ p + 1 }}</button></li>
+              }
+              <li class="page-item" [class.disabled]="pagina >= totalPaginas - 1"><button class="page-link" type="button" [disabled]="pagina >= totalPaginas - 1" (click)="cambiarPagina(pagina + 1)">Siguiente</button></li>
+            </ul>
+          </nav>
+        }
+      </div>
+    </div>
+  </div>
 </div>
 
-
-
-<!-- Modal -->
-<div class="modal fade" id="modalCrearFormula" tabindex="-1" aria-labelledby="modalCrearFormulaLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="modalCrearFormulaLabel">{{ titleModal }}</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-                    (click)="closeModal()"></button>
-            </div>
-            <form [formGroup]="form" (ngSubmit)="guardarFormula()">
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="cita" class="form-label">Cita</label>
-                            <select id="cita" class="form-select" formControlName="cita" [compareWith]="compararCitas">
-                                <option [ngValue]="null" disabled>Selecciona una cita</option>
-                                <option *ngFor="let cita of listCitas" [ngValue]="cita">
-                                    {{ cita.fechaHora | date:'yyyy-MM-dd HH:mm' }} -
-                                    {{ cita.cliente?.nombres }} {{ cita.cliente?.apellidos }}
-                                    ({{ cita.mascota?.nombreMascota }})
-                                </option>
-                            </select>
-                            <div class="text-danger" *ngIf="f['cita'].touched && f['cita'].invalid">
-                                Selecciona una cita.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="medicamento" class="form-label">Medicamento</label>
-                            <select id="medicamento" class="form-select" formControlName="medicamento"
-                                [compareWith]="compararMedicamentos">
-                                <option [ngValue]="null" disabled>
-                                    {{ cargandoMedicamentos ? 'Cargando medicamentos...' :
-                                        errorMedicamentos ? 'No se pudieron cargar los medicamentos' :
-                                        listMedicamentos.length ? 'Selecciona un medicamento' : 'No hay medicamentos disponibles' }}
-                                </option>
-                                <option *ngFor="let medicamento of listMedicamentos" [ngValue]="medicamento">
-                                    {{ medicamento.nombre }} {{ medicamento.presentacion ? ' - ' + medicamento.presentacion : '' }}
-                                </option>
-                            </select>
-                            <div class="text-danger" *ngIf="errorMedicamentos" role="alert">{{ errorMedicamentos }}</div>
-                            <div class="text-danger" *ngIf="f['medicamento'].touched && f['medicamento'].invalid">
-                                Selecciona un medicamento.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="dosis" class="form-label">Dosis</label>
-                            <input id="dosis" class="form-control" formControlName="dosis">
-                            <div class="text-danger" *ngIf="f['dosis'].touched && f['dosis'].invalid">
-                                Ingresa la dosis.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="frecuencia" class="form-label">Frecuencia</label>
-                            <input id="frecuencia" class="form-control" formControlName="frecuencia">
-                            <div class="text-danger" *ngIf="f['frecuencia'].touched && f['frecuencia'].invalid">
-                                Ingresa la frecuencia.
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="duracion" class="form-label">Duración</label>
-                            <input id="duracion" class="form-control" formControlName="duracion">
-                            <div class="text-danger" *ngIf="f['duracion'].touched && f['duracion'].invalid">
-                                Ingresa la duración.
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <label for="indicaciones" class="form-label">Indicaciones</label>
-                            <textarea id="indicaciones" class="form-control" rows="3"
-                                formControlName="indicaciones"></textarea>
-                        </div>
-                    </div>
-                    <div class="alert alert-danger mt-3 mb-0" *ngIf="respuestaError" role="alert">{{ respuestaError }}
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        (click)="closeModal()">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" [disabled]="enviando">
-                        {{ enviando ? 'Enviando...' : titleBoton }}
-                    </button>
-                </div>
-            </form>
+<!-- Detalle completo de la fórmula (el listado solo muestra un resumen) -->
+<div class="modal fade" id="modalVerFormula" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header"><h1 class="modal-title fs-5"><i class="fa fa-prescription-bottle-medical me-2"></i>Detalle de la fórmula</h1></div>
+      @if (formulaDetalle; as fm) {
+        <div class="modal-body">
+          <h2 class="h6">Tratamiento</h2>
+          <dl class="row">
+            <dt class="col-sm-4">Medicamento</dt><dd class="col-sm-8">{{ fm.medicamento?.nombre }} <small class="text-muted">{{ fm.medicamento?.presentacion }}</small></dd>
+            <dt class="col-sm-4">Dosis</dt><dd class="col-sm-8">{{ fm.dosis }}</dd>
+            <dt class="col-sm-4">Frecuencia</dt><dd class="col-sm-8">{{ fm.frecuencia }}</dd>
+            <dt class="col-sm-4">Duración</dt><dd class="col-sm-8">{{ fm.duracion }}</dd>
+            <dt class="col-sm-4">Indicaciones</dt><dd class="col-sm-8 text-break">{{ fm.indicaciones || 'Sin indicaciones' }}</dd>
+            <dt class="col-sm-4">Estado</dt>
+            <dd class="col-sm-8"><span class="badge" [ngClass]="fm.activo !== false ? 'bg-success' : 'bg-secondary'">{{ fm.activo !== false ? 'Activa' : 'Inactiva' }}</span></dd>
+          </dl>
+          <hr />
+          <h2 class="h6">Paciente</h2>
+          <dl class="row">
+            <dt class="col-sm-4">Mascota</dt><dd class="col-sm-8">{{ fm.mascota?.nombreMascota }} · {{ fm.mascota?.raza?.nombre }}</dd>
+            <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ fm.mascota?.cliente?.nombres }} {{ fm.mascota?.cliente?.apellidos }}</dd>
+            <dt class="col-sm-4">Veterinario</dt><dd class="col-sm-8">{{ fm.medico?.nombres }} {{ fm.medico?.apellidos }} <small class="text-muted">{{ fm.medico?.registroProfesional }}</small></dd>
+          </dl>
+          <hr />
+          <h2 class="h6">Consulta y fechas</h2>
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Consulta (cita)</dt><dd class="col-sm-8">{{ fm.cita?.fechaHora | date:'yyyy-MM-dd HH:mm' }} · {{ fm.cita?.motivo }}</dd>
+            <dt class="col-sm-4">Fecha de emisión</dt><dd class="col-sm-8">{{ fm.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</dd>
+            <dt class="col-sm-4">Registrada</dt><dd class="col-sm-8">{{ fm.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</dd>
+            <dt class="col-sm-4">Última modificación</dt><dd class="col-sm-8">{{ (fm.fechaActualizacionRegistro | date:'yyyy-MM-dd HH:mm') || 'Sin modificaciones' }}</dd>
+          </dl>
         </div>
+      }
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" (click)="cerrarDetalle()">Cerrar</button></div>
     </div>
+  </div>
+</div>
+
+<!-- Crear / editar fórmula -->
+<div class="modal fade" id="modalCrearFormula" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5">{{ titleModal }}</h1>
+        <button type="button" class="btn-close" aria-label="Cerrar" [disabled]="enviando" (click)="cerrarFormulario()"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="guardarFormula()">
+        <div class="modal-body">
+          @if (errorCombos) { <div class="alert alert-warning py-2">{{ errorCombos }}</div> }
+          @if (modoFormulario === 'E') {
+            <div class="alert alert-info py-2">La consulta, la mascota y el veterinario no se pueden cambiar en una fórmula ya emitida.</div>
+          }
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" for="fClienteId">Cliente *</label>
+              <select id="fClienteId" class="form-select" formControlName="clienteId">
+                <option [ngValue]="null">Selecciona un cliente</option>
+                @for (c of clientes; track c.id) { <option [ngValue]="c.id">{{ c.nombres }} {{ c.apellidos }}</option> }
+              </select>
+              @if (f['clienteId'].touched && f['clienteId'].invalid) { <div class="text-danger small">Selecciona el cliente.</div> }
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="fMascotaId">Mascota *</label>
+              <select id="fMascotaId" class="form-select" formControlName="mascotaId">
+                <option [ngValue]="null">{{ cargandoMascotas ? 'Cargando...' : 'Selecciona una mascota' }}</option>
+                @for (m of mascotas; track m.mascotaId) { <option [ngValue]="m.mascotaId">{{ m.nombreMascota ?? m.nombre }}</option> }
+              </select>
+              @if (f['mascotaId'].touched && f['mascotaId'].invalid) { <div class="text-danger small">Selecciona la mascota.</div> }
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="fCitaId">Consulta (cita) *</label>
+              <select id="fCitaId" class="form-select" formControlName="citaId">
+                <option [ngValue]="null">{{ cargandoCitas ? 'Cargando...' : 'Selecciona la consulta' }}</option>
+                @for (c of citas; track c.id) { <option [ngValue]="c.id">{{ etiquetaCita(c) }}</option> }
+              </select>
+              @if (f['mascotaId'].value && !cargandoCitas && citas.length === 0 && modoFormulario === 'C') {
+                <div class="text-warning small">La mascota no tiene consultas realizadas.</div>
+              }
+              @if (f['citaId'].touched && f['citaId'].invalid) { <div class="text-danger small">Selecciona la consulta.</div> }
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="fMedicoId">Veterinario *</label>
+              <select id="fMedicoId" class="form-select" formControlName="medicoId">
+                <option [ngValue]="null">Selecciona un veterinario</option>
+                @for (m of medicos; track m.id) { <option [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option> }
+              </select>
+              @if (f['medicoId'].touched && f['medicoId'].invalid) { <div class="text-danger small">Selecciona el veterinario.</div> }
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="fMedicamentoId">Medicamento *</label>
+              <select id="fMedicamentoId" class="form-select" formControlName="medicamentoId">
+                <option [ngValue]="null">Selecciona un medicamento</option>
+                @for (m of medicamentos; track m.id) { <option [ngValue]="m.id">{{ m.nombre }} {{ m.presentacion ? '· ' + m.presentacion : '' }}</option> }
+              </select>
+              @if (f['medicamentoId'].touched && f['medicamentoId'].invalid) { <div class="text-danger small">Selecciona el medicamento.</div> }
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="fDosis">Dosis *</label>
+              <input id="fDosis" class="form-control" formControlName="dosis" placeholder="Ej: 0.5 ml" />
+              @if (f['dosis'].touched && f['dosis'].invalid) { <div class="text-danger small">Un número mayor a cero con su unidad (0.5 ml, 1 tableta).</div> }
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="fFrecuencia">Frecuencia *</label>
+              <input id="fFrecuencia" class="form-control" formControlName="frecuencia" placeholder="Ej: Cada 12 horas" maxlength="100" />
+              @if (f['frecuencia'].touched && f['frecuencia'].invalid) { <div class="text-danger small">Indica cada cuánto se administra.</div> }
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="fDuracion">Duración *</label>
+              <input id="fDuracion" class="form-control" formControlName="duracion" placeholder="Ej: 5 días" />
+              @if (f['duracion'].touched && f['duracion'].invalid) { <div class="text-danger small">Un número mayor a cero con unidad (5 días, 2 semanas); máx. 365 días.</div> }
+            </div>
+            <div class="col-md-8">
+              <label class="form-label" for="fIndicaciones">Indicaciones *</label>
+              <textarea id="fIndicaciones" class="form-control" rows="2" formControlName="indicaciones" maxlength="1000"></textarea>
+              @if (f['indicaciones'].touched && f['indicaciones'].invalid) { <div class="text-danger small">Las indicaciones son obligatorias.</div> }
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="fFechaEmision">Fecha de emisión *</label>
+              <input id="fFechaEmision" type="datetime-local" class="form-control" formControlName="fechaEmision" [attr.max]="maxEmision" />
+              <div class="form-text">No puede ser anterior a la consulta.</div>
+            </div>
+          </div>
+          @if (respuestaError) { <div class="alert alert-danger mt-3 mb-0" role="alert">{{ respuestaError }}</div> }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarFormulario()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="enviando">
+            @if (enviando) { <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> }
+            {{ titleBoton }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>

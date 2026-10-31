@@ -1,0 +1,78 @@
+<div class="login-page">
+  <section class="login-hero">
+    <div class="hero-content">
+      <img src="assets/images/logo_mascotas.png" alt="Logo de la clínica veterinaria" class="hero-logo" />
+      <h1>Cuidamos a quienes más quieres</h1>
+      <p>Atención veterinaria con amor, experiencia y compromiso para la salud de tu mascota.</p>
+      <div class="chips">
+        <span class="chip"><i class="fa-solid fa-stethoscope"></i> Consultas y controles</span>
+        <span class="chip"><i class="fa-solid fa-syringe"></i> Vacunación y prevención</span>
+        <span class="chip"><i class="fa-solid fa-book-medical"></i> Historia clínica digital</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="login-panel">
+    <div class="login-card">
+      <img src="assets/images/logo_mascotas.png" alt="" class="card-logo" />
+
+      @if (paso === 'credenciales') {
+        <h2>Iniciar sesión</h2>
+        <p class="subtitulo">Ingresa tus credenciales para continuar</p>
+
+        <form (ngSubmit)="ingresar()" autocomplete="off">
+          <label for="username">Usuario</label>
+          <input id="username" name="username" type="text" class="form-control" [(ngModel)]="username"
+            [disabled]="cargando" autocomplete="username" />
+
+          <label for="password">Contraseña</label>
+          <div class="input-clave">
+            <input id="password" name="password" [type]="verClave ? 'text' : 'password'" class="form-control"
+              [(ngModel)]="password" [disabled]="cargando" autocomplete="current-password" />
+            <button type="button" class="ojo" (click)="verClave = !verClave"
+              [attr.aria-label]="verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <i class="fa-solid" [ngClass]="verClave ? 'fa-eye-slash' : 'fa-eye'"></i>
+            </button>
+          </div>
+
+          @if (error) {
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          }
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="cargando">
+            {{ cargando ? 'Verificando...' : 'Ingresar' }}
+          </button>
+        </form>
+      } @else {
+        <h2>Verifica tu identidad</h2>
+        <p class="subtitulo">
+          Enviamos un código de 6 números a
+          <strong>{{ emailEnmascarado || 'tu correo' }}</strong>. Escríbelo aquí.
+        </p>
+
+        <form (ngSubmit)="verificar()" autocomplete="off">
+          <input name="codigo" type="text" inputmode="numeric" maxlength="6" class="form-control otp-input"
+            placeholder="000000" [(ngModel)]="codigo" (input)="soloNumeros()" [disabled]="cargando" autofocus />
+
+          @if (info) {
+            <div class="alert alert-success" role="status">{{ info }}</div>
+          }
+          @if (error) {
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          }
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="cargando || codigo.length !== 6">
+            {{ cargando ? 'Verificando...' : 'Verificar código' }}
+          </button>
+        </form>
+
+        <div class="acciones-otp">
+          <button type="button" class="btn-link" (click)="reenviar()" [disabled]="cargando || segundosReenvio > 0">
+            {{ segundosReenvio > 0 ? 'Reenviar código en ' + segundosReenvio + 's' : 'Reenviar código' }}
+          </button>
+          <button type="button" class="btn-link" (click)="volver()" [disabled]="cargando">Volver</button>
+        </div>
+      }
+    </div>
+  </section>
+</div>

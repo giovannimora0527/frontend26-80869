@@ -12,6 +12,8 @@ import { MedicoRq } from 'src/app/models/medico-rq';
 import { Especializacion } from 'src/app/models/especializacion';
 import { EspecializacionService } from '../especializacion/service/especializacion.service';
 
+type ColumnaOrdenMedico = 'nombres' | 'apellidos' | 'especializacion' | 'registro' | 'tipoDocumento' | 'numeroDocumento' | 'estado';
+
 @Component({
   selector: 'app-medico',
   imports: [CommonModule, ReactiveFormsModule],
@@ -65,6 +67,10 @@ export class MedicoComponent {
   paginaActual = 1;
   readonly registrosPorPagina = 5;
 
+  // Orden de la tabla (clic en el encabezado: ascendente / descendente).
+  columnaOrden: ColumnaOrdenMedico = 'nombres';
+  direccionOrden: 'asc' | 'desc' = 'asc';
+
   constructor(private readonly medicoService: MedicoService,
     private readonly especializacionService: EspecializacionService) {
     this.destroyRef.onDestroy(() => this.modalInstance?.dispose());
@@ -92,6 +98,11 @@ export class MedicoComponent {
      * @returns Un arreglo de médicos filtrados.
      */
   get medicoFiltrados(): Medico[] {
+    return [...this.filtrarMedicos()].sort((a, b) => this.compararMedicos(a, b));
+  }
+
+  /** Aplica solo el filtro de búsqueda (sin ordenar). */
+  private filtrarMedicos(): Medico[] {
     const termino = this.normalizarTexto(this.terminoBusqueda.trim());
     if (!termino) {
       return this.listMedicos;
@@ -120,6 +131,44 @@ export class MedicoComponent {
         this.normalizarTexto(String(valor ?? '')).includes(termino)
       );
     });
+  }
+
+  /** Alterna el orden al hacer clic en una columna; al cambiar de columna empieza ascendente. */
+  ordenarPor(columna: ColumnaOrdenMedico): void {
+    if (this.columnaOrden === columna) {
+      this.direccionOrden = this.direccionOrden === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.columnaOrden = columna;
+      this.direccionOrden = 'asc';
+    }
+    this.paginaActual = 1;
+  }
+
+  /** Icono Font Awesome de la flechita de la columna. */
+  iconoOrden(columna: ColumnaOrdenMedico): string {
+    if (this.columnaOrden !== columna) {
+      return 'fa-sort';
+    }
+    return this.direccionOrden === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  /** Valor de texto por el que se ordena cada columna. */
+  private valorOrden(medico: Medico, columna: ColumnaOrdenMedico): string {
+    switch (columna) {
+      case 'nombres': return medico.nombres ?? '';
+      case 'apellidos': return medico.apellidos ?? '';
+      case 'especializacion': return medico.especializacion?.nombre ?? '';
+      case 'registro': return medico.registroProfesional ?? '';
+      case 'tipoDocumento': return medico.tipoDocumento ?? '';
+      case 'numeroDocumento': return medico.numeroDocumento ?? '';
+      default: return this.obtenerEstado(medico);
+    }
+  }
+
+  private compararMedicos(a: Medico, b: Medico): number {
+    const comparacion = this.valorOrden(a, this.columnaOrden)
+      .localeCompare(this.valorOrden(b, this.columnaOrden), 'es', { numeric: true, sensitivity: 'base' });
+    return this.direccionOrden === 'asc' ? comparacion : -comparacion;
   }
 
   obtenerEstado(medico: Medico): string {

@@ -1,1 +1,157 @@
-<p>medicamento works!</p>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <input class="form-control" type="text" placeholder="Buscar por nombre, presentación o descripción"
+                        (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" aria-label="Filtrar por estado" (change)="cambiarFiltroEstado($event)">
+                        <option value="todos">Todos los estados</option>
+                        <option value="activos">Solo activos</option>
+                        <option value="inactivos">Solo inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-md btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                        (click)="abrirCreacion()" title="Agregar medicamento">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        &nbsp; Nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div *ngIf="errorListado" class="alert alert-danger" role="alert">
+                {{ errorListado }}
+                <button type="button" class="btn btn-link" (click)="listar()">Reintentar</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Nombre</th>
+                            <th class="text-center">Presentación</th>
+                            <th class="text-center">Compra</th>
+                            <th class="text-center">Vence</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="cargando">
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                &nbsp;Cargando medicamentos...
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && !errorListado && medicamentos.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No hay medicamentos registrados</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && medicamentos.length > 0 && medicamentosFiltrados.length === 0">
+                        <tr>
+                            <td colspan="6" class="text-center">No se encontraron medicamentos con ese criterio</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="!cargando && medicamentosFiltrados.length > 0">
+                        <tr *ngFor="let medicamento of medicamentosPaginados">
+                            <td class="text-center">{{ medicamento.nombre }}</td>
+                            <td class="text-center">{{ medicamento.presentacion || '—' }}</td>
+                            <td class="text-center">{{ medicamento.fechaCompra | date:'dd/MM/yyyy' }}</td>
+                            <td class="text-center">
+                                {{ medicamento.fechaVence | date:'dd/MM/yyyy' }}
+                                <span *ngIf="estaVencido(medicamento)" class="badge bg-danger ms-1">Vencido</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge" [class.bg-success]="medicamento.activo"
+                                    [class.bg-secondary]="!medicamento.activo">{{ medicamento.activo ? 'Activo' : 'Inactivo' }}</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-info btn-sm me-1" (click)="abrirEdicion(medicamento)">
+                                    <i class="fa fa-edit"></i>&nbsp;Editar
+                                </button>
+                                <button class="btn btn-sm"
+                                    [class.btn-outline-danger]="medicamento.activo"
+                                    [class.btn-outline-success]="!medicamento.activo"
+                                    [disabled]="cambiandoEstadoId === medicamento.id || (!medicamento.activo && estaVencido(medicamento))"
+                                    [attr.title]="!medicamento.activo && estaVencido(medicamento) ? 'Vencido: actualiza la fecha de vencimiento para poder activarlo' : null"
+                                    (click)="confirmarCambioEstado(medicamento)">
+                                    {{ medicamento.activo ? 'Desactivar' : 'Activar' }}
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <app-paginacion [paginaActual]="paginaActual" [totalPaginas]="totalPaginas"
+                (paginaCambiada)="cambiarPagina($event)"></app-paginacion>
+        </div>
+    </div>
+</div>
+
+<!-- Modal crear / editar -->
+<div class="modal fade" id="modalMedicamento" tabindex="-1" aria-labelledby="modalMedicamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalMedicamentoLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" [disabled]="enviando" aria-label="Cerrar"
+                    (click)="cerrarModal()"></button>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+                <div class="modal-body">
+                    <div *ngIf="errorFormulario" class="alert alert-danger" role="alert">{{ errorFormulario }}</div>
+                    <fieldset [disabled]="enviando">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="medicamento-nombre" class="form-label">Nombre</label>
+                                <input id="medicamento-nombre" class="form-control" type="text" formControlName="nombre"
+                                    [class.is-invalid]="invalido('nombre')">
+                                <div class="invalid-feedback">{{ mensajeError('nombre') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="medicamento-presentacion" class="form-label">Presentación <small class="text-muted">(opcional)</small></label>
+                                <input id="medicamento-presentacion" class="form-control" type="text"
+                                    formControlName="presentacion" placeholder="Ej.: Tabletas 250 mg"
+                                    [class.is-invalid]="invalido('presentacion')">
+                                <div class="invalid-feedback">{{ mensajeError('presentacion') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="medicamento-fechaCompra" class="form-label">Fecha de compra</label>
+                                <input id="medicamento-fechaCompra" class="form-control" type="date"
+                                    formControlName="fechaCompra" [max]="hoy"
+                                    [class.is-invalid]="invalido('fechaCompra')">
+                                <div class="invalid-feedback">{{ mensajeError('fechaCompra') }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="medicamento-fechaVence" class="form-label">Fecha de vencimiento</label>
+                                <input id="medicamento-fechaVence" class="form-control" type="date"
+                                    formControlName="fechaVence"
+                                    [class.is-invalid]="invalido('fechaVence') || vencimientoIncorrecto">
+                                <div class="invalid-feedback">
+                                    {{ vencimientoIncorrecto ? 'El vencimiento debe ser posterior a la fecha de compra.' : mensajeError('fechaVence') }}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="medicamento-descripcion" class="form-label">Descripción <small class="text-muted">(opcional)</small></label>
+                                <textarea id="medicamento-descripcion" class="form-control" rows="3"
+                                    formControlName="descripcion" [class.is-invalid]="invalido('descripcion')"></textarea>
+                                <div class="invalid-feedback">{{ mensajeError('descripcion') }}</div>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="cerrarModal()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="enviando">
+                        {{ enviando ? 'Guardando...' : titleBoton }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

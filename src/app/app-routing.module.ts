@@ -10,6 +10,8 @@ import { ClienteComponent } from './demo/pages/cliente/cliente.component';
 import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.component';
 import { HistoriaComponent } from './demo/pages/historia/historia.component';
 import { EspecializacionComponent } from './demo/pages/especializacion/especializacion.component';
+import { LoginComponent } from './demo/pages/login/login.component';
+import { authGuard, guestGuard, menuGuard } from './guards/auth.guard';
 
 
 export const routes: Routes = [
@@ -18,9 +20,12 @@ export const routes: Routes = [
     redirectTo: 'inicio',
     pathMatch: 'full'
   },  
+  { path: 'login', component: LoginComponent, canActivate: [guestGuard], data: { title: 'Iniciar sesión' } },
   {
     path: 'inicio',
     component: AdminComponent,
+    canActivate: [authGuard],
+    canActivateChild: [menuGuard],
     data: { title: 'Inicio' },
     children: [      
       { path: 'usuarios', component: UsuarioComponent, data: { title: 'Usuarios' }},

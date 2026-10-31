@@ -1,0 +1,20 @@
+
+
+// El tema fuerza line-height = alto del header (70px) en cada <li>; sin esto el botón sale gigante.
+.menu-usuario {
+  line-height: 1.5;
+
+  .btn {
+    line-height: 1.5;
+    padding: 0.4rem 0.9rem;
+  }
+
+  .dropdown-menu {
+    min-width: 15rem;
+    line-height: 1.5;
+  }
+
+  .dropdown-item {
+    padding: 0.55rem 1rem;
+  }
+}

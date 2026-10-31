@@ -7,6 +7,7 @@ import { environment } from 'src/environments/environment';
 import { NavigationItem, NavigationItems } from '../navigation';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
 import { NavGroupComponent } from './nav-group/nav-group.component';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-nav-content',
@@ -16,6 +17,7 @@ import { NavGroupComponent } from './nav-group/nav-group.component';
 })
 export class NavContentComponent {
   private location = inject(Location);
+  private auth = inject(AuthService);
 
   // public method
   // version
@@ -30,7 +32,12 @@ export class NavContentComponent {
 
   // constructor
   constructor() {
-    this.navigations = NavigationItems;
+    // Solo se muestran las opciones que vienen en la menuList del usuario
+    const permitidas = this.auth.getMenus().map((m) => m.url);
+    this.navigations = NavigationItems.map((grupo) => ({
+      ...grupo,
+      children: grupo.children?.filter((item) => !!item.url && permitidas.includes(item.url))
+    }));
   }
 
   fireOutClick() {
