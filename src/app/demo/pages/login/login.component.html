@@ -62,16 +62,17 @@
       @if (paso === 'otp') {
         <h4 class="login-title text-center mb-1">Verificación</h4>
         <p class="text-center text-muted small mb-4">
-          Ingresa el código de 6 dígitos enviado a tu correo electrónico
+          Ingresa el código de 6 caracteres enviado a tu correo electrónico
         </p>
 
         <form [formGroup]="otpForm" (ngSubmit)="validarToken()" novalidate>
           <div class="mb-4">
-            <input id="token" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+            <input id="token" type="text" inputmode="text" maxlength="6" autocomplete="one-time-code"
+              autocapitalize="off" autocorrect="off" spellcheck="false"
               class="form-control form-control-lg text-center otp-input" placeholder="••••••"
-              formControlName="token" (input)="soloDigitos($event)"
+              formControlName="token" (input)="soloAlfanumericos($event)"
               [class.is-invalid]="campoInvalido(otpForm, 'token')" />
-            <div class="invalid-feedback text-center">El código debe tener 6 dígitos.</div>
+            <div class="invalid-feedback text-center">El código debe tener 6 caracteres alfanuméricos.</div>
           </div>
 
           <button type="submit" class="btn btn-primary w-100 mb-3" [disabled]="cargando">

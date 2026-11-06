@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import { AuthService } from './service/auth.service';
 import { AuthRs } from 'src/app/models/auth-rs';
 import { TokenRq } from 'src/app/models/token-rq';
+import { LoginRs } from 'src/app/models/login-rs';
 
 type Paso = 'credenciales' | 'otp' | 'recuperar';
 
@@ -22,6 +23,7 @@ export class LoginComponent {
   paso: Paso = 'credenciales';
   cargando = false;
   mostrarPassword = false;
+  loginExitoso?: LoginRs;
 
   loginForm: FormGroup;
   otpForm: FormGroup;
@@ -38,7 +40,7 @@ export class LoginComponent {
       password: ['', [Validators.required]]
     });
     this.otpForm = this.fb.group({
-      token: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]]
+      token: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9]{6}$/)]]
     });
     this.recuperarForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]]
@@ -68,7 +70,7 @@ export class LoginComponent {
         Swal.fire({
           icon: 'info',
           title: 'Verificación en dos pasos',
-          text: 'Se ha enviado un código de 6 dígitos a tu correo electrónico.',
+          text: 'Se ha enviado un código de 6 caracteres a tu correo electrónico.',
           timer: 2500,
           showConfirmButton: false
         });
@@ -77,6 +79,10 @@ export class LoginComponent {
     });
   }
 
+  /**
+   * Servicio que valida el token otp ingresado.
+   * @returns 
+   */
   validarToken(): void {
     if (this.otpForm.invalid) {
       this.otpForm.markAllAsTouched();
@@ -90,9 +96,10 @@ export class LoginComponent {
       token: this.otpForm.value.token
     };
     this.authService
-      .validateToken(tokenRq)
+      .validateOtp(tokenRq)
       .subscribe({
-        next: () => {
+        next: (data) => {
+          this.loginExitoso = data;
           this.cargando = false;
           this.router.navigate(['/inicio']);
         },
@@ -124,9 +131,9 @@ export class LoginComponent {
     });
   }
 
-  soloDigitos(event: Event): void {
+  soloAlfanumericos(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const limpio = input.value.replace(/\D/g, '').slice(0, 6);
+    const limpio = input.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 6);
     if (limpio !== input.value) {
       this.otpForm.get('token')?.setValue(limpio);
     }

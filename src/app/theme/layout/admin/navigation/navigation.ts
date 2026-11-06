@@ -1,3 +1,5 @@
+import { getJwtMenus } from 'src/app/utils/jwt.util';
+
 export interface NavigationItem {
   id: string;
   title: string;
@@ -86,7 +88,7 @@ export const NavigationItems: NavigationItem[] = [
         classes: 'nav-item'
       },
       {
-        id: 'usuario',
+        id: 'usuarios',
         title: 'Gestión de Usuarios',
         type: 'item',
         url: '/inicio/usuarios',
@@ -97,3 +99,25 @@ export const NavigationItems: NavigationItem[] = [
     ]
   },
 ];
+
+export function getNavigationItems(): NavigationItem[] {
+  let allowedCodes: Set<string>;
+  try {
+    allowedCodes = new Set(getJwtMenus().filter((menu) => menu.activo).map((menu) => menu.code));
+  } catch (error) {
+    console.error('No fue posible obtener los menus del token JWT', error);
+    return [];
+  }
+
+  const filterItems = (items: NavigationItem[]): NavigationItem[] =>
+    items.flatMap((item) => {
+      if (item.type === 'item') {
+        return allowedCodes.has(item.id) ? [{ ...item }] : [];
+      }
+
+      const children = filterItems(item.children ?? []);
+      return children.length > 0 ? [{ ...item, children }] : [];
+    });
+
+  return filterItems(NavigationItems);
+}
