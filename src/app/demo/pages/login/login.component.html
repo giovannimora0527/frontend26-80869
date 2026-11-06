@@ -1,0 +1,121 @@
+<div class="login-wrapper">
+  <!-- Panel izquierdo: imagen de la clínica -->
+  <section class="login-hero" aria-hidden="true">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1>Cuidamos a quienes más quieres</h1>
+      <p>Atención veterinaria con amor, experiencia y compromiso para la salud de tu mascota.</p>
+      <ul class="hero-features">
+        <li><i class="bi bi-heart-pulse"></i> Consultas y controles</li>
+        <li><i class="bi bi-shield-check"></i> Vacunación y prevención</li>
+        <li><i class="bi bi-clipboard2-pulse"></i> Historia clínica digital</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Panel derecho: formulario -->
+  <section class="login-panel">
+    <div class="login-card">
+      <div class="text-center mb-4">
+        <img src="assets/images/logo-vet.jpg" alt="Logo clínica veterinaria" class="login-logo" />
+      </div>
+
+      <!-- Paso 1: usuario y contraseña -->
+      @if (paso === 'credenciales') {
+        <h4 class="login-title text-center mb-1">Iniciar sesión</h4>
+        <p class="text-center text-muted small mb-4">Ingresa tus credenciales para continuar</p>
+
+        <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label">Usuario</label>
+            <input id="username" type="text" class="form-control" formControlName="username" autocomplete="username"
+              [class.is-invalid]="campoInvalido(loginForm, 'username')" />
+            <div class="invalid-feedback">El usuario es obligatorio.</div>
+          </div>
+
+          <div class="mb-2">
+            <label for="password" class="form-label">Contraseña</label>
+            <div class="input-group has-validation">
+              <input id="password" [type]="mostrarPassword ? 'text' : 'password'" class="form-control"
+                formControlName="password" autocomplete="current-password"
+                [class.is-invalid]="campoInvalido(loginForm, 'password')" />
+              <button type="button" class="btn btn-outline-secondary" (click)="mostrarPassword = !mostrarPassword"
+                [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                <i class="bi" [ngClass]="mostrarPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+              <div class="invalid-feedback">La contraseña es obligatoria.</div>
+            </div>
+          </div>
+
+          <div class="text-end mb-4">
+            <a href="javascript:void(0)" class="small" (click)="irA('recuperar')">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="cargando">
+            @if (cargando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Ingresar
+          </button>
+        </form>
+      }
+
+      <!-- Paso 2: código OTP (2FA) -->
+      @if (paso === 'otp') {
+        <h4 class="login-title text-center mb-1">Verificación</h4>
+        <p class="text-center text-muted small mb-4">
+          Ingresa el código de 6 dígitos enviado a tu correo electrónico
+        </p>
+
+        <form [formGroup]="otpForm" (ngSubmit)="validarToken()" novalidate>
+          <div class="mb-4">
+            <input id="token" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+              class="form-control form-control-lg text-center otp-input" placeholder="••••••"
+              formControlName="token" (input)="soloDigitos($event)"
+              [class.is-invalid]="campoInvalido(otpForm, 'token')" />
+            <div class="invalid-feedback text-center">El código debe tener 6 dígitos.</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mb-3" [disabled]="cargando">
+            @if (cargando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Verificar
+          </button>
+
+          <div class="d-flex justify-content-between small">
+            <a href="javascript:void(0)" (click)="irA('credenciales')">Volver</a>
+            <a href="javascript:void(0)" (click)="reenviarCodigo()">Reenviar código</a>
+          </div>
+        </form>
+      }
+
+      <!-- Recuperar contraseña -->
+      @if (paso === 'recuperar') {
+        <h4 class="login-title text-center mb-1">Recuperar contraseña</h4>
+        <p class="text-center text-muted small mb-4">
+          Te enviaremos un correo con las instrucciones
+        </p>
+
+        <form [formGroup]="recuperarForm" (ngSubmit)="recuperarPassword()" novalidate>
+          <div class="mb-4">
+            <label for="email" class="form-label">Correo electrónico</label>
+            <input id="email" type="email" class="form-control" formControlName="email" autocomplete="email"
+              [class.is-invalid]="campoInvalido(recuperarForm, 'email')" />
+            <div class="invalid-feedback">Ingresa un correo electrónico válido.</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mb-3" [disabled]="cargando">
+            @if (cargando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Enviar correo
+          </button>
+
+          <div class="text-center small">
+            <a href="javascript:void(0)" (click)="irA('credenciales')">Volver al inicio de sesión</a>
+          </div>
+        </form>
+      }
+
+      <p class="login-footer text-center small mb-0">
+        © Clínica Veterinaria Uniminuto
+      </p>   
+      
+    </div>
+  </section>
+</div>

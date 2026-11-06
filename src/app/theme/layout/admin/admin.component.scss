@@ -1,0 +1,168 @@
+.clinic-home {
+	--clinic-ink: #17324d;
+	--clinic-muted: #647789;
+	--clinic-teal: #087e8b;
+	--clinic-mint: #e7f4f1;
+	--clinic-line: #d9e5e6;
+	display: grid;
+	grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+	gap: 2.5rem;
+	align-items: center;
+	min-height: min(540px, calc(100vh - 190px));
+	padding: 3.25rem clamp(1.25rem, 4vw, 4.5rem);
+	border: 1px solid var(--clinic-line);
+	border-radius: 8px;
+	background: linear-gradient(135deg, #ffffff 0%, #f3f8f7 100%);
+	color: var(--clinic-ink);
+}
+
+.clinic-home__intro {
+	max-width: 620px;
+}
+
+.clinic-home__eyebrow {
+	display: inline-block;
+	margin-bottom: 1rem;
+	color: var(--clinic-teal);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.clinic-home h1 {
+	max-width: 600px;
+	margin: 0 0 1.25rem;
+	color: var(--clinic-ink);
+	font-size: clamp(2rem, 4vw, 3.6rem);
+	font-weight: 700;
+	line-height: 1.08;
+}
+
+.clinic-home p {
+	max-width: 540px;
+	margin: 0;
+	color: var(--clinic-muted);
+	font-size: 1rem;
+	line-height: 1.7;
+}
+
+
+.clinic-home__panel {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	padding: 2rem;
+	border-left: 3px solid var(--clinic-teal);
+	background: #12385a;
+	box-shadow: 0 14px 28px rgba(18, 56, 90, 0.16);
+	color: #ffffff;
+}
+
+.clinic-home__logo-wrap {
+	display: grid;
+	place-items: center;
+	width: min(100%, 230px);
+	margin-bottom: 0.65rem;
+	padding: 0.45rem;
+	border-radius: 6px;
+	background: #ffffff;
+}
+
+.clinic-home__logo {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: 150px;
+	object-fit: contain;
+}
+
+.clinic-home__panel-mark {
+	display: grid;
+	place-items: center;
+	width: 3rem;
+	height: 3rem;
+	margin-bottom: 0.65rem;
+	border-radius: 50%;
+	background: var(--clinic-teal);
+	color: #ffffff;
+	font-size: 1.35rem;
+}
+
+.clinic-home__panel span {
+	color: #8ed8d1;
+	font-size: 0.8rem;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.clinic-home__panel strong {
+	font-size: 1.35rem;
+	line-height: 1.25;
+}
+
+.clinic-home__panel p {
+	color: #d8e6ed;
+	font-size: 0.9rem;
+	line-height: 1.55;
+}
+
+.clinic-home__highlights {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+	padding-top: 1.75rem;
+	border-top: 1px solid var(--clinic-line);
+}
+
+.clinic-home__highlights article {
+	display: flex;
+	gap: 0.75rem;
+	align-items: flex-start;
+}
+
+.clinic-home__highlights i {
+	flex: 0 0 auto;
+	padding-top: 0.15rem;
+	color: var(--clinic-teal);
+	font-size: 1.25rem;
+}
+
+.clinic-home__highlights div {
+	display: grid;
+	gap: 0.25rem;
+}
+
+.clinic-home__highlights strong {
+	font-size: 0.9rem;
+}
+
+.clinic-home__highlights span {
+	color: var(--clinic-muted);
+	font-size: 0.8rem;
+	line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+	.clinic-home {
+		grid-template-columns: 1fr;
+		gap: 2rem;
+		min-height: auto;
+		padding: 2.5rem 1.5rem;
+	}
+
+	.clinic-home__panel {
+		max-width: 500px;
+	}
+}
+
+@media (max-width: 600px) {
+	.clinic-home {
+		padding: 2rem 1.25rem;
+	}
+
+	.clinic-home__highlights {
+		grid-template-columns: 1fr;
+	}
+}

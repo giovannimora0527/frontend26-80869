@@ -1,0 +1,166 @@
+﻿$azul-oscuro: #0a2a4a;
+$azul-medio: #0b5a8c;
+$azul-claro: #4fa3d9;
+$azul-suave: #e8f2fa;
+
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  background: $azul-suave;
+}
+
+// Panel izquierdo
+.login-hero {
+  position: relative;
+  flex: 1 1 58%;
+  background: url('/assets/images/fondo-login-web.jpg') 65% center / cover no-repeat;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba($azul-oscuro, 0.92) 0%,
+    rgba($azul-medio, 0.55) 45%,
+    rgba($azul-claro, 0.1) 100%
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  padding: 3rem;
+  max-width: 560px;
+
+  h1 {
+    color: #fff;
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+
+  p {
+    color: rgba(#fff, 0.85);
+    font-size: 1.05rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.hero-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  li {
+    background: rgba(#fff, 0.15);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(#fff, 0.25);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.85rem;
+
+    i {
+      color: $azul-claro;
+      margin-right: 0.25rem;
+    }
+  }
+}
+
+// Panel derecho
+.login-panel {
+  flex: 1 1 42%;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #fff;
+  box-shadow: -8px 0 24px rgba($azul-oscuro, 0.08);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+}
+
+.login-logo {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba($azul-medio, 0.2);
+}
+
+.login-title {
+  color: $azul-oscuro;
+  font-weight: 700;
+}
+
+.form-label {
+  color: $azul-oscuro;
+  font-weight: 500;
+}
+
+.form-control:focus {
+  border-color: $azul-claro;
+  box-shadow: 0 0 0 0.2rem rgba($azul-claro, 0.25);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, $azul-medio, $azul-oscuro);
+  border: none;
+  padding: 0.65rem;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, $azul-claro, $azul-medio);
+  }
+}
+
+.btn-outline-secondary {
+  border-color: #ced4da;
+  color: $azul-medio;
+}
+
+a {
+  color: $azul-medio;
+  text-decoration: none;
+
+  &:hover {
+    color: $azul-claro;
+    text-decoration: underline;
+  }
+}
+
+.otp-input {
+  letter-spacing: 0.75rem;
+  font-weight: 600;
+  color: $azul-oscuro;
+}
+
+.login-footer {
+  margin-top: 2rem;
+  color: #9aa7b4;
+}
+
+// En pantallas pequeñas se oculta la imagen
+@media (max-width: 991.98px) {
+  .login-hero {
+    display: none;
+  }
+
+  .login-panel {
+    flex: 1;
+    max-width: none;
+    background: linear-gradient(160deg, $azul-suave, #fff);
+  }
+}

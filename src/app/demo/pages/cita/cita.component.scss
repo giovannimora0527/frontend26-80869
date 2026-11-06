@@ -1,0 +1,23 @@
+.estado-cita {
+  background-color: #e9ecef;
+  color: #212529;
+
+  &[data-estado='programada'] {
+    background-color: #ffc107;
+  }
+
+  &[data-estado='cancelada'] {
+    background-color: #dc3545;
+    color: #fff;
+  }
+
+  &[data-estado='pendiente'] {
+    background-color: #fd7e14;
+  }
+
+  &[data-estado='confirmada'],
+  &[data-estado='atendida'] {
+    background-color: #198754;
+    color: #fff;
+  }
+}
