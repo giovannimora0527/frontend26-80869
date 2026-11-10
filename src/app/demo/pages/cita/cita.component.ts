@@ -50,7 +50,7 @@ export class CitaComponent {
   private readonly destroyRef = inject(DestroyRef);
   terminoBusqueda = '';
   paginaActual = 1;
-  readonly registrosPorPagina = 5;
+  readonly registrosPorPagina = 10;
   columnaOrden: ColumnaOrden = 'mascota';
   direccionOrden: 'asc' | 'desc' = 'asc';
 

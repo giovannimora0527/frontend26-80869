@@ -32,7 +32,7 @@ export class HistoriaComponent {
   errorHistorias = '';
   terminoBusqueda = '';
   paginaActual = 1;
-  readonly registrosPorPagina = 5;
+  readonly registrosPorPagina = 10;
   readonly columnas: { clave: ColumnaOrden; titulo: string }[] = [
     { clave: 'fecha', titulo: 'Fecha de creación' },
     { clave: 'mascota', titulo: 'Mascota' },

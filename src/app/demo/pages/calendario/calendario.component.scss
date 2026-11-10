@@ -1,0 +1,33 @@
+// Estilos del calendario de citas (FullCalendar).
+// Se apoya en la plantilla (Datta Able) y Bootstrap 5.
+
+:host ::ng-deep {
+  .fc .fc-button-primary {
+    background-color: #4680ff;
+    border-color: #4680ff;
+  }
+
+  .fc .fc-button-primary:hover {
+    background-color: #3a6fe0;
+    border-color: #3a6fe0;
+  }
+
+  .fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: #2c54b0;
+    border-color: #2c54b0;
+  }
+
+  .fc-event {
+    cursor: pointer;
+    font-size: 0.78rem;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1.1rem;
+    text-transform: capitalize;
+  }
+}
+
+.badge {
+  font-weight: 500;
+}

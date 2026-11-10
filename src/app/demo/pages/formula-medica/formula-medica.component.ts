@@ -33,7 +33,7 @@ export class FormulaMedicaComponent {
   listFormulas: Formula[] = [];
   terminoBusqueda = '';
   paginaActual = 1;
-  readonly registrosPorPagina = 2;
+  readonly registrosPorPagina = 10;
   columnaOrden: ColumnaOrden = 'nombre';
   direccionOrden: 'asc' | 'desc' = 'asc';
 

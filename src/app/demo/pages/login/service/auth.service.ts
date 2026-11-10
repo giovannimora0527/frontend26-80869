@@ -5,6 +5,7 @@ import { LoginRs } from 'src/app/models/login-rs';
 import { TokenRq } from 'src/app/models/token-rq';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
+import { getJwtUsuarioId } from 'src/app/utils/jwt.util';
 
 export interface LoginRequest {
   username: string;
@@ -49,6 +50,11 @@ export class AuthService {
 
   recuperarPassword(email: string): Observable<unknown> {
     return this.backendService.post(environment.apiUrlAuth, this.api, 'recover-password', { email });
+  }
+
+  cerrarSesionServidor(): Observable<unknown> {
+    const usuarioId = getJwtUsuarioId();
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'cerrar-sesion', { usuarioId });
   }
 
   guardarToken(resp: JwtResponse): void {

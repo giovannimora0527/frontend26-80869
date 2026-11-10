@@ -33,7 +33,7 @@ export class MascotaComponent {
   listMascotas: Mascota[] = [];
   terminoBusqueda = '';
   paginaActual = 1;
-  readonly registrosPorPagina = 5;
+  readonly registrosPorPagina = 10;
   columnaOrden: ColumnaOrden = 'nombre';
   direccionOrden: 'asc' | 'desc' = 'asc';
 

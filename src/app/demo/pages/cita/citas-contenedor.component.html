@@ -1,0 +1,22 @@
+<div class="row">
+  <div class="col-12">
+    <h5 class="m-b-10">Gestion de citas</h5>
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" style="cursor:pointer" [class.active]="pestana === 'lista'"
+          (click)="pestana = 'lista'">Lista</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" style="cursor:pointer" [class.active]="pestana === 'calendario'"
+          (click)="pestana = 'calendario'">Calendario</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+@if (pestana === 'lista') {
+  <app-cita></app-cita>
+}
+@if (pestana === 'calendario') {
+  <app-calendario></app-calendario>
+}

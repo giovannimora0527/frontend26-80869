@@ -71,6 +71,52 @@ export function getJwtMenus(): JwtMenu[] {
   return menus;
 }
 
+/**
+ * Obtiene el rol (perfil) del usuario autenticado a partir del token JWT.
+ * Retorna null si no hay token o si no se puede leer.
+ */
+export function getJwtRol(): string | null {
+  try {
+    return getJwtPayload()?.rol ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Obtiene el identificador del usuario autenticado (claim "sub") del token JWT.
+ * Retorna null si no hay token o si no se puede leer.
+ */
+export function getJwtUsuarioId(): number | null {
+  try {
+    const payload = getJwtPayload();
+    if (payload === null) {
+      return null;
+    }
+    const id = Number(payload.sub);
+    return Number.isNaN(id) ? null : id;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Indica si el token JWT esta vigente (existe y no ha expirado).
+ * La expiracion (exp) del JWT se expresa en segundos.
+ */
+export function isJwtVigente(): boolean {
+  try {
+    const payload = getJwtPayload();
+    if (payload === null) {
+      return false;
+    }
+    const ahoraSegundos = Math.floor(Date.now() / 1000);
+    return payload.exp > ahoraSegundos;
+  } catch {
+    return false;
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

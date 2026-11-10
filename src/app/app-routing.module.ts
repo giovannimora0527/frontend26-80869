@@ -5,12 +5,14 @@ import { UsuarioComponent } from './demo/pages/usuario/usuario.component';
 import { MascotaComponent } from './demo/pages/mascota/mascota.component';
 import { MedicoComponent } from './demo/pages/medico/medico.component';
 import { FormulaMedicaComponent } from './demo/pages/formula-medica/formula-medica.component';
-import { CitaComponent } from './demo/pages/cita/cita.component';
+import { CitasContenedorComponent } from './demo/pages/cita/citas-contenedor.component';
 import { ClienteComponent } from './demo/pages/cliente/cliente.component';
-import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.component';
 import { HistoriaComponent } from './demo/pages/historia/historia.component';
 import { EspecializacionComponent } from './demo/pages/especializacion/especializacion.component';
 import { LoginComponent } from './demo/pages/login/login.component';
+import { PerfilComponent } from './demo/pages/perfil/perfil.component';
+import { InventarioComponent } from './demo/pages/inventario/inventario.component';
+import { RolComponent } from './demo/pages/rol/rol.component';
 import { authGuard } from './guards/auth.guard';
 
 
@@ -28,14 +30,16 @@ export const routes: Routes = [
     canActivateChild: [authGuard],
     data: { title: 'Inicio' },
     children: [      
+      { path: 'perfil', component: PerfilComponent, data: { title: 'Mi perfil' }},
+      { path: 'inventario', component: InventarioComponent, data: { title: 'Inventario' }},
       { path: 'usuarios', component: UsuarioComponent, data: { title: 'Usuarios' }},
+      { path: 'roles', component: RolComponent, data: { title: 'Roles' }},
       { path: 'mascotas', component: MascotaComponent, data: { title: 'Mascotas' }},
       { path: 'medicos', component: MedicoComponent, data: { title: 'Medicos' }},
       /* Inserte nuevos menus aqui */    
       { path: 'formulas', component: FormulaMedicaComponent, data: { title: 'Formulas' }},
-      { path: 'citas', component: CitaComponent, data: { title: 'Citas' }},
+      { path: 'citas', component: CitasContenedorComponent, data: { title: 'Citas' }},
       { path: 'clientes', component: ClienteComponent, data: { title: 'Clientes' }},
-      { path: 'medicamentos', component: MedicamentoComponent, data: { title: 'Medicamentos' }},
       { path: 'historias', component: HistoriaComponent, data: { title: 'Historias' }},
       { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' }}
     ]

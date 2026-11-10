@@ -146,6 +146,18 @@
                                 <p *ngIf="!cargandoEspecializaciones && !errorEspecializaciones && listEspecializaciones.length === 0"
                                     class="text-muted">No hay especializaciones disponibles.</p>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="medico-usuario" class="form-label">Usuario del sistema (opcional)</label>
+                                <select id="medico-usuario" class="form-select" formControlName="usuarioId">
+                                    <option [ngValue]="null">Sin usuario asociado</option>
+                                    <option *ngFor="let usuario of listUsuarios" [ngValue]="usuario.id">
+                                        {{ usuario.username }}
+                                    </option>
+                                </select>
+                                <small class="text-muted">
+                                    Asocia un usuario con rol Medico para que vea sus citas en el calendario.
+                                </small>
+                            </div>
                         </div>
                     </fieldset>
                 </div>

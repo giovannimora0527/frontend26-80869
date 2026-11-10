@@ -1,4 +1,142 @@
-<div class="container">
-   <label>Usuario Component Funciona</label>
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="m-b-10">Gestion de usuarios</h5>
+        <p class="text-muted mb-0">Administra los usuarios del sistema y sus roles.</p>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">
+        <i class="feather icon-plus me-1"></i> Nuevo usuario
+      </button>
+    </div>
+  </div>
 </div>
 
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        @if (cargando) {
+          <div class="text-center my-4">
+            <span class="spinner-border text-primary"></span>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Correo</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th class="text-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (usuario of usuarios; track usuario.id) {
+                  <tr>
+                    <td>{{ usuario.username }}</td>
+                    <td>{{ usuario.email }}</td>
+                    <td><span class="badge bg-light-primary">{{ usuario.rol }}</span></td>
+                    <td>
+                      @if (usuario.activo) {
+                        <span class="badge bg-success">Activo</span>
+                      } @else {
+                        <span class="badge bg-secondary">Inactivo</span>
+                      }
+                    </td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-primary"
+                        (click)="abrirEditar(usuario)">
+                        <i class="feather icon-edit"></i> Editar
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                      No hay usuarios registrados.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear / editar -->
+@if (modalAbierto) {
+  <div class="modal fade show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+        </div>
+        <form [formGroup]="usuarioForm" (ngSubmit)="guardar()" novalidate>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="username" class="form-label">Nombre de usuario</label>
+              <input id="username" type="text" class="form-control" formControlName="username"
+                [class.is-invalid]="campoInvalido('username')" />
+              <div class="invalid-feedback">El nombre de usuario debe tener al menos 3 caracteres.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Correo electronico</label>
+              <input id="email" type="email" class="form-control" formControlName="email"
+                [class.is-invalid]="campoInvalido('email')" />
+              <div class="invalid-feedback">Ingresa un correo electronico valido.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">
+                Contrasena
+                @if (modoEdicion) { <small class="text-muted">(dejar vacia para no cambiarla)</small> }
+              </label>
+              <div class="input-group">
+                <input id="password" [type]="mostrarPassword ? 'text' : 'password'"
+                  class="form-control" formControlName="password"
+                  [class.is-invalid]="campoInvalido('password')" />
+                <button type="button" class="btn btn-outline-secondary"
+                  (click)="mostrarPassword = !mostrarPassword">
+                  <i class="bi" [ngClass]="mostrarPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                </button>
+                <div class="invalid-feedback">La contrasena debe tener al menos 6 caracteres.</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="perfilId" class="form-label">Rol</label>
+              <select id="perfilId" class="form-select" formControlName="perfilId"
+                [class.is-invalid]="campoInvalido('perfilId')">
+                <option [ngValue]="null" disabled>Seleccione un rol</option>
+                @for (perfil of perfiles; track perfil.perfilId) {
+                  <option [ngValue]="perfil.perfilId">{{ perfil.nombre }}</option>
+                }
+              </select>
+              <div class="invalid-feedback">Selecciona un rol.</div>
+            </div>
+
+            <div class="form-check form-switch">
+              <input id="activo" class="form-check-input" type="checkbox" formControlName="activo" />
+              <label for="activo" class="form-check-label">Usuario activo</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="guardando">
+              @if (guardando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              {{ modoEdicion ? 'Guardar cambios' : 'Crear usuario' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

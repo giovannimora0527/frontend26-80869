@@ -1,0 +1,32 @@
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div>
+        <h5 class="m-b-10">{{ rol === 'Medico' ? 'Mi calendario' : 'Calendario de citas' }}</h5>
+        <p class="text-muted mb-0">
+          {{ rol === 'Medico' ? 'Agenda de tus citas asignadas.' : 'Agenda de citas de la clinica.' }}
+        </p>
+      </div>
+      <button class="btn btn-outline-success btn-sm" (click)="descargarReporte()">
+        <i class="feather icon-download me-1"></i> Reporte Excel
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <!-- Leyenda de estados -->
+    <div class="mb-3 small">
+      <span class="badge bg-primary me-1">Programada</span>
+      <span class="badge bg-info me-1">Confirmada</span>
+      <span class="badge bg-success me-1">Atendida / Finalizada</span>
+      <span class="badge bg-danger me-1">Cancelada</span>
+      @if (cargando) {
+        <span class="spinner-border spinner-border-sm text-primary ms-2"></span>
+      }
+    </div>
+
+    <full-calendar [options]="calendarOptions"></full-calendar>
+  </div>
+</div>

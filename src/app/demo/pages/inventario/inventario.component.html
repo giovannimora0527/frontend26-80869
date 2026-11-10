@@ -1,0 +1,417 @@
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="m-b-10">Gestion de inventario</h5>
+        <p class="text-muted mb-0">Medicamentos, existencias, lotes y carga masiva.</p>
+      </div>
+    </div>
+
+    <!-- Pestanas -->
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'inventario'"
+          href="javascript:" (click)="pestana = 'inventario'">Inventario</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'carga'"
+          href="javascript:" (click)="pestana = 'carga'">Carga masiva</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== INVENTARIO ===================== -->
+@if (pestana === 'inventario') {
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div class="btn-group btn-group-sm" role="group">
+            <button class="btn" [class.btn-primary]="filtro==='todos'" [class.btn-outline-primary]="filtro!=='todos'" (click)="filtro='todos'">Todos</button>
+            <button class="btn" [class.btn-primary]="filtro==='agotados'" [class.btn-outline-primary]="filtro!=='agotados'" (click)="filtro='agotados'">Agotados</button>
+            <button class="btn" [class.btn-primary]="filtro==='stockBajo'" [class.btn-outline-primary]="filtro!=='stockBajo'" (click)="filtro='stockBajo'">Stock bajo</button>
+            <button class="btn" [class.btn-primary]="filtro==='proximos'" [class.btn-outline-primary]="filtro!=='proximos'" (click)="filtro='proximos'">Proximos a vencer</button>
+            <button class="btn" [class.btn-primary]="filtro==='vencidos'" [class.btn-outline-primary]="filtro!=='vencidos'" (click)="filtro='vencidos'">Vencidos</button>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" (click)="abrirCrear()">
+            <i class="feather icon-plus me-1"></i> Nuevo medicamento
+          </button>
+        </div>
+        <div class="card-body">
+          @if (cargando) {
+            <div class="text-center my-4"><span class="spinner-border text-primary"></span></div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>Codigo</th>
+                    <th>Nombre</th>
+                    <th>Invima</th>
+                    <th class="text-end">P. venta</th>
+                    <th class="text-center">Existencia</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (med of medicamentosFiltrados; track med.id) {
+                    <tr>
+                      <td>{{ med.codigo || '-' }}</td>
+                      <td>
+                        {{ med.nombre }}
+                        <div class="text-muted small">{{ med.presentacion }}</div>
+                      </td>
+                      <td>{{ med.registroInvima || (med.requiereInvima ? '-' : 'No requiere') }}</td>
+                      <td class="text-end">{{ med.precioVenta | number:'1.2-2' }}</td>
+                      <td class="text-center">{{ med.existenciaTotal }}</td>
+                      <td class="text-center">
+                        @if (med.agotado) { <span class="badge bg-danger me-1">Agotado</span> }
+                        @if (med.stockBajo) { <span class="badge bg-warning text-dark me-1">Stock bajo</span> }
+                        @if (med.tieneVencidos) { <span class="badge bg-danger me-1">Vencido</span> }
+                        @if (med.tieneProximosAVencer) { <span class="badge bg-warning text-dark me-1">Por vencer</span> }
+                        @if (!med.agotado && !med.stockBajo && !med.tieneVencidos && !med.tieneProximosAVencer) {
+                          <span class="badge bg-success">Ok</span>
+                        }
+                      </td>
+                      <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                          title="Ver lotes y movimientos" (click)="abrirDetalle(med)">
+                          <i class="feather icon-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success me-1"
+                          title="Agregar lote / reabastecer" (click)="abrirAgregarLote(med)">
+                          <i class="feather icon-plus"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                          title="Editar" (click)="abrirEditar(med)">
+                          <i class="feather icon-edit"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No hay medicamentos para el filtro seleccionado.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===================== CARGA MASIVA ===================== -->
+@if (pestana === 'carga') {
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header"><h5>Carga masiva de medicamentos</h5></div>
+        <div class="card-body">
+          <p class="text-muted">
+            Seleccione un archivo Excel (.xlsx) o CSV (.csv). Columnas esperadas en orden:
+            <code>nombre, codigo, presentacion, requiere_invima, registro_invima,
+            precio_compra, precio_venta, stock_minimo, numero_lote, cantidad, fecha_vencimiento</code>
+            (fecha en formato aaaa-mm-dd).
+          </p>
+
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Archivo</label>
+              <input type="file" class="form-control" accept=".xlsx,.csv" (change)="seleccionarArchivo($event)" />
+            </div>
+            <div class="col-md-6">
+              <button class="btn btn-outline-primary me-2" (click)="previsualizar()" [disabled]="procesandoCarga">
+                @if (procesandoCarga) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Vista previa
+              </button>
+              <button class="btn btn-primary" (click)="confirmarCarga()"
+                [disabled]="procesandoCarga || !resultadoCarga || resultadoCarga.registrosValidos === 0 || resultadoCarga.confirmado">
+                Confirmar importacion
+              </button>
+            </div>
+          </div>
+
+          @if (resultadoCarga) {
+            <div class="alert"
+              [class.alert-info]="!resultadoCarga.confirmado"
+              [class.alert-success]="resultadoCarga.confirmado">
+              {{ resultadoCarga.mensaje }}
+              <div class="mt-1">
+                Total: <b>{{ resultadoCarga.totalRegistros }}</b> |
+                Validos: <b class="text-success">{{ resultadoCarga.registrosValidos }}</b> |
+                Con error: <b class="text-danger">{{ resultadoCarga.registrosConError }}</b>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered align-middle">
+                <thead>
+                  <tr>
+                    <th>Fila</th>
+                    <th>Nombre</th>
+                    <th>Codigo</th>
+                    <th>Lote</th>
+                    <th>Cantidad</th>
+                    <th>Vence</th>
+                    <th>Resultado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (f of resultadoCarga.filas; track f.fila) {
+                    <tr [class.table-danger]="!f.valida" [class.table-success]="f.valida">
+                      <td>{{ f.fila }}</td>
+                      <td>{{ f.nombre }}</td>
+                      <td>{{ f.codigo }}</td>
+                      <td>{{ f.numeroLote }}</td>
+                      <td>{{ f.cantidad }}</td>
+                      <td>{{ f.fechaVencimiento }}</td>
+                      <td>
+                        @if (f.valida) { <span class="badge bg-success">Valido</span> }
+                        @else { <span class="text-danger small">{{ f.motivoError }}</span> }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===================== MODAL CREAR / EDITAR ===================== -->
+@if (modalAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modoEdicion ? 'Editar medicamento' : 'Nuevo medicamento' }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+        </div>
+        <form [formGroup]="medicamentoForm" (ngSubmit)="guardar()" novalidate>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Nombre</label>
+                <input type="text" class="form-control" formControlName="nombre"
+                  [class.is-invalid]="campoInvalido('nombre')" />
+                <div class="invalid-feedback">El nombre es obligatorio.</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Codigo (8 caracteres)</label>
+                <input type="text" class="form-control" formControlName="codigo" maxlength="8" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Presentacion</label>
+                <input type="text" class="form-control" formControlName="presentacion" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Descripcion</label>
+                <input type="text" class="form-control" formControlName="descripcion" />
+              </div>
+
+              <div class="col-md-4 d-flex align-items-center">
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" formControlName="requiereInvima" id="reqInvima" />
+                  <label class="form-check-label" for="reqInvima">Requiere Invima</label>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Registro Invima</label>
+                <input type="text" class="form-control" formControlName="registroInvima" />
+                <small class="text-muted">Obligatorio si requiere Invima.</small>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Precio compra</label>
+                <input type="number" class="form-control" formControlName="precioCompra" min="0"
+                  [class.is-invalid]="campoInvalido('precioCompra')" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Precio venta</label>
+                <input type="number" class="form-control" formControlName="precioVenta" min="0"
+                  [class.is-invalid]="campoInvalido('precioVenta')" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Stock minimo</label>
+                <input type="number" class="form-control" formControlName="stockMinimo" min="0"
+                  [class.is-invalid]="campoInvalido('stockMinimo')" />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Fecha compra</label>
+                <input type="date" class="form-control" formControlName="fechaCompra" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Fecha vencimiento (ref.)</label>
+                <input type="date" class="form-control" formControlName="fechaVence" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Proximo pedido</label>
+                <input type="date" class="form-control" formControlName="fechaProximoPedido" />
+              </div>
+            </div>
+            @if (modoEdicion) {
+              <div class="alert alert-light mt-3 mb-0 small">
+                La gestion de lotes (cantidades y vencimientos por lote) se realiza mediante la
+                carga masiva o el ingreso de lotes. Esta pantalla edita los datos del catalogo.
+              </div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="guardando">
+              @if (guardando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              {{ modoEdicion ? 'Guardar cambios' : 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+<!-- ===================== MODAL DETALLE: LOTES + MOVIMIENTOS ===================== -->
+@if (modalDetalleAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalle: {{ medicamentoDetalle?.nombre }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarDetalle()"></button>
+        </div>
+        <div class="modal-body">
+          <h6>Lotes</h6>
+          <div class="table-responsive mb-4">
+            <table class="table table-sm table-bordered align-middle">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th class="text-center">Cantidad</th>
+                  <th class="text-end">P. compra</th>
+                  <th>Ingreso</th>
+                  <th>Vence</th>
+                  <th class="text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (lote of medicamentoDetalle?.lotes; track lote.id) {
+                  <tr>
+                    <td>{{ lote.numeroLote }}</td>
+                    <td class="text-center">{{ lote.cantidad }}</td>
+                    <td class="text-end">{{ lote.precioCompra | number:'1.2-2' }}</td>
+                    <td>{{ lote.fechaIngreso }}</td>
+                    <td>{{ lote.fechaVencimiento }}</td>
+                    <td class="text-center">
+                      @if (lote.vencido) { <span class="badge bg-danger">Vencido</span> }
+                      @else if (lote.proximoAVencer) { <span class="badge bg-warning text-dark">Por vencer</span> }
+                      @else { <span class="badge bg-success">Vigente</span> }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="text-center text-muted">Sin lotes registrados.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <h6>Movimientos de inventario</h6>
+          @if (cargandoMovimientos) {
+            <div class="text-center my-3"><span class="spinner-border spinner-border-sm text-primary"></span></div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered align-middle">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th class="text-center">Cantidad</th>
+                    <th>Responsable</th>
+                    <th>Referencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (mov of movimientos; track mov.id) {
+                    <tr>
+                      <td>{{ mov.fecha }}</td>
+                      <td>
+                        @if (mov.tipo === 'ENTRADA') { <span class="badge bg-success">Entrada</span> }
+                        @else { <span class="badge bg-danger">Salida</span> }
+                      </td>
+                      <td class="text-center">{{ mov.cantidad }}</td>
+                      <td>{{ mov.usuarioResponsable }}</td>
+                      <td>{{ mov.referencia }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="5" class="text-center text-muted">Sin movimientos registrados.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarDetalle()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+<!-- ===================== MODAL AGREGAR LOTE ===================== -->
+@if (modalLoteAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar lote: {{ medicamentoLote?.nombre }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarLote()"></button>
+        </div>
+        <form [formGroup]="loteForm" (ngSubmit)="guardarLote()" novalidate>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Numero de lote</label>
+                <input type="text" class="form-control" formControlName="numeroLote"
+                  [class.is-invalid]="campoInvalidoLote('numeroLote')" />
+                <div class="invalid-feedback">El numero de lote es obligatorio.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Cantidad</label>
+                <input type="number" class="form-control" formControlName="cantidad" min="1"
+                  [class.is-invalid]="campoInvalidoLote('cantidad')" />
+                <div class="invalid-feedback">La cantidad debe ser mayor que cero.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Precio de compra</label>
+                <input type="number" class="form-control" formControlName="precioCompra" min="0"
+                  [class.is-invalid]="campoInvalidoLote('precioCompra')" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Fecha de vencimiento</label>
+                <input type="date" class="form-control" formControlName="fechaVencimiento"
+                  [class.is-invalid]="campoInvalidoLote('fechaVencimiento')" />
+                <div class="invalid-feedback">La fecha de vencimiento es obligatoria.</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="cerrarLote()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="guardandoLote">
+              @if (guardandoLote) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Agregar lote
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

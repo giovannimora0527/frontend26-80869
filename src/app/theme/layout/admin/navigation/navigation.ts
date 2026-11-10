@@ -72,13 +72,14 @@ export const NavigationItems: NavigationItem[] = [
         classes: 'nav-item'
       },
       {
-        id: 'medicamentos',
-        title: 'Gestión de Medicamentos',
+        id: 'inventario',
+        title: 'Gestión de Inventario',
         type: 'item',
-        url: '/inicio/medicamentos',
-        icon: 'fa-solid fa-capsules',
+        url: '/inicio/inventario',
+        icon: 'fa-solid fa-boxes-stacked',
         classes: 'nav-item'
       },
+
       {
         id: 'medicos',
         title: 'Gestión de Medicos',
@@ -93,6 +94,14 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/inicio/usuarios',
         icon: 'feather icon-users',
+        classes: 'nav-item'
+      },
+      {
+        id: 'roles',
+        title: 'Gestión de Roles',
+        type: 'item',
+        url: '/inicio/roles',
+        icon: 'feather icon-shield',
         classes: 'nav-item'
       },
       /* ---------- Nuevos menus aqui -------------  */

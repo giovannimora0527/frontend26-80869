@@ -11,6 +11,7 @@ import { MedicoService } from './service/medico.service';
 import { MedicoRq } from 'src/app/models/medico-rq';
 import { Especializacion } from 'src/app/models/especializacion';
 import { EspecializacionService } from '../especializacion/service/especializacion.service';
+import { UsuarioService } from '../usuario/service/usuario.service';
 
 @Component({
   selector: 'app-medico',
@@ -29,8 +30,12 @@ export class MedicoComponent {
     numeroDocumento: ['', [Validators.required, Validators.pattern(/\S/)]],
     telefono: ['', [Validators.required, Validators.pattern(/\S/)]],
     registroProfesional: ['', [Validators.required, Validators.pattern(/\S/)]],
-    especializacionId: this.formBuilder.control<number | null>(null, Validators.required)
+    especializacionId: this.formBuilder.control<number | null>(null, Validators.required),
+    usuarioId: this.formBuilder.control<number | null>(null)
   });
+
+  // Usuarios del sistema con rol Medico, para asociarlos a un medico.
+  listUsuarios: { id: number; username: string; rol: string }[] = [];
 
   readonly campos = [
     { clave: 'nombres', etiqueta: 'Nombres' },
@@ -63,13 +68,26 @@ export class MedicoComponent {
   listMedicos: Medico[] = [];
   terminoBusqueda = '';
   paginaActual = 1;
-  readonly registrosPorPagina = 5;
+  readonly registrosPorPagina = 10;
 
   constructor(private readonly medicoService: MedicoService,
-    private readonly especializacionService: EspecializacionService) {
+    private readonly especializacionService: EspecializacionService,
+    private readonly usuarioService: UsuarioService) {
     this.destroyRef.onDestroy(() => this.modalInstance?.dispose());
     this.listar();
     this.listarEspecializaciones();
+    this.listarUsuariosMedicos();
+  }
+
+  /** Carga los usuarios con rol Medico para poder asociarlos a un medico. */
+  listarUsuariosMedicos(): void {
+    this.usuarioService.listarUsuarios().subscribe({
+      next: (usuarios) => {
+        this.listUsuarios = (usuarios as unknown as { id: number; username: string; rol: string }[])
+          .filter((u) => (u.rol || '').toLowerCase() === 'medico');
+      },
+      error: () => { this.listUsuarios = []; }
+    });
   }
 
   listarEspecializaciones(): void {
@@ -208,7 +226,8 @@ export class MedicoComponent {
       numeroDocumento: medico.numeroDocumento,
       telefono: medico.telefono,
       registroProfesional: medico.registroProfesional,
-      especializacionId: medico.especializacionId ?? medico.especializacion?.id ?? null
+      especializacionId: medico.especializacionId ?? medico.especializacion?.id ?? null,
+      usuarioId: (medico as unknown as { usuarioId?: number }).usuarioId ?? null
     });
     this.modoFormulario = 'E';
     this.openModal(this.modoFormulario);
@@ -245,7 +264,8 @@ export class MedicoComponent {
       numeroDocumento: valores.numeroDocumento.trim(),
       telefono: valores.telefono.trim(),
       registroProfesional: valores.registroProfesional.trim(),
-      especializacionId: valores.especializacionId
+      especializacionId: valores.especializacionId,
+      usuarioId: valores.usuarioId ?? null
     };
     const id = this.medicoSelected?.id;
     if (this.modoFormulario === 'E' && id == null) {

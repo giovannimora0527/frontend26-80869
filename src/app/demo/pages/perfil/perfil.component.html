@@ -1,0 +1,126 @@
+<div class="row">
+  <div class="col-12">
+    <div class="page-header-title mb-3">
+      <h5 class="m-b-10">Mi perfil</h5>
+      <p class="text-muted">Administra la informacion de tu cuenta y tu contrasena.</p>
+    </div>
+  </div>
+</div>
+
+@if (cargando) {
+  <div class="text-center my-4">
+    <span class="spinner-border text-primary"></span>
+  </div>
+}
+
+<div class="row">
+  <!-- Resumen de la cuenta -->
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="feather icon-user" style="font-size: 48px;"></i>
+        </div>
+        <h5 class="mb-1">{{ perfil?.username || '-' }}</h5>
+        <p class="text-muted mb-2">{{ perfil?.email || '-' }}</p>
+        <span class="badge bg-primary">{{ perfil?.rol || '-' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formularios -->
+  <div class="col-md-8">
+    <!-- Informacion de la cuenta -->
+    <div class="card">
+      <div class="card-header">
+        <h5>Informacion de la cuenta</h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="perfilForm" (ngSubmit)="guardarPerfil()" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label">Nombre de usuario</label>
+            <input id="username" type="text" class="form-control" formControlName="username"
+              [class.is-invalid]="campoInvalido(perfilForm, 'username')" />
+            <div class="invalid-feedback">El nombre de usuario debe tener al menos 3 caracteres.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo electronico</label>
+            <input id="email" type="email" class="form-control" formControlName="email"
+              [class.is-invalid]="campoInvalido(perfilForm, 'email')" />
+            <div class="invalid-feedback">Ingresa un correo electronico valido.</div>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary" [disabled]="guardandoPerfil">
+              @if (guardandoPerfil) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Cambiar contrasena -->
+    <div class="card">
+      <div class="card-header">
+        <h5>Cambiar contrasena</h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="passwordForm" (ngSubmit)="cambiarPassword()" novalidate>
+          <div class="mb-3">
+            <label for="passwordActual" class="form-label">Contrasena actual</label>
+            <div class="input-group">
+              <input id="passwordActual" [type]="mostrarPasswordActual ? 'text' : 'password'"
+                class="form-control" formControlName="passwordActual"
+                [class.is-invalid]="campoInvalido(passwordForm, 'passwordActual')" />
+              <button type="button" class="btn btn-outline-secondary"
+                (click)="mostrarPasswordActual = !mostrarPasswordActual">
+                <i class="bi" [ngClass]="mostrarPasswordActual ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+              <div class="invalid-feedback">La contrasena actual es obligatoria.</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="passwordNueva" class="form-label">Nueva contrasena</label>
+            <div class="input-group">
+              <input id="passwordNueva" [type]="mostrarPasswordNueva ? 'text' : 'password'"
+                class="form-control" formControlName="passwordNueva"
+                [class.is-invalid]="campoInvalido(passwordForm, 'passwordNueva')" />
+              <button type="button" class="btn btn-outline-secondary"
+                (click)="mostrarPasswordNueva = !mostrarPasswordNueva">
+                <i class="bi" [ngClass]="mostrarPasswordNueva ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+              <div class="invalid-feedback">La nueva contrasena debe tener al menos 6 caracteres.</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="passwordConfirmar" class="form-label">Confirmar nueva contrasena</label>
+            <div class="input-group">
+              <input id="passwordConfirmar" [type]="mostrarPasswordConfirmar ? 'text' : 'password'"
+                class="form-control" formControlName="passwordConfirmar"
+                [class.is-invalid]="campoInvalido(passwordForm, 'passwordConfirmar') || passwordsNoCoinciden" />
+              <button type="button" class="btn btn-outline-secondary"
+                (click)="mostrarPasswordConfirmar = !mostrarPasswordConfirmar">
+                <i class="bi" [ngClass]="mostrarPasswordConfirmar ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+              <div class="invalid-feedback">
+                @if (passwordsNoCoinciden) { Las contrasenas no coinciden. }
+                @else { Debes confirmar la nueva contrasena. }
+              </div>
+            </div>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary" [disabled]="cambiandoPassword">
+              @if (cambiandoPassword) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              Actualizar contrasena
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

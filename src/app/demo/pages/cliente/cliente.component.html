@@ -1,1 +1,144 @@
-<p>cliente works!</p>
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="m-b-10">Gestion de clientes</h5>
+        <p class="text-muted mb-0">Propietarios de las mascotas.</p>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">
+        <i class="feather icon-plus me-1"></i> Nuevo cliente
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <input type="text" class="form-control" placeholder="Buscar por nombre o documento"
+      [(ngModel)]="filtro" name="filtro" />
+  </div>
+  <div class="card-body">
+    @if (cargando) {
+      <div class="text-center my-4"><span class="spinner-border text-primary"></span></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Documento</th>
+              <th>Nombre</th>
+              <th>Telefono</th>
+              <th>Direccion</th>
+              <th class="text-center">Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of clientesFiltrados; track c.id) {
+              <tr>
+                <td>{{ c.tipoDocumento }} {{ c.numeroDocumento }}</td>
+                <td>{{ c.nombres }} {{ c.apellidos }}</td>
+                <td>{{ c.telefono || '-' }}</td>
+                <td>{{ c.direccion || '-' }}</td>
+                <td class="text-center">
+                  @if (c.activo) { <span class="badge bg-success">Activo</span> }
+                  @else { <span class="badge bg-secondary">Inactivo</span> }
+                </td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="abrirEditar(c)">
+                    <i class="feather icon-edit"></i> Editar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="text-center text-muted py-4">No hay clientes registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Modal crear / editar -->
+@if (modalAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modoEdicion ? 'Editar cliente' : 'Nuevo cliente' }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+        </div>
+        <form [formGroup]="clienteForm" (ngSubmit)="guardar()" novalidate>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Tipo documento</label>
+                <select class="form-select" formControlName="tipoDocumento">
+                  <option value="CC">CC</option>
+                  <option value="TI">TI</option>
+                  <option value="CE">CE</option>
+                  <option value="PA">Pasaporte</option>
+                </select>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Numero de documento</label>
+                <input type="text" class="form-control" formControlName="numeroDocumento"
+                  [class.is-invalid]="campoInvalido('numeroDocumento')" />
+                <div class="invalid-feedback">El numero de documento es obligatorio.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Nombres</label>
+                <input type="text" class="form-control" formControlName="nombres"
+                  [class.is-invalid]="campoInvalido('nombres')" />
+                <div class="invalid-feedback">Los nombres son obligatorios.</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Apellidos</label>
+                <input type="text" class="form-control" formControlName="apellidos"
+                  [class.is-invalid]="campoInvalido('apellidos')" />
+                <div class="invalid-feedback">Los apellidos son obligatorios.</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Fecha de nacimiento</label>
+                <input type="date" class="form-control" formControlName="fechaNacimiento"
+                  [class.is-invalid]="campoInvalido('fechaNacimiento')" />
+                <div class="invalid-feedback">La fecha es obligatoria.</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Genero</label>
+                <select class="form-select" formControlName="genero">
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                  <option value="O">Otro</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Telefono</label>
+                <input type="text" class="form-control" formControlName="telefono" />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Direccion</label>
+                <input type="text" class="form-control" formControlName="direccion" />
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" formControlName="activo" id="clienteActivo" />
+                  <label class="form-check-label" for="clienteActivo">Cliente activo</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="guardando">
+              @if (guardando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              {{ modoEdicion ? 'Guardar cambios' : 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

@@ -1,0 +1,103 @@
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="m-b-10">Gestion de roles</h5>
+        <p class="text-muted mb-0">Define los roles y los modulos que cada uno puede ver.</p>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">
+        <i class="feather icon-plus me-1"></i> Nuevo rol
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    @if (cargando) {
+      <div class="text-center my-4"><span class="spinner-border text-primary"></span></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Rol</th>
+              <th>Modulos asignados</th>
+              <th class="text-center">Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (rol of roles; track rol.perfilId) {
+              <tr>
+                <td class="fw-semibold">{{ rol.nombre }}</td>
+                <td class="small text-muted">{{ nombreMenus(rol) }}</td>
+                <td class="text-center">
+                  @if (rol.activo) { <span class="badge bg-success">Activo</span> }
+                  @else { <span class="badge bg-secondary">Inactivo</span> }
+                </td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="abrirEditar(rol)">
+                    <i class="feather icon-edit"></i> Editar
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="text-center text-muted py-4">No hay roles registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Modal crear / editar rol -->
+@if (modalAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modoEdicion ? 'Editar rol' : 'Nuevo rol' }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-8">
+              <label class="form-label">Nombre del rol</label>
+              <input type="text" class="form-control" [(ngModel)]="nombre" name="nombre"
+                placeholder="Ej: Despacho medico, Contable..." />
+            </div>
+            <div class="col-md-4 d-flex align-items-center">
+              <div class="form-check form-switch mt-4">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="activo" name="activo" id="rolActivo" />
+                <label class="form-check-label" for="rolActivo">Rol activo</label>
+              </div>
+            </div>
+          </div>
+
+          <label class="form-label">Modulos que puede ver este rol</label>
+          <div class="row">
+            @for (menu of menus; track menu.menuId) {
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" [id]="'menu-' + menu.menuId"
+                    [checked]="estaSeleccionado(menu.menuId)" (change)="toggleMenu(menu.menuId)" />
+                  <label class="form-check-label" [for]="'menu-' + menu.menuId">{{ menu.title }}</label>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
+            @if (guardando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            {{ modoEdicion ? 'Guardar cambios' : 'Crear rol' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

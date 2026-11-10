@@ -85,20 +85,15 @@ export class BackendService {
   }
 
   // Servicio generico para realizar peticiones POST al backend con archivos.
+  // No se fija Content-Type manualmente: el navegador establece el boundary
+  // correcto de multipart/form-data automaticamente. El token se adjunta
+  // mediante el interceptor de autenticacion.
   postFile<T>(
     urlApi: string,
     endpoint: string,
     service: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any
+    formData: FormData
   ): Observable<T> {
-    const tokenRecuperado = sessionStorage.getItem('token') || ''; // Evita `null`
-    const headers = new HttpHeaders({
-      mimeType: 'multipart/form-data',
-      Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
-    });
-    return this.http.post<T>(`${urlApi}/${endpoint}/${service}`, data, {
-      headers: headers,
-    });
+    return this.http.post<T>(`${urlApi}/${endpoint}/${service}`, formData);
   }
 }
