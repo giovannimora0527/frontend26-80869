@@ -1,0 +1,178 @@
+<div class="row">
+  <div class="col-12">
+    <h5 class="m-b-10">Despacho de medicamentos</h5>
+    <p class="text-muted">Dispensacion de formulas. El inventario se descuenta solo al confirmar la entrega.</p>
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" style="cursor:pointer" [class.active]="pestana==='pendientes'"
+          (click)="cambiarPestana('pendientes')">Pendientes</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" style="cursor:pointer" [class.active]="pestana==='historial'"
+          (click)="cambiarPestana('historial')">Historial</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- PENDIENTES -->
+@if (pestana === 'pendientes') {
+  <div class="card">
+    <div class="card-body">
+      @if (cargando) {
+        <div class="text-center my-4"><span class="spinner-border text-primary"></span></div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Formula #</th>
+                <th>Fecha</th>
+                <th>Propietario</th>
+                <th>Mascota</th>
+                <th>Medico</th>
+                <th class="text-center">Medicamentos</th>
+                <th class="text-end">Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of pendientes; track f.formulaId) {
+                <tr>
+                  <td>{{ f.formulaId }}</td>
+                  <td>{{ f.fechaGeneracion ? (f.fechaGeneracion.substring(0,16).replace('T',' ')) : '' }}</td>
+                  <td>{{ f.clienteNombre || '-' }}</td>
+                  <td>{{ f.mascotaNombre || '-' }}</td>
+                  <td>{{ f.medicoNombre || '-' }}</td>
+                  <td class="text-center">{{ f.medicamentos.length }}</td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="abrirPreparar(f)">
+                      <i class="feather icon-package me-1"></i> Preparar
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="text-center text-muted py-4">No hay formulas pendientes de despacho.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- HISTORIAL -->
+@if (pestana === 'historial') {
+  <div class="card">
+    <div class="card-body">
+      @if (cargando) {
+        <div class="text-center my-4"><span class="spinner-border text-primary"></span></div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Formula</th>
+                <th>Propietario</th>
+                <th>Mascota</th>
+                <th>Responsable</th>
+                <th class="text-center">Estado</th>
+                <th class="text-end">Comprobante</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of despachos; track d.id) {
+                <tr>
+                  <td>{{ d.id }}</td>
+                  <td>{{ d.fecha ? (d.fecha.substring(0,16).replace('T',' ')) : '' }}</td>
+                  <td>{{ d.formulaId }}</td>
+                  <td>{{ d.clienteNombre || '-' }}</td>
+                  <td>{{ d.mascotaNombre || '-' }}</td>
+                  <td>{{ d.usuarioResponsable || '-' }}</td>
+                  <td class="text-center"><span class="badge {{ badgeEstado(d.estado) }}">{{ d.estado }}</span></td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="descargarComprobante(d)">
+                      <i class="feather icon-file-text"></i> PDF
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8" class="text-center text-muted py-4">No hay despachos registrados.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Modal preparar despacho -->
+@if (modalAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Preparar despacho - Formula #{{ formulaSeleccionada?.formulaId }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2 small text-muted">
+            Propietario: {{ formulaSeleccionada?.clienteNombre }} |
+            Mascota: {{ formulaSeleccionada?.mascotaNombre }}
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+              <thead>
+                <tr>
+                  <th>Medicamento</th>
+                  <th class="text-center">Prescrito</th>
+                  <th class="text-center">Disponible</th>
+                  <th style="width:140px" class="text-center">Entregar</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of entregas; track e.medicamentoId) {
+                  <tr>
+                    <td>{{ e.medicamentoNombre }}</td>
+                    <td class="text-center">{{ e.cantidadPrescrita }}</td>
+                    <td class="text-center">
+                      @if (e.existenciaDisponible < e.cantidadPrescrita) {
+                        <span class="text-danger">{{ e.existenciaDisponible }}</span>
+                      } @else {
+                        {{ e.existenciaDisponible }}
+                      }
+                    </td>
+                    <td>
+                      <input type="number" min="0" [max]="e.existenciaDisponible"
+                        class="form-control form-control-sm" [(ngModel)]="e.cantidadEntregada"
+                        [name]="'ent'+e.medicamentoId" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Observacion</label>
+            <input type="text" class="form-control" [(ngModel)]="observacion" name="observacion" />
+          </div>
+          <p class="text-muted small mb-0">
+            El inventario se descuenta de los lotes con vencimiento mas proximo (FEFO). No se entregan
+            lotes vencidos. Si entrega menos de lo prescrito, el despacho queda como parcial.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="confirmar()" [disabled]="guardando">
+            @if (guardando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Confirmar despacho
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

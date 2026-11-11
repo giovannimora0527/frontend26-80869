@@ -48,6 +48,30 @@ export const NavigationItems: NavigationItem[] = [
         classes: 'nav-item'
       },
       {
+        id: 'servicios',
+        title: 'Gestión de Servicios',
+        type: 'item',
+        url: '/inicio/servicios',
+        icon: 'fa-solid fa-hand-holding-medical',
+        classes: 'nav-item'
+      },
+      {
+        id: 'facturacion',
+        title: 'Facturación',
+        type: 'item',
+        url: '/inicio/facturacion',
+        icon: 'fa-solid fa-file-invoice-dollar',
+        classes: 'nav-item'
+      },
+      {
+        id: 'despacho',
+        title: 'Despacho de Medicamentos',
+        type: 'item',
+        url: '/inicio/despacho',
+        icon: 'fa-solid fa-truck-medical',
+        classes: 'nav-item'
+      },
+      {
         id: 'formulas',
         title: 'Gestión de Formulas',
         type: 'item',
@@ -102,6 +126,14 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/inicio/roles',
         icon: 'feather icon-shield',
+        classes: 'nav-item'
+      },
+      {
+        id: 'reportes',
+        title: 'Reportes',
+        type: 'item',
+        url: '/inicio/reportes',
+        icon: 'fa-solid fa-chart-line',
         classes: 'nav-item'
       },
       /* ---------- Nuevos menus aqui -------------  */

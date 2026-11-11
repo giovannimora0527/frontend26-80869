@@ -1,0 +1,186 @@
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="m-b-10">Gestion de servicios</h5>
+        <p class="text-muted mb-0">Servicios, procedimientos y sus tarifas (precio e IVA).</p>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="abrirCrear()">
+        <i class="feather icon-plus me-1"></i> Nuevo servicio
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <input type="text" class="form-control" placeholder="Buscar servicio por nombre"
+      [(ngModel)]="filtro" name="filtro" />
+  </div>
+  <div class="card-body">
+    @if (cargando) {
+      <div class="text-center my-4"><span class="spinner-border text-primary"></span></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Servicio</th>
+              <th>Especializacion</th>
+              <th class="text-end">Precio</th>
+              <th class="text-center">IVA</th>
+              <th class="text-end">Precio + IVA</th>
+              <th class="text-center">Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of serviciosFiltrados; track s.id) {
+              <tr>
+                <td>
+                  {{ s.nombre }}
+                  <div class="text-muted small">{{ s.descripcion }}</div>
+                </td>
+                <td>{{ s.especializacionNombre || 'General' }}</td>
+                <td class="text-end">{{ s.precio | number:'1.2-2' }}</td>
+                <td class="text-center">{{ s.ivaPorcentaje }}%</td>
+                <td class="text-end">{{ s.precioConIva | number:'1.2-2' }}</td>
+                <td class="text-center">
+                  @if (s.activo) { <span class="badge bg-success">Activo</span> }
+                  @else { <span class="badge bg-secondary">Inactivo</span> }
+                </td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                    title="Historial de tarifas" (click)="verHistorial(s)">
+                    <i class="feather icon-clock"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-primary"
+                    title="Editar" (click)="abrirEditar(s)">
+                    <i class="feather icon-edit"></i>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="text-center text-muted py-4">No hay servicios registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Modal crear / editar -->
+@if (modalAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modoEdicion ? 'Editar servicio' : 'Nuevo servicio' }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+        </div>
+        <form [formGroup]="servicioForm" (ngSubmit)="guardar()" novalidate>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Nombre</label>
+                <input type="text" class="form-control" formControlName="nombre"
+                  [class.is-invalid]="campoInvalido('nombre')" />
+                <div class="invalid-feedback">El nombre es obligatorio.</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Especializacion</label>
+                <select class="form-select" formControlName="especializacionId">
+                  <option [ngValue]="null">General (sin especializacion)</option>
+                  @for (esp of especializaciones; track esp.id) {
+                    <option [ngValue]="esp.id">{{ esp.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Descripcion</label>
+                <input type="text" class="form-control" formControlName="descripcion" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Precio</label>
+                <input type="number" class="form-control" formControlName="precio" min="0"
+                  [class.is-invalid]="campoInvalido('precio')" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">IVA (%)</label>
+                <input type="number" class="form-control" formControlName="ivaPorcentaje" min="0" max="100"
+                  [class.is-invalid]="campoInvalido('ivaPorcentaje')" />
+              </div>
+              <div class="col-md-4 d-flex align-items-center">
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" formControlName="activo" id="servicioActivo" />
+                  <label class="form-check-label" for="servicioActivo">Servicio activo</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="guardando">
+              @if (guardando) { <span class="spinner-border spinner-border-sm me-2"></span> }
+              {{ modoEdicion ? 'Guardar cambios' : 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal historial de tarifas -->
+@if (modalHistorialAbierto) {
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Historial de tarifas: {{ servicioHistorialNombre }}</h5>
+          <button type="button" class="btn-close" (click)="cerrarHistorial()"></button>
+        </div>
+        <div class="modal-body">
+          @if (cargandoHistorial) {
+            <div class="text-center my-3"><span class="spinner-border spinner-border-sm text-primary"></span></div>
+          } @else {
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered align-middle">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th class="text-end">Precio anterior</th>
+                    <th class="text-end">Precio nuevo</th>
+                    <th class="text-center">IVA ant.</th>
+                    <th class="text-center">IVA nuevo</th>
+                    <th>Responsable</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (log of historial; track log.id) {
+                    <tr>
+                      <td>{{ log.fecha }}</td>
+                      <td class="text-end">{{ log.precioAnterior | number:'1.2-2' }}</td>
+                      <td class="text-end">{{ log.precioNuevo | number:'1.2-2' }}</td>
+                      <td class="text-center">{{ log.ivaAnterior }}%</td>
+                      <td class="text-center">{{ log.ivaNuevo }}%</td>
+                      <td>{{ log.usuarioResponsable }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="6" class="text-center text-muted">Este servicio no ha tenido cambios de tarifa.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarHistorial()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show"></div>
+}

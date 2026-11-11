@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "2420bc35f5ef7ba0a0ad9eb582762ed5c97cef74",
-    "indexed_at": "2026-11-10T04:57:20Z",
+    "commit": "f38474e9c7847daae8aaafabcd31780f3aa06c01",
+    "indexed_at": "2026-11-11T02:42:07Z",
     "project": "C-frontend26-80869",
-    "nodes": 2319,
-    "edges": 4379,
-    "original_size": 8716288,
-    "compressed_size": 1628083,
+    "nodes": 2489,
+    "edges": 4964,
+    "original_size": 9240576,
+    "compressed_size": 1747374,
     "compression_level": 3
 }

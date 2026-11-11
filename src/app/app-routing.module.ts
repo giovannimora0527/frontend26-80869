@@ -4,7 +4,6 @@ import { AdminComponent } from './theme/layout/admin/admin.component';
 import { UsuarioComponent } from './demo/pages/usuario/usuario.component';
 import { MascotaComponent } from './demo/pages/mascota/mascota.component';
 import { MedicoComponent } from './demo/pages/medico/medico.component';
-import { FormulaMedicaComponent } from './demo/pages/formula-medica/formula-medica.component';
 import { CitasContenedorComponent } from './demo/pages/cita/citas-contenedor.component';
 import { ClienteComponent } from './demo/pages/cliente/cliente.component';
 import { HistoriaComponent } from './demo/pages/historia/historia.component';
@@ -13,6 +12,11 @@ import { LoginComponent } from './demo/pages/login/login.component';
 import { PerfilComponent } from './demo/pages/perfil/perfil.component';
 import { InventarioComponent } from './demo/pages/inventario/inventario.component';
 import { RolComponent } from './demo/pages/rol/rol.component';
+import { ServicioComponent } from './demo/pages/servicio/servicio.component';
+import { FormulaComponent } from './demo/pages/formula/formula.component';
+import { FacturacionComponent } from './demo/pages/facturacion/facturacion.component';
+import { DespachoComponent } from './demo/pages/despacho/despacho.component';
+import { ReportesComponent } from './demo/pages/reportes/reportes.component';
 import { authGuard } from './guards/auth.guard';
 
 
@@ -37,11 +41,15 @@ export const routes: Routes = [
       { path: 'mascotas', component: MascotaComponent, data: { title: 'Mascotas' }},
       { path: 'medicos', component: MedicoComponent, data: { title: 'Medicos' }},
       /* Inserte nuevos menus aqui */    
-      { path: 'formulas', component: FormulaMedicaComponent, data: { title: 'Formulas' }},
+      { path: 'formulas', component: FormulaComponent, data: { title: 'Formulas' }},
       { path: 'citas', component: CitasContenedorComponent, data: { title: 'Citas' }},
       { path: 'clientes', component: ClienteComponent, data: { title: 'Clientes' }},
       { path: 'historias', component: HistoriaComponent, data: { title: 'Historias' }},
-      { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' }}
+      { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' }},
+      { path: 'servicios', component: ServicioComponent, data: { title: 'Servicios' }},
+      { path: 'facturacion', component: FacturacionComponent, data: { title: 'Facturacion' }},
+      { path: 'despacho', component: DespachoComponent, data: { title: 'Despacho' }},
+      { path: 'reportes', component: ReportesComponent, data: { title: 'Reportes' }}
     ]
   },
   { path: '**', redirectTo: 'login' }
