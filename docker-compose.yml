@@ -1,0 +1,89 @@
+# ============================================================
+#  docker-compose.yml - Clinica DDSF (copia para el repo frontend)
+#  Orquesta MySQL, backend (Spring Boot) y frontend (Angular + Nginx).
+# ============================================================
+#
+#  Este archivo es equivalente al que esta en el repositorio del backend.
+#  Permite levantar todo desde la carpeta del frontend. Espera que los dos
+#  repositorios esten como carpetas hermanas:
+#
+#    proyecto/
+#      Backen-p/     <- repositorio del backend
+#      Frontend-p/   <- este repositorio (contiene este archivo)
+#
+#  Uso (desde esta carpeta):
+#    docker compose up --build
+#
+#  Puertos publicados:
+#    - Frontend: http://localhost:4200
+#    - Backend:  http://localhost:8080/clinica/v1
+#    - MySQL:    localhost:3307
+# ============================================================
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: clinica-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: clinica123
+      MYSQL_DATABASE: clinica
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # El dump de inicializacion vive en el repositorio del backend.
+      - ../Backen-p/docker/mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - clinica-net
+
+  backend:
+    build:
+      context: ../Backen-p
+      dockerfile: Dockerfile
+    container_name: clinica-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: clinica
+      DB_USER: root
+      DB_PASSWORD: clinica123
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_TO: ${MAIL_TO:-}
+    ports:
+      - "8080:8080"
+    networks:
+      - clinica-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinica-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+    networks:
+      - clinica-net
+
+networks:
+  clinica-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

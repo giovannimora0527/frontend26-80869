@@ -1,0 +1,12 @@
+# Archivos y carpetas que NO deben copiarse al contexto de construccion.
+# node_modules y dist se regeneran dentro del contenedor; copiarlos haria
+# el build enorme y lento.
+node_modules/
+dist/
+.git/
+.gitignore
+.angular/
+.vscode/
+.idea/
+*.log
+docs/

@@ -1,3 +1,39 @@
+# Frontend - Clínica DDSF (Angular 19)
+
+Interfaz web de la clínica veterinaria, construida sobre la plantilla Datta Able
+(Angular 19 + Bootstrap 5) con identidad de marca propia (ver
+`docs/estetica-identidad.md`). Las pantallas por módulo se describen en
+`docs/README.md`.
+
+## Ejecución con Docker (recomendada)
+
+Todo el sistema (base de datos, backend y frontend) se levanta con Docker
+Compose. Requiere los repositorios `Backen-p` y `Frontend-p` como carpetas
+hermanas. Desde esta carpeta:
+
+```bash
+docker compose up --build
+```
+
+Luego acceda a http://localhost:4200. El despliegue completo está documentado en
+`../Backen-p/docs/docker-despliegue.md`.
+
+## Ejecución local sin Docker
+
+Requiere Node 20+. Instale dependencias y levante el servidor de desarrollo:
+
+```bash
+npm install
+npm start
+```
+
+La aplicación queda en http://localhost:4200 y espera el backend en
+http://localhost:8080/clinica/v1.
+
+---
+
+> A continuación se conserva la documentación original de la plantilla Datta Able.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Price](https://img.shields.io/badge/price-FREE-0098f7.svg)](https://codedthemes.com/item/datta-able-angular-lite/)
 [![GitHub package version](https://img.shields.io/github/package-json/v/codedthemes/datta-able-free-angular-admin-template)](https://github.com/codedthemes/datta-able-free-angular-admin-template/)
