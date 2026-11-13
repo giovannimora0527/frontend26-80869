@@ -1,11 +1,12 @@
 {
     "schema_version": 2,
-    "commit": "f38474e9c7847daae8aaafabcd31780f3aa06c01",
-    "indexed_at": "2026-11-11T02:42:07Z",
+    "commit": "832fe9167028fa965b3d3b46005feb5fae2e7ee7",
+    "indexed_at": "2026-11-11T02:45:23Z",
     "project": "C-frontend26-80869",
     "nodes": 2489,
     "edges": 4964,
     "original_size": 9240576,
-    "compressed_size": 1747374,
-    "compression_level": 3
+    "compressed_size": 1745657,
+    "compression_level": 3,
+    "reconcile_basis": "git-clean-head"
 }

@@ -16,10 +16,14 @@ export interface NavigationItem {
 
   children?: NavigationItem[];
 }
+// El menu lateral se organiza en grupos (cajitas) para evitar una lista plana
+// y muy larga. Cada item conserva su "id", que es el codigo con el que el
+// filtro por perfil_menu decide si el item se muestra al rol autenticado.
+// Al agrupar, un grupo solo aparece si al menos uno de sus items esta permitido.
 export const NavigationItems: NavigationItem[] = [
   {
-    id: 'navigation',
-    title: 'Inicio',
+    id: 'grp-agenda',
+    title: 'Agenda',
     type: 'group',
     icon: 'icon-navigation',
     children: [
@@ -30,6 +34,38 @@ export const NavigationItems: NavigationItem[] = [
         url: '/inicio/citas',
         icon: 'bi bi-calendar',
         classes: 'nav-item'
+      }
+    ]
+  },
+  {
+    id: 'grp-clinica',
+    title: 'Mi Clínica',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
+      {
+        id: 'historias',
+        title: 'Gestión de Historias',
+        type: 'item',
+        url: '/inicio/historias',
+        icon: 'fa-solid fa-book-medical',
+        classes: 'nav-item'
+      },
+      {
+        id: 'formulas',
+        title: 'Gestión de Formulas',
+        type: 'item',
+        url: '/inicio/formulas',
+        icon: 'fa-solid fa-clipboard-list',
+        classes: 'nav-item'
+      },
+      {
+        id: 'mascotas',
+        title: 'Gestión de Mascotas',
+        type: 'item',
+        url: '/inicio/mascotas',
+        icon: 'fa-solid fa-paw',
+        classes: 'nav-item'
       },
       {
         id: 'clientes',
@@ -38,15 +74,39 @@ export const NavigationItems: NavigationItem[] = [
         url: '/inicio/clientes',
         icon: 'bi bi-person-check',
         classes: 'nav-item'
-      },
+      }
+    ]
+  },
+  {
+    id: 'grp-inventario',
+    title: 'Inventario y despacho',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
       {
-        id: 'especializaciones',
-        title: 'Gestión de Especializaciones',
+        id: 'inventario',
+        title: 'Gestión de Inventario',
         type: 'item',
-        url: '/inicio/especializaciones',
-        icon: 'fa-solid fa-user-graduate',
+        url: '/inicio/inventario',
+        icon: 'fa-solid fa-boxes-stacked',
         classes: 'nav-item'
       },
+      {
+        id: 'despacho',
+        title: 'Despacho de Medicamentos',
+        type: 'item',
+        url: '/inicio/despacho',
+        icon: 'fa-solid fa-truck-medical',
+        classes: 'nav-item'
+      }
+    ]
+  },
+  {
+    id: 'grp-gestion',
+    title: 'Gestión',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
       {
         id: 'servicios',
         title: 'Gestión de Servicios',
@@ -64,52 +124,35 @@ export const NavigationItems: NavigationItem[] = [
         classes: 'nav-item'
       },
       {
-        id: 'despacho',
-        title: 'Despacho de Medicamentos',
+        id: 'reportes',
+        title: 'Reportes',
         type: 'item',
-        url: '/inicio/despacho',
-        icon: 'fa-solid fa-truck-medical',
+        url: '/inicio/reportes',
+        icon: 'fa-solid fa-chart-line',
         classes: 'nav-item'
-      },
-      {
-        id: 'formulas',
-        title: 'Gestión de Formulas',
-        type: 'item',
-        url: '/inicio/formulas',
-        icon: 'fa-solid fa-clipboard-list',
-        classes: 'nav-item'
-      },
-      {
-        id: 'historias',
-        title: 'Gestión de Historias',
-        type: 'item',
-        url: '/inicio/historias',
-        icon: 'fa-solid fa-book-medical',
-        classes: 'nav-item'
-      },
-      {
-        id: 'mascotas',
-        title: 'Gestión de Mascotas',
-        type: 'item',
-        url: '/inicio/mascotas',
-        icon: 'fa-solid fa-paw',
-        classes: 'nav-item'
-      },
-      {
-        id: 'inventario',
-        title: 'Gestión de Inventario',
-        type: 'item',
-        url: '/inicio/inventario',
-        icon: 'fa-solid fa-boxes-stacked',
-        classes: 'nav-item'
-      },
-
+      }
+    ]
+  },
+  {
+    id: 'grp-administracion',
+    title: 'Administración',
+    type: 'group',
+    icon: 'icon-navigation',
+    children: [
       {
         id: 'medicos',
         title: 'Gestión de Medicos',
         type: 'item',
         url: '/inicio/medicos',
         icon: 'fa-solid fa-user-doctor',
+        classes: 'nav-item'
+      },
+      {
+        id: 'especializaciones',
+        title: 'Gestión de Especializaciones',
+        type: 'item',
+        url: '/inicio/especializaciones',
+        icon: 'fa-solid fa-user-graduate',
         classes: 'nav-item'
       },
       {
@@ -127,18 +170,10 @@ export const NavigationItems: NavigationItem[] = [
         url: '/inicio/roles',
         icon: 'feather icon-shield',
         classes: 'nav-item'
-      },
-      {
-        id: 'reportes',
-        title: 'Reportes',
-        type: 'item',
-        url: '/inicio/reportes',
-        icon: 'fa-solid fa-chart-line',
-        classes: 'nav-item'
-      },
+      }
       /* ---------- Nuevos menus aqui -------------  */
     ]
-  },
+  }
 ];
 
 export function getNavigationItems(): NavigationItem[] {

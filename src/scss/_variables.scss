@@ -6,17 +6,25 @@ $header-height: 70px;
 $Menu-width: 264px;
 $Menu-collapsed-width: 80px;
 
+// =======================================
+//   Identidad de marca - Clinica DDSF
+//   Paleta aguamarina pastel + sidebar petroleo oscuro.
+//   (David, Danna, Sebastian, Farid)
+// =======================================
 // color list for build layouts
 // temp variables
-$theme-color: linear-gradient(-135deg, #1de9b6 0%, #1dc4e9 100%);
-$theme-color2: linear-gradient(-135deg, #899fd4 0%, #a389d4 100%);
-$primary-color: #04a9f5;
+$theme-color: linear-gradient(-135deg, #7fd1c9 0%, #4fb0ac 100%);
+$theme-color2: linear-gradient(-135deg, #9bd6cf 0%, #6fc2bb 100%);
+// Aguamarina pastel como color primario de la marca. Se usa una variante un
+// poco mas saturada que el tono pastel puro para garantizar contraste en
+// botones y enlaces.
+$primary-color: #4bbdb2;
 $warning-color: #f4c22b;
-$danger-color: #f44236;
-$success-color: #1de9b6;
+$danger-color: #e2686b;
+$success-color: #4bbdb2;
 $purple-color: #a389d4;
-$info-color: #3ebfea;
-$secondary-color: #748892;
+$info-color: #6fc2bb;
+$secondary-color: #6d7f84;
 $default-color: #d6d6d6;
 $light-color: #f2f2f2;
 $dark-color: #37474f;
@@ -25,19 +33,20 @@ $theme-border: #eaeaea;
 $white: #fff;
 
 // header
-$brand-background: #3f4d67;
-$header-dark-background: #3f4d67;
+// Marca y menu en verde petroleo oscuro y elegante (no gris sobrio).
+$brand-background: #123b3a;
+$header-dark-background: #123b3a;
 $header-dark-text-color: #fff;
 $header-light-background: #fff;
-$header-light-text-color: #3f4d67;
+$header-light-text-color: #123b3a;
 
-// Menu
-$menu-caption-color: #14171d;
-$menu-dark-background: #3f4d67;
-$menu-dark-text-color: #a9b7d0;
+// Menu (sidebar) oscuro petroleo
+$menu-caption-color: #7fd1c9;
+$menu-dark-background: #123b3a;
+$menu-dark-text-color: #c6dedb;
 $menu-light-background: #fff;
-$menu-light-text-color: #3f4d67;
-$menu-active-color: #04a9f5;
+$menu-light-text-color: #123b3a;
+$menu-active-color: #7fd1c9;
 
 // dark layout colors
 $dark-layout: #212224;
@@ -58,11 +67,12 @@ $color-active-color: $primary-color, #ff5252, #9575cd, #23b7e5, lighten($dark-la
 $color-title-name: blue, red, purple, lightblue, dark;
 $color-title-color: $primary-color, #ff5252, #9575cd, #23b7e5, lighten($dark-layout, 7%);
 
-$theme-font-family: 'Open Sans', sans-serif;
+$theme-font-family: 'Inter', 'Segoe UI', sans-serif;
+$theme-heading-font-family: 'Poppins', 'Inter', sans-serif;
 $theme-font-size: 14px;
-$theme-background: #f4f7fa;
-$theme-font-color: #888;
-$theme-heading-color: #111;
+$theme-background: #f3f8f7;
+$theme-font-color: #6b7a7a;
+$theme-heading-color: #123b3a;
 
 $layout-6-bg-color: #23b7e5;
 

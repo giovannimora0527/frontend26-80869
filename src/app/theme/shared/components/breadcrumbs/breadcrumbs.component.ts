@@ -47,7 +47,7 @@ export class BreadcrumbsComponent {
         const activeLink = router.url;
         const breadcrumbList = this.filterNavigation(this.navigations, activeLink);
         this.navigationList = breadcrumbList;
-        this.titleService.setTitle('Clinica Veterinaria | Uniminuto');
+        this.titleService.setTitle('Clinica DDSF | Veterinaria');
       }
     });
   }
