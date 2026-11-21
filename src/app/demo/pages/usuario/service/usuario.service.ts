@@ -19,7 +19,7 @@ export class UsuarioService {
 
   constructor(private backendService: BackendService) { }
 
-  /** Lista todos los usuarios (activos e inactivos). */
+  /** Lista todos los usuarios (activos y desactivados). */
   getUsuarios(): Observable<Usuario[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar");
   }

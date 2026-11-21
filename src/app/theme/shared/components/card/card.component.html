@@ -1,10 +1,10 @@
 <div class="card" [ngClass]="cardClass" [@cardRemove]="cardRemove" #toAnimate>
-  @if (!hidHeader) {
+  @if (!hidHeader()) {
     <div class="card-header" [ngClass]="headerClass()">
-      @if (!customHeader) {
+      @if (!customHeader()) {
         <h5>{{ cardTitle() }}</h5>
       }
-      @if (this.options && !customHeader) {
+      @if (options() && !customHeader()) {
         <div class="card-header-right">
           <div class="btn-group card-option dropdown" ngbDropdown>
             <button type="button" class="btn dropdown-toggle btn-icon" ngbDropdownToggle>
@@ -49,7 +49,7 @@
           </div>
         </div>
       }
-      @if (customHeader) {
+      @if (customHeader()) {
         <ng-content select=".app-card-header"></ng-content>
       }
     </div>

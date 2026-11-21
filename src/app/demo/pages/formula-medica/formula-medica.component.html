@@ -32,7 +32,7 @@
           <select id="filtroEstadoFormula" class="form-select" [(ngModel)]="estadoFiltro" (change)="aplicarFiltros()">
             <option value="">Todas</option>
             <option value="true">Activas</option>
-            <option value="false">Inactivas</option>
+            <option value="false">Desactivadas</option>
           </select>
         </div>
         <div class="col-lg-2 col-md-4">
@@ -82,7 +82,7 @@
                 <td class="text-center">{{ f.medicoNombre }}</td>
                 <td class="text-center">{{ f.medicamentoNombre }}</td>
                 <td class="text-center">
-                  <span class="badge" [ngClass]="f.activo ? 'bg-success' : 'bg-secondary'">{{ f.activo ? 'Activa' : 'Inactiva' }}</span>
+                  <span class="badge" [ngClass]="f.activo ? 'bg-success' : 'bg-secondary'">{{ f.activo ? 'Activa' : 'Desactivada' }}</span>
                 </td>
                 <td class="text-center acciones">
                   <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="verFormula(f)">
@@ -96,12 +96,12 @@
                       <button type="button" ngbDropdownItem [disabled]="!f.activo" (click)="abrirEdicion(f)">
                         <i class="fa fa-edit text-info" aria-hidden="true"></i>
                         <span><span class="accion-titulo">Editar fórmula</span>
-                          <span class="accion-ayuda">{{ f.activo ? 'Cambiar medicamento, dosis, frecuencia o indicaciones' : 'Una fórmula inactiva no se puede editar' }}</span></span>
+                          <span class="accion-ayuda">{{ f.activo ? 'Cambiar medicamento, dosis, frecuencia o indicaciones' : 'Una fórmula desactivada no se puede editar' }}</span></span>
                       </button>
                       <div class="dropdown-divider"></div>
                       <button type="button" ngbDropdownItem [class.text-danger]="f.activo" (click)="cambiarEstado(f)">
                         <i class="fa" [ngClass]="f.activo ? 'fa-toggle-off' : 'fa-toggle-on text-success'" aria-hidden="true"></i>
-                        <span><span class="accion-titulo">{{ f.activo ? 'Inactivar fórmula' : 'Activar fórmula' }}</span>
+                        <span><span class="accion-titulo">{{ f.activo ? 'Desactivar fórmula' : 'Activar fórmula' }}</span>
                           <span class="accion-ayuda">{{ f.activo ? 'No se borra: queda guardada en el historial' : 'Vuelve a poder editarse' }}</span></span>
                       </button>
                     </div>
@@ -152,7 +152,7 @@
             <dt class="col-sm-4">Duración</dt><dd class="col-sm-8">{{ fm.duracion }}</dd>
             <dt class="col-sm-4">Indicaciones</dt><dd class="col-sm-8 text-break">{{ fm.indicaciones || 'Sin indicaciones' }}</dd>
             <dt class="col-sm-4">Estado</dt>
-            <dd class="col-sm-8"><span class="badge" [ngClass]="fm.activo !== false ? 'bg-success' : 'bg-secondary'">{{ fm.activo !== false ? 'Activa' : 'Inactiva' }}</span></dd>
+            <dd class="col-sm-8"><span class="badge" [ngClass]="fm.activo !== false ? 'bg-success' : 'bg-secondary'">{{ fm.activo !== false ? 'Activa' : 'Desactivada' }}</span></dd>
           </dl>
           <hr />
           <h2 class="h6">Paciente</h2>

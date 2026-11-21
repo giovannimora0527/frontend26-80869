@@ -14,7 +14,7 @@ import { fechaLocalISO, fechaNoFutura, vencimientoPosterior } from 'src/app/util
 import { MedicamentoService } from './service/medicamento.service';
 
 /** Opciones del filtro por estado del listado. */
-type FiltroEstado = 'todos' | 'activos' | 'inactivos';
+type FiltroEstado = 'todos' | 'activos' | 'desactivados';
 
 /**
  * Pantalla de gestión de medicamentos: listar, buscar, crear, editar y activar/desactivar.
@@ -122,7 +122,7 @@ export class MedicamentoComponent implements OnInit {
       if (this.filtroEstado === 'activos' && !medicamento.activo) {
         return false;
       }
-      if (this.filtroEstado === 'inactivos' && medicamento.activo) {
+      if (this.filtroEstado === 'desactivados' && medicamento.activo) {
         return false;
       }
       if (!termino) {

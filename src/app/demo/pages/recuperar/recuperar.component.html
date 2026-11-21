@@ -1,0 +1,77 @@
+<div class="cuenta-page">
+  <div class="cuenta-card estrecha">
+    <img src="assets/images/logo_mascotas.png" alt="Logo de la clínica veterinaria" class="card-logo" />
+    <h2>Recuperar contraseña</h2>
+
+    @if (paso === 'solicitar') {
+      <p class="subtitulo">Escribe tu usuario o tu correo y te enviaremos un código</p>
+
+      <form [formGroup]="formSolicitar" (ngSubmit)="solicitarCodigo()" novalidate>
+        <fieldset [disabled]="enviando">
+          <label for="rec-identificador" class="form-label">Usuario o correo electrónico</label>
+          <input id="rec-identificador" class="form-control" type="text" formControlName="identificador"
+            autocomplete="username" [class.is-invalid]="invalido('solicitar', 'identificador')" />
+          <div class="invalid-feedback">Escribe tu usuario o tu correo.</div>
+        </fieldset>
+
+        @if (error) {
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100 mt-3" [disabled]="enviando">
+          {{ enviando ? 'Enviando...' : 'Enviar código' }}
+        </button>
+      </form>
+    } @else {
+      <p class="subtitulo">Escribe el código de 6 dígitos que llegó a tu correo y tu contraseña nueva</p>
+
+      @if (info) {
+        <div class="alert alert-info" role="status">{{ info }}</div>
+      }
+
+      <form [formGroup]="formRestablecer" (ngSubmit)="restablecer()" novalidate autocomplete="off">
+        <fieldset [disabled]="enviando">
+          <label for="rec-codigo" class="form-label">Código</label>
+          <input id="rec-codigo" class="form-control otp-input" type="text" inputmode="numeric" maxlength="6"
+            formControlName="codigo" autocomplete="one-time-code" [class.is-invalid]="invalido('restablecer', 'codigo')" />
+          <div class="invalid-feedback">El código tiene 6 números.</div>
+
+          <label for="rec-nueva" class="form-label mt-3">Contraseña nueva</label>
+          <input id="rec-nueva" class="form-control" [type]="verClaves ? 'text' : 'password'"
+            formControlName="nuevaPassword" autocomplete="new-password"
+            [class.is-invalid]="invalido('restablecer', 'nuevaPassword')" />
+          <div class="invalid-feedback">De 8 a 100 caracteres, con al menos una letra y un número.</div>
+
+          <label for="rec-confirmar" class="form-label mt-3">Confirmar contraseña</label>
+          <input id="rec-confirmar" class="form-control" [type]="verClaves ? 'text' : 'password'"
+            formControlName="confirmar" autocomplete="new-password"
+            [class.is-invalid]="invalido('restablecer', 'confirmar')" />
+          <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+
+          <div class="form-check mt-2">
+            <input id="rec-ver" class="form-check-input" type="checkbox" [checked]="verClaves"
+              (change)="verClaves = !verClaves" />
+            <label for="rec-ver" class="form-check-label">Mostrar contraseñas</label>
+          </div>
+        </fieldset>
+
+        @if (error) {
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+        }
+
+        <button type="submit" class="btn btn-primary w-100 mt-3" [disabled]="enviando">
+          {{ enviando ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+        <div class="acciones">
+          <button type="button" class="btn-link" (click)="pedirOtroCodigo()" [disabled]="enviando">
+            Pedir otro código
+          </button>
+        </div>
+      </form>
+    }
+
+    <div class="acciones">
+      <a routerLink="/login" class="btn-link">Volver a iniciar sesión</a>
+    </div>
+  </div>
+</div>

@@ -78,7 +78,7 @@ export class CardComponent implements OnInit {
 
   // life cycle event
   ngOnInit() {
-    if (!this.options || this.hidHeader || this.customHeader) {
+    if (!this.options() || this.hidHeader() || this.customHeader()) {
       this.collapsedCard = 'false';
     }
   }

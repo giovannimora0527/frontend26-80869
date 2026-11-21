@@ -111,7 +111,7 @@ export class MascotaComponent {
       if (termino === 'activo' || termino === 'true') {
         return mascota.activo === true;
       }
-      if (termino === 'inactivo' || termino === 'false') {
+      if (termino === 'desactivado' || termino === 'false') {
         return mascota.activo === false;
       }
 
@@ -163,7 +163,7 @@ export class MascotaComponent {
   }
 
   obtenerEstado(mascota: Mascota): string {
-    return mascota.activo == null ? 'No informado' : mascota.activo ? 'Activo' : 'Inactivo';
+    return mascota.activo == null ? 'No informado' : mascota.activo ? 'Activo' : 'Desactivado';
   }
 
   ordenarPor(columna: ColumnaOrden): void {

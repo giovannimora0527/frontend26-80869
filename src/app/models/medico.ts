@@ -11,4 +11,6 @@ export class Medico {
     especializacionId?: number;
     especializacion?: Especializacion;
     estado?: boolean;
+    /** Usuario del sistema asociado al médico (opcional). */
+    usuarioId?: number;
 }

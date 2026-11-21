@@ -21,7 +21,7 @@ export class MedicamentoService {
 
   }
 
-  /** Lista todos los medicamentos (activos e inactivos). */
+  /** Lista todos los medicamentos (activos y desactivados). */
   listarMedicamentos(): Observable<Medicamento[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar");
   }

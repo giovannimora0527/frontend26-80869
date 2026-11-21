@@ -1,0 +1,89 @@
+// Estilos compartidos de las pantallas públicas de cuenta (registro y recuperar contraseña).
+.cuenta-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #0b3d91 0%, #1f6fd1 60%, #5aa9e6 100%);
+}
+
+.cuenta-card {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+  &.estrecha {
+    max-width: 420px;
+  }
+
+  .card-logo {
+    display: block;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitulo {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .seccion {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #1f6fd1;
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .otp-input {
+    text-align: center;
+    font-size: 1.8rem;
+    letter-spacing: 0.5rem;
+    font-weight: 600;
+  }
+
+  .alert {
+    margin: 1rem 0 0;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .acciones {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-link {
+    border: 0;
+    background: transparent;
+    color: #1f6fd1;
+    padding: 0;
+    text-decoration: none;
+
+    &:disabled {
+      color: #9aa5b1;
+    }
+  }
+}

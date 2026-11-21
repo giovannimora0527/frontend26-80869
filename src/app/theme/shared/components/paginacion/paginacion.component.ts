@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 /**
  * Barra de paginación reutilizable (Bootstrap).
@@ -11,25 +10,34 @@ import { CommonModule } from '@angular/common';
  */
 @Component({
   selector: 'app-paginacion',
-  imports: [CommonModule],
+  imports: [],
   template: `
-    <nav *ngIf="totalPaginas > 1" aria-label="Paginación">
-      <ul class="pagination justify-content-end mb-0">
-        <li class="page-item" [class.disabled]="paginaActual === 1">
-          <button class="page-link" type="button" [disabled]="paginaActual === 1"
-            (click)="cambiar(paginaActual - 1)">Anterior</button>
-        </li>
-        <li class="page-item" *ngFor="let pagina of paginasVisibles" [class.active]="pagina === paginaActual">
-          <button class="page-link" type="button"
-            [attr.aria-current]="pagina === paginaActual ? 'page' : null"
-            (click)="cambiar(pagina)">{{ pagina }}</button>
-        </li>
-        <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
-          <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas"
-            (click)="cambiar(paginaActual + 1)">Siguiente</button>
-        </li>
-      </ul>
-    </nav>
+    @if (totalPaginas > 1) {
+      <nav aria-label="Paginación">
+        <ul class="pagination justify-content-end mb-0">
+          <li class="page-item" [class.disabled]="paginaActual === 1">
+            <button class="page-link" type="button" [disabled]="paginaActual === 1" (click)="cambiar(paginaActual - 1)">Anterior</button>
+          </li>
+          @for (pagina of paginasVisibles; track pagina) {
+            <li class="page-item" [class.active]="pagina === paginaActual">
+              <button
+                class="page-link"
+                type="button"
+                [attr.aria-current]="pagina === paginaActual ? 'page' : null"
+                (click)="cambiar(pagina)"
+              >
+                {{ pagina }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+            <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas" (click)="cambiar(paginaActual + 1)">
+              Siguiente
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
   `
 })
 export class PaginacionComponent {

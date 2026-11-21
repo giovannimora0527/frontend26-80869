@@ -112,7 +112,7 @@ export class MedicoComponent {
       if (termino === 'activo' || termino === 'true') {
         return medico.estado === true;
       }
-      if (termino === 'inactivo' || termino === 'false') {
+      if (termino === 'desactivado' || termino === 'false') {
         return medico.estado === false;
       }
 
@@ -172,7 +172,7 @@ export class MedicoComponent {
   }
 
   obtenerEstado(medico: Medico): string {
-    return medico.estado == null ? 'No informado' : medico.estado ? 'Activo' : 'Inactivo';
+    return medico.estado == null ? 'No informado' : medico.estado ? 'Activo' : 'Desactivado';
   }
 
   get medicoPaginados(): Medico[] {

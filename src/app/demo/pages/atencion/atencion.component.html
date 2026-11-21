@@ -1,0 +1,151 @@
+@if (atencion) {
+  <div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h5 class="mb-0">
+        <i class="fa-solid fa-stethoscope me-2"></i>
+        Atención médica · cita #{{ atencion.citaId }}
+        <span class="badge ms-2" [ngClass]="finalizada ? 'bg-success' : 'bg-primary'">{{ finalizada ? 'FINALIZADA' : 'EN ATENCIÓN' }}</span>
+      </h5>
+      <button class="btn btn-outline-secondary btn-sm" (click)="volver()">
+        <i class="fa-solid fa-arrow-left me-1"></i>
+        Volver al calendario
+      </button>
+    </div>
+    <div class="card-body">
+      @if (error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="border rounded p-2 h-100">
+            <h6>Paciente</h6>
+            <div>
+              <strong>{{ atencion.mascota }}</strong>
+              · {{ atencion.especie }} {{ atencion.raza }} · {{ atencion.edad }} años
+            </div>
+            <div class="small text-muted">
+              Cita: {{ atencion.fechaCita | date: 'yyyy-MM-dd HH:mm' }} · Veterinario: {{ atencion.veterinario }} ({{
+                atencion.especialidad
+              }})
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-2 h-100">
+            <h6>Propietario</h6>
+            <div>
+              <strong>{{ atencion.propietario }}</strong>
+            </div>
+            <div class="small text-muted">{{ atencion.documento }} · Tel. {{ atencion.telefono }}</div>
+          </div>
+        </div>
+      </div>
+      <h6>Antecedentes médicos</h6>
+      <div class="border rounded p-2 mb-3" style="max-height: 180px; overflow: auto">
+        @if (atencion.antecedentes.length === 0) {
+          <p class="text-muted mb-0">La mascota no tiene antecedentes registrados.</p>
+        }
+        @for (a of atencion.antecedentes; track a) {
+          <div class="small border-bottom pb-1 mb-1">
+            <strong>{{ a.fecha | date: 'yyyy-MM-dd' }}</strong>
+            · {{ a.veterinario }} — {{ a.descripcion }}
+            @if (a.diagnostico) {
+              <div>
+                <em>Diagnóstico:</em>
+                {{ a.diagnostico }}
+              </div>
+            }
+            @if (a.observaciones) {
+              <div>
+                <em>Obs.:</em>
+                {{ a.observaciones }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <h6>Registro de la atención</h6>
+      <div class="row g-2">
+        <div class="col-md-6">
+          <label class="form-label">Motivo de consulta *</label>
+          <textarea class="form-control" rows="2" maxlength="2000" [(ngModel)]="form.motivo" [disabled]="finalizada"></textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Síntomas identificados *</label>
+          <textarea class="form-control" rows="2" maxlength="2000" [(ngModel)]="form.sintomas" [disabled]="finalizada"></textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Diagnóstico *</label>
+          <textarea class="form-control" rows="2" maxlength="2000" [(ngModel)]="form.diagnostico" [disabled]="finalizada"></textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Observaciones médicas</label>
+          <textarea class="form-control" rows="2" maxlength="2000" [(ngModel)]="form.observaciones" [disabled]="finalizada"></textarea>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Recomendaciones</label>
+          <textarea class="form-control" rows="2" maxlength="2000" [(ngModel)]="form.recomendaciones" [disabled]="finalizada"></textarea>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        @if (!finalizada) {
+          <button class="btn btn-outline-primary" [disabled]="guardando" (click)="guardar()">Guardar borrador</button>
+        }
+        @if (!finalizada) {
+          <button class="btn btn-success" [disabled]="guardando" (click)="finalizar()">Finalizar atención</button>
+        }
+        <button class="btn btn-outline-secondary" (click)="generarFormula()">
+          <i class="fa-solid fa-clipboard-list me-1"></i>
+          Generar fórmula médica
+        </button>
+      </div>
+      <hr />
+      <h6>Prefactura (PDF): servicios prestados y medicamentos formulados</h6>
+      <input class="form-control mb-2" placeholder="Filtrar servicios" [(ngModel)]="filtroServicio" />
+      <div class="table-responsive" style="max-height: 220px; overflow: auto">
+        <table class="table table-sm align-middle">
+          <thead class="table-light sticky-top">
+            <tr>
+              <th>Código</th>
+              <th>Servicio</th>
+              <th class="text-end">Tarifa</th>
+              <th style="width: 100px">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of serviciosFiltrados; track s) {
+              <tr [class.table-primary]="cantidades[s.id]">
+                <td>{{ s.codigo }}</td>
+                <td>{{ s.nombre }}</td>
+                <td class="text-end">{{ s.precio | currency: 'COP' : '$' : '1.0-0' }}</td>
+                <td>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    class="form-control form-control-sm"
+                    [ngModel]="cantidades[s.id] || 0"
+                    (ngModelChange)="cambiarCantidad(s.id, $event)"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-outline-danger mt-2" (click)="prefactura()">
+        <i class="fa-solid fa-file-pdf me-1"></i>
+        Generar prefactura (PDF)
+      </button>
+      <p class="small text-muted mt-1">
+        La factura definitiva la genera recepción cuando la cita está atendida y los medicamentos fueron dispensados.
+      </p>
+    </div>
+  </div>
+}
+@if (!atencion && error) {
+  <div class="alert alert-danger">{{ error }}</div>
+}
+@if (cargando) {
+  <div class="text-center py-4">Cargando...</div>
+}

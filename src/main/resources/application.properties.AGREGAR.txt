@@ -1,0 +1,3 @@
+# ---- Recuperacion de contraseña (agregar al final de application.properties) ----
+app.recuperacion.expiracion-minutos=10
+app.recuperacion.max-intentos=3

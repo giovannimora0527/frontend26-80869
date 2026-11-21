@@ -1,0 +1,89 @@
+<div class="row">
+  <div class="col-12 col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Mi perfil</h5>
+      </div>
+      <div class="card-body">
+        @if (cargando) {
+          <p class="text-muted mb-0">Cargando tu perfil...</p>
+        } @else if (!perfil) {
+          <div class="alert alert-danger" role="alert">{{ error || 'No fue posible cargar tu perfil.' }}</div>
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="cargar()">Reintentar</button>
+        } @else {
+          <dl class="row mb-4">
+            <dt class="col-sm-4">Usuario</dt>
+            <dd class="col-sm-8">{{ perfil.username }}</dd>
+            <dt class="col-sm-4">Perfil de acceso</dt>
+            <dd class="col-sm-8">{{ perfil.perfil || '—' }}</dd>
+            @if (tienePersona) {
+              <dt class="col-sm-4">Documento</dt>
+              <dd class="col-sm-8">{{ perfil.tipoDocumento }} {{ perfil.numeroDocumento }}</dd>
+            }
+          </dl>
+
+          @if (!tienePersona) {
+            <div class="alert alert-info" role="status">
+              Tu usuario todavía no está asociado a una persona (cliente o médico). Pide a un administrador que lo asocie;
+              mientras tanto solo puedes cambiar tu correo.
+            </div>
+          }
+
+          <form [formGroup]="form" (ngSubmit)="guardar()" novalidate autocomplete="off">
+            <fieldset [disabled]="guardando">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label for="perfil-email" class="form-label">Correo electrónico</label>
+                  <input id="perfil-email" class="form-control" type="email" formControlName="email" maxlength="255"
+                    [class.is-invalid]="invalido('email')" />
+                  <div class="invalid-feedback">Escribe un correo válido (ejemplo: nombre&#64;dominio.com).</div>
+                </div>
+
+                @if (tienePersona) {
+                  <div class="col-md-6">
+                    <label for="perfil-nombres" class="form-label">Nombres</label>
+                    <input id="perfil-nombres" class="form-control" type="text" formControlName="nombres" maxlength="100"
+                      [class.is-invalid]="invalido('nombres')" />
+                    <div class="invalid-feedback">Los nombres son obligatorios (máximo 100 caracteres).</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="perfil-apellidos" class="form-label">Apellidos</label>
+                    <input id="perfil-apellidos" class="form-control" type="text" formControlName="apellidos"
+                      maxlength="100" [class.is-invalid]="invalido('apellidos')" />
+                    <div class="invalid-feedback">Los apellidos son obligatorios (máximo 100 caracteres).</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="perfil-telefono" class="form-label">Teléfono</label>
+                    <input id="perfil-telefono" class="form-control" type="tel" formControlName="telefono" maxlength="20"
+                      [class.is-invalid]="invalido('telefono')" />
+                    <div class="invalid-feedback">De 7 a 20 caracteres (números, +, - o espacios).</div>
+                  </div>
+                  @if (esCliente) {
+                    <div class="col-md-6">
+                      <label for="perfil-direccion" class="form-label">Dirección</label>
+                      <input id="perfil-direccion" class="form-control" type="text" formControlName="direccion"
+                        maxlength="500" [class.is-invalid]="invalido('direccion')" />
+                      <div class="invalid-feedback">Máximo 500 caracteres.</div>
+                    </div>
+                  }
+                }
+              </div>
+            </fieldset>
+
+            @if (error) {
+              <div class="alert alert-danger mt-3" role="alert">{{ error }}</div>
+            }
+
+            <button type="submit" class="btn btn-primary mt-3" [disabled]="guardando">
+              {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
+            </button>
+          </form>
+
+          <p class="text-muted small mt-4 mb-0">
+            Para cambiar tu contraseña usa el menú de tu usuario (arriba a la derecha) y elige «Cambiar contraseña».
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+</div>

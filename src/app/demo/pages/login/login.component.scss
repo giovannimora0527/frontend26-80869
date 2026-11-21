@@ -138,6 +138,17 @@
     font-weight: 600;
   }
 
+  .enlaces-cuenta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+
+    a {
+      text-decoration: none;
+    }
+  }
+
   .acciones-otp {
     display: flex;
     justify-content: space-between;

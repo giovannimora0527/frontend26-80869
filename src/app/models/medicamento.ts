@@ -18,7 +18,7 @@ export class Medicamento {
 	fechaCreacionRegistro?: Date | string;
 	/** Fecha de la última modificación. */
 	fechaModificacionRegistro?: Date | string | null;
-	/** `true` si se puede recetar; los inactivos no aparecen al emitir fórmulas. */
+	/** `true` si se puede recetar; los desactivados no aparecen al emitir fórmulas. */
 	activo?: boolean;
 	/** Nombres antiguos en formato snake_case; se conservan para no romper pantallas existentes. */
 	fecha_compra?: Date;

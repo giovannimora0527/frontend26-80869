@@ -59,7 +59,7 @@ describe('MedicoComponent', () => {
     expect(component.medicoFiltrados.map(m => m.id)).toEqual([1]);
     component.terminoBusqueda = 'true';
     expect(component.medicoFiltrados.map(m => m.id)).toEqual([1]);
-    component.terminoBusqueda = 'inactivo';
+    component.terminoBusqueda = 'desactivado';
     expect(component.medicoFiltrados.map(m => m.id)).toEqual([2]);
     component.terminoBusqueda = 'false';
     expect(component.medicoFiltrados.map(m => m.id)).toEqual([2]);
@@ -73,7 +73,7 @@ describe('MedicoComponent', () => {
     const badges = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody .badge');
     expect(badges[0].textContent?.trim()).toBe('Activo');
     expect(badges[0].classList).toContain('bg-success');
-    expect(badges[1].textContent?.trim()).toBe('Inactivo');
+    expect(badges[1].textContent?.trim()).toBe('Desactivado');
     expect(badges[1].classList).toContain('bg-secondary');
   });
 

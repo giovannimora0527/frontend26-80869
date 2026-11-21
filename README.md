@@ -61,6 +61,19 @@ yarn
 yarn start
 ```
 
+## Instalacion en Windows (PowerShell)
+
+Usa Node.js compatible con Angular 21 (Node 20.19+, 22.12+ o 24+) y abre la terminal en la carpeta del proyecto. Instala las dependencias de desarrollo incluidas en `package-lock.json`; espera a que npm termine y vuelva el prompt:
+
+```powershell
+node --version
+npm.cmd ci
+npx.cmd ng serve
+```
+
+Si `npm ci` reporta un conflicto de peer dependencies, usa `npm.cmd ci --legacy-peer-deps` (este repositorio lo fija en `.npmrc`). No es necesario instalar Angular CLI globalmente. El aviso `Node packages may not be installed` significa que no está disponible el builder local `@angular-devkit/build-angular`; compruébalo con `npm.cmd ls @angular-devkit/build-angular --depth=0`.
+
+Los avisos `deprecated` de dependencias no son errores por sí mismos. Si la instalación se interrumpe, vuelve a ejecutar `npm.cmd ci` y espera el código de salida antes de `npx.cmd ng serve`.
 ## Documentation
 
 [Datta Able Angular Documentation](https://codedthemes.gitbook.io/datta-angular/) helps you with installation, deployment, and troubleshooting.

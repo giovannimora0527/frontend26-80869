@@ -123,6 +123,9 @@
           <div class="fw-semibold">{{ usuario?.username }}</div>
           <small class="text-muted">{{ usuario?.email }}</small>
         </div>
+        <button type="button" ngbDropdownItem (click)="irAPerfil()">
+          <i class="feather icon-user me-2"></i> Mi perfil
+        </button>
         <button type="button" ngbDropdownItem (click)="abrirCambiar(modalCambiar)">
           <i class="feather icon-lock me-2"></i> Cambiar contraseña
         </button>
@@ -158,7 +161,7 @@
         <label class="form-label" for="nuevaPassword">Contraseña nueva</label>
         <input id="nuevaPassword" class="form-control" [type]="verClaves ? 'text' : 'password'"
           formControlName="nuevaPassword" autocomplete="new-password" />
-        <div class="form-text">De 8 a 64 caracteres, con al menos una letra y un número.</div>
+        <div class="form-text">De 8 a 100 caracteres, con al menos una letra y un número.</div>
         @if (formCambiar.controls.nuevaPassword.touched && formCambiar.controls.nuevaPassword.invalid) {
           <div class="text-danger small">La contraseña no cumple el formato.</div>
         }
@@ -231,7 +234,7 @@
           <label class="form-label" for="nuevaOlvide">Contraseña nueva</label>
           <input id="nuevaOlvide" class="form-control" [type]="verClaves ? 'text' : 'password'"
             formControlName="nuevaPassword" autocomplete="new-password" />
-          <div class="form-text">De 8 a 64 caracteres, con al menos una letra y un número.</div>
+          <div class="form-text">De 8 a 100 caracteres, con al menos una letra y un número.</div>
           @if (formRestablecer.controls.nuevaPassword.touched && formRestablecer.controls.nuevaPassword.invalid) {
             <div class="text-danger small">La contraseña no cumple el formato.</div>
           }

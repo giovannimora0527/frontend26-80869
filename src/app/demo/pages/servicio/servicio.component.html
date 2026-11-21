@@ -1,0 +1,354 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fa-solid fa-tags me-2"></i>
+      Especialidades y tarifas
+    </h5>
+    @if (puedeEditar && pestana === 'servicios') {
+      <button class="btn btn-primary btn-sm" (click)="nuevo()">
+        <i class="fa-solid fa-plus me-1"></i>
+        Nuevo servicio
+      </button>
+    }
+    @if (puedeEditar && pestana === 'especialidades') {
+      <button class="btn btn-primary btn-sm" (click)="nuevaEsp()">
+        <i class="fa-solid fa-plus me-1"></i>
+        Nueva especialidad
+      </button>
+    }
+  </div>
+  <div class="card-body">
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'servicios'" role="button" (click)="cambiarPestana('servicios')">
+          Servicios y tarifas
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'especialidades'" role="button" (click)="cambiarPestana('especialidades')">
+          Especialidades
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'impuestos'" role="button" (click)="cambiarPestana('impuestos')">Impuestos (IVA)</a>
+      </li>
+    </ul>
+
+    @if (pestana === 'especialidades') {
+      @if (error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Especialidad</th>
+              <th>Descripción</th>
+              <th class="text-end">Veterinarios</th>
+              <th class="text-end">Servicios</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of especialidades; track e) {
+              <tr [class.text-muted]="!e.activo">
+                <td>{{ e.codigo }}</td>
+                <td>{{ e.nombre }}</td>
+                <td>{{ e.descripcion }}</td>
+                <td class="text-end">{{ e.medicos }}</td>
+                <td class="text-end">{{ e.servicios }}</td>
+                <td>
+                  <span class="badge" [ngClass]="e.activo ? 'bg-success' : 'bg-secondary'">{{ e.activo ? 'Activa' : 'Inactiva' }}</span>
+                </td>
+                @if (puedeEditar) {
+                  <td class="text-nowrap">
+                    <button class="btn btn-sm btn-outline-primary me-1" (click)="editarEsp(e)"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm" [ngClass]="e.activo ? 'btn-outline-danger' : 'btn-outline-success'" (click)="alternarEsp(e)">
+                      {{ e.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (pestana === 'impuestos') {
+      <p class="text-muted">
+        Configura el IVA y los datos que salen en las facturas. El cambio aplica a las facturas nuevas; las ya generadas conservan el IVA
+        con que se emitieron. Marca en cada servicio o producto si aplica IVA.
+      </p>
+      @if (errorClinica) {
+        <div class="alert alert-danger">{{ errorClinica }}</div>
+      }
+      <div class="row g-2" style="max-width: 800px">
+        <div class="col-md-8">
+          <label class="form-label">Nombre de la clínica *</label>
+          <input class="form-control" [(ngModel)]="clinica.nombre" [disabled]="!puedeEditar" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">NIT *</label>
+          <input class="form-control" [(ngModel)]="clinica.nit" [disabled]="!puedeEditar" />
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Dirección</label>
+          <input class="form-control" [(ngModel)]="clinica.direccion" [disabled]="!puedeEditar" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Teléfono</label>
+          <input class="form-control" [(ngModel)]="clinica.telefono" [disabled]="!puedeEditar" />
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Correo</label>
+          <input class="form-control" [(ngModel)]="clinica.email" [disabled]="!puedeEditar" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">IVA aplicable (%) *</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            class="form-control"
+            [(ngModel)]="clinica.ivaPorcentaje"
+            [disabled]="!puedeEditar"
+          />
+        </div>
+      </div>
+      @if (puedeEditar) {
+        <button class="btn btn-primary mt-3" (click)="guardarClinica()">Guardar</button>
+      }
+    }
+
+    @if (pestana === 'servicios') {
+      <div class="row g-2 mb-3">
+        <div class="col-md-5"><input class="form-control" placeholder="Buscar por código o nombre" [(ngModel)]="texto" /></div>
+        <div class="col-md-4">
+          <select class="form-select" [(ngModel)]="categoria">
+            <option value="">Todas las categorías</option>
+            @for (c of categorias; track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" [(ngModel)]="estado">
+            <option value="todos">Todos</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+        </div>
+      </div>
+      @if (error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+      @if (cargando) {
+        <div class="text-center py-3">Cargando...</div>
+      }
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Servicio</th>
+              <th>Categoría</th>
+              <th>Especialización</th>
+              <th class="text-end">Tarifa</th>
+              <th>IVA</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of filtrados; track s) {
+              <tr [class.text-muted]="!s.activo">
+                <td>{{ s.codigo }}</td>
+                <td>
+                  {{ s.nombre }}
+                  <div class="small text-muted">{{ s.descripcion }}</div>
+                </td>
+                <td>{{ s.categoria }}</td>
+                <td>
+                  {{ s.especializacion || '—' }}
+                  @if (s.requiereEspecializacion) {
+                    <span class="badge bg-warning text-dark">Requerida</span>
+                  }
+                </td>
+                <td class="text-end">{{ s.precio | currency: 'COP' : '$' : '1.0-0' }}</td>
+                <td>{{ s.aplicaIva ? 'Sí' : 'No' }}</td>
+                <td>
+                  <span class="badge" [ngClass]="s.activo ? 'bg-success' : 'bg-secondary'">{{ s.activo ? 'Activo' : 'Inactivo' }}</span>
+                </td>
+                <td class="text-nowrap">
+                  <button class="btn btn-sm btn-outline-info me-1" title="Historial de tarifas" (click)="verHistorial(s)">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                  </button>
+                  @if (puedeEditar) {
+                    <button class="btn btn-sm btn-outline-primary me-1" (click)="editar(s)"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm" [ngClass]="s.activo ? 'btn-outline-danger' : 'btn-outline-success'" (click)="alternar(s)">
+                      {{ s.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+            @if (!cargando && filtrados.length === 0) {
+              <tr><td colspan="8" class="text-center text-muted">Sin resultados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (mostrarEsp) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ espId === null ? 'Nueva especialidad' : 'Editar especialidad' }}</h5>
+          <button type="button" class="btn-close" (click)="mostrarEsp = false"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorEsp) {
+            <div class="alert alert-danger">{{ errorEsp }}</div>
+          }
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Código *</label>
+              <input class="form-control" maxlength="10" [(ngModel)]="espForm.codigo" />
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Nombre *</label>
+              <input class="form-control" maxlength="255" [(ngModel)]="espForm.nombre" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <input class="form-control" maxlength="255" [(ngModel)]="espForm.descripcion" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="mostrarEsp = false">Cancelar</button>
+          <button class="btn btn-primary" (click)="guardarEsp()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (mostrarForm) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editandoId === null ? 'Nuevo servicio' : 'Editar servicio' }}</h5>
+          <button type="button" class="btn-close" (click)="mostrarForm = false"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorForm) {
+            <div class="alert alert-danger">{{ errorForm }}</div>
+          }
+          <div class="row g-2">
+            <div class="col-md-3">
+              <label class="form-label">Código *</label>
+              <input class="form-control" maxlength="20" [(ngModel)]="form.codigo" [disabled]="editandoId !== null" />
+            </div>
+            <div class="col-md-9">
+              <label class="form-label">Nombre *</label>
+              <input class="form-control" maxlength="150" [(ngModel)]="form.nombre" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <input class="form-control" maxlength="500" [(ngModel)]="form.descripcion" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Categoría *</label>
+              <select class="form-select" [(ngModel)]="form.categoria">
+                @for (c of categorias; track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Especialización</label>
+              <select class="form-select" [(ngModel)]="form.especializacionId">
+                <option [ngValue]="null">Ninguna</option>
+                @for (e of especializaciones; track e) {
+                  <option [ngValue]="e.id">{{ e.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="reqEsp" [(ngModel)]="form.requiereEspecializacion" />
+                <label class="form-check-label" for="reqEsp">Requiere especialización</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tarifa *</label>
+              <input type="number" min="1" class="form-control" [(ngModel)]="form.precio" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="ivaS" [(ngModel)]="form.aplicaIva" />
+                <label class="form-check-label" for="ivaS">Aplica IVA</label>
+              </div>
+            </div>
+            @if (cambiaPrecio) {
+              <div class="col-md-5">
+                <label class="form-label">Motivo del cambio de tarifa *</label>
+                <input class="form-control" maxlength="255" [(ngModel)]="form.motivoTarifa" />
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="mostrarForm = false">Cancelar</button>
+          <button class="btn btn-primary" [disabled]="enviando" (click)="guardar()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (historial) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Historial de tarifas · {{ historial.servicio.nombre }}</h5>
+          <button type="button" class="btn-close" (click)="historial = null"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th class="text-end">Anterior</th>
+                <th class="text-end">Nueva</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of historial.tarifas; track t) {
+                <tr>
+                  <td>{{ t.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td class="text-end">{{ t.valorAnterior != null ? (t.valorAnterior | currency: 'COP' : '$' : '1.0-0') : '—' }}</td>
+                  <td class="text-end">{{ t.valorNuevo | currency: 'COP' : '$' : '1.0-0' }}</td>
+                  <td>{{ t.motivo }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" (click)="historial = null">Cerrar</button></div>
+      </div>
+    </div>
+  </div>
+}

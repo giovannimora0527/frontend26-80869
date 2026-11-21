@@ -40,7 +40,7 @@ describe('MascotaComponent', () => {
     fixture.detectChanges();
     const element: HTMLElement = fixture.nativeElement;
     const badges = element.querySelectorAll('tbody .badge');
-    expect(Array.from(badges).map(badge => badge.textContent?.trim())).toEqual(['Activo', 'Inactivo', 'No informado']);
+    expect(Array.from(badges).map(badge => badge.textContent?.trim())).toEqual(['Activo', 'Desactivado', 'No informado']);
     expect(badges[0].classList.contains('bg-success')).toBeTrue();
     expect(badges[0].classList.contains('bg-secondary')).toBeFalse();
     expect(badges[1].classList.contains('bg-secondary')).toBeTrue();
@@ -50,7 +50,7 @@ describe('MascotaComponent', () => {
 
   it('should filter by status labels or boolean text without confusing active and inactive', () => {
     component.listMascotas = [mascota('A', true), mascota('B', false), mascota('C')];
-    for (const termino of [' ACTIVO ', 'true', 'inactivo', 'FALSE']) {
+    for (const termino of [' ACTIVO ', 'true', 'desactivado', 'FALSE']) {
       component.terminoBusqueda = termino;
       expect(component.mascotasFiltradas.length).toBe(1);
       expect(component.mascotasFiltradas[0].activo).toBe([' ACTIVO ', 'true'].includes(termino));

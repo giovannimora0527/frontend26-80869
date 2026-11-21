@@ -17,6 +17,6 @@ export class Formula {
 	fechaActualizacionRegistro?: Date | string | null;
 	frecuencia!: string;
 	duracion!: string;
-	/** `false` = fórmula inactiva (nunca se borra físicamente). */
+	/** `false` = fórmula desactivada (nunca se borra físicamente). */
 	activo?: boolean;
 }

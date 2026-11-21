@@ -43,6 +43,11 @@
             {{ cargando ? 'Verificando...' : 'Ingresar' }}
           </button>
         </form>
+
+        <div class="enlaces-cuenta">
+          <a routerLink="/recuperar" class="btn-link">¿Olvidaste tu contraseña?</a>
+          <a routerLink="/registro" class="btn-link">Crear cuenta</a>
+        </div>
       } @else {
         <h2>Verifica tu identidad</h2>
         <p class="subtitulo">

@@ -1,0 +1,579 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h5 class="mb-0">
+      <i class="fa-solid fa-boxes-stacked me-2"></i>
+      Inventario
+    </h5>
+    @if (pestana === 'productos' && !soloConsulta) {
+      <button class="btn btn-primary btn-sm" (click)="nuevo()">
+        <i class="fa-solid fa-plus me-1"></i>
+        Nuevo producto
+      </button>
+    }
+  </div>
+  <div class="card-body">
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'productos'" role="button" (click)="cambiarPestana('productos')">Productos</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="pestana === 'alertas'" role="button" (click)="cambiarPestana('alertas')">Alertas</a>
+      </li>
+      @if (!soloConsulta) {
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="pestana === 'carga'" role="button" (click)="cambiarPestana('carga')">Carga masiva</a>
+        </li>
+      }
+      @if (!soloConsulta) {
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="pestana === 'logs'" role="button" (click)="cambiarPestana('logs')">Historial de cargas</a>
+        </li>
+      }
+    </ul>
+
+    <!-- ================= PRODUCTOS ================= -->
+    @if (pestana === 'productos') {
+      <div class="row g-2 mb-3">
+        <div class="col-md-3">
+          <input
+            class="form-control"
+            placeholder="Código, nombre, presentación o INVIMA"
+            [(ngModel)]="filtroTexto"
+            (keyup.enter)="cargar()"
+          />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="filtroStock" (change)="cargar()">
+            <option value="">Todo el inventario</option>
+            <option value="disponibles">Disponibles</option>
+            <option value="agotados">Agotados</option>
+            <option value="bajo">Stock bajo</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" [(ngModel)]="filtroTipo" (change)="cargar()">
+            <option value="">Todos los tipos</option>
+            @for (t of tipos; track t) {
+              <option [value]="t.valor">{{ t.texto }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="filtroEstado" (change)="cargar()">
+            <option value="activos">Activos</option>
+            <option value="inactivos">Desactivados</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-grid"><button class="btn btn-outline-primary" (click)="cargar()">Buscar</button></div>
+      </div>
+      @if (error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+      @if (cargando) {
+        <div class="text-center py-4">Cargando...</div>
+      }
+      @if (!cargando) {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Tipo</th>
+                <th>INVIMA</th>
+                <th class="text-end">Stock</th>
+                <th class="text-end">Reservado</th>
+                <th class="text-end">Precio venta</th>
+                <th>Próx. vence</th>
+                <th>Próx. pedido</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of paginaProductos; track p) {
+                <tr [class.text-muted]="!p.activo">
+                  <td>{{ p.codigo }}</td>
+                  <td>
+                    {{ p.nombre }}
+                    <div class="small text-muted">{{ p.presentacion }}</div>
+                  </td>
+                  <td>{{ p.tipo }}</td>
+                  <td>{{ p.requiereInvima ? p.registroInvima || '—' : 'No aplica' }}</td>
+                  <td class="text-end">
+                    {{ p.stock }}
+                    <span class="text-muted small">/ mín {{ p.stockMinimo }}</span>
+                  </td>
+                  <td class="text-end">{{ p.reservado }}</td>
+                  <td class="text-end">{{ p.precioVenta | currency: 'COP' : '$' : '1.0-0' }}</td>
+                  <td>{{ p.proximoVencimiento || '—' }}</td>
+                  <td>{{ p.fechaProximoPedido || '—' }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="claseEstado(p)">{{ p.estadoStock }}</span>
+                    @if (!p.activo) {
+                      <span class="badge bg-secondary">Inactivo</span>
+                    }
+                  </td>
+                  <td class="text-nowrap">
+                    <button class="btn btn-sm btn-outline-info me-1" title="Lotes y kárdex" (click)="verDetalle(p)">
+                      <i class="fa-solid fa-layer-group"></i>
+                    </button>
+                    @if (!soloConsulta) {
+                      <button class="btn btn-sm btn-outline-primary me-1" title="Editar" (click)="editar(p)">
+                        <i class="fa-solid fa-pen"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm"
+                        [ngClass]="p.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+                        (click)="alternarEstado(p)"
+                      >
+                        {{ p.activo ? 'Desactivar' : 'Activar' }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+              @if (productos.length === 0) {
+                <tr><td colspan="11" class="text-center text-muted">No hay productos con esos filtros.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (productos.length > tamPagina) {
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted small">{{ productos.length }} productos</span>
+          <div class="btn-group">
+            <button class="btn btn-outline-secondary btn-sm" [disabled]="pagina === 1" (click)="pagina = pagina - 1">Anterior</button>
+            <button class="btn btn-outline-secondary btn-sm" disabled>{{ pagina }} / {{ totalPaginas }}</button>
+            <button class="btn btn-outline-secondary btn-sm" [disabled]="pagina === totalPaginas" (click)="pagina = pagina + 1">
+              Siguiente
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ================= ALERTAS ================= -->
+    @if (pestana === 'alertas') {
+      @if (resumen) {
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-md-2">
+            <div class="border rounded p-2 text-center">
+              <div class="h4 mb-0">{{ resumen.totalProductos }}</div>
+              <small>Productos</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="border rounded p-2 text-center text-danger">
+              <div class="h4 mb-0">{{ resumen.agotados }}</div>
+              <small>Agotados</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="border rounded p-2 text-center text-warning">
+              <div class="h4 mb-0">{{ resumen.stockBajo }}</div>
+              <small>Stock bajo</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="border rounded p-2 text-center text-info">
+              <div class="h4 mb-0">{{ resumen.porVencer }}</div>
+              <small>Por vencer</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="border rounded p-2 text-center text-danger">
+              <div class="h4 mb-0">{{ resumen.vencidos }}</div>
+              <small>Vencidos</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="border rounded p-2 text-center">
+              <div class="fw-bold">{{ resumen.valorCosto | currency: 'COP' : '$' : '1.0-0' }}</div>
+              <small>Valor a costo</small>
+            </div>
+          </div>
+        </div>
+      }
+      @if (!soloConsulta) {
+        <div class="d-flex justify-content-end mb-2">
+          <button class="btn btn-outline-primary btn-sm" (click)="notificar()">
+            <i class="fa-solid fa-envelope me-1"></i>
+            Enviar alertas por correo a los administradores
+          </button>
+        </div>
+      }
+      @for (a of alertas; track a) {
+        <div class="alert py-2 mb-2" [ngClass]="'alert-' + claseAlerta(a.tipo)">
+          <strong>{{ a.tipo }}</strong>
+          · {{ a.mensaje }}
+        </div>
+      }
+      @if (alertas.length === 0) {
+        <p class="text-muted">No hay alertas de inventario.</p>
+      }
+    }
+
+    <!-- ================= CARGA MASIVA ================= -->
+    @if (pestana === 'carga') {
+      <p class="text-muted">
+        Sube un archivo
+        <strong>.csv</strong>
+        o
+        <strong>.xlsx</strong>
+        con el inventario. Primero se muestra una vista previa y solo se cargan las filas válidas.
+      </p>
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-6"><input type="file" class="form-control" accept=".csv,.xlsx" (change)="elegirArchivo($event)" /></div>
+        <div class="col-md-3 d-grid">
+          <button class="btn btn-primary" [disabled]="!archivo || procesando" (click)="previsualizar()">Vista previa</button>
+        </div>
+        <div class="col-md-3 d-grid">
+          <button class="btn btn-outline-secondary" (click)="descargarPlantilla()">Descargar plantilla CSV</button>
+        </div>
+      </div>
+      @if (errorCarga) {
+        <div class="alert alert-danger">{{ errorCarga }}</div>
+      }
+      @if (resultado) {
+        <div class="alert alert-success">
+          <strong>{{ resultado.mensaje }}</strong>
+          (estado {{ resultado.estado }}, carga #{{ resultado.logId }})
+          @if (resultado.totalErrores > 0) {
+            <button class="btn btn-sm btn-outline-success ms-2" (click)="informeLog(resultado.logId)">Descargar informe de errores</button>
+          }
+        </div>
+      }
+      @if (previa) {
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-2">
+          <span>
+            <strong>{{ previa.totalLeidos }}</strong>
+            filas leídas
+          </span>
+          <span class="text-success">
+            <strong>{{ previa.totalValidos }}</strong>
+            válidas
+          </span>
+          <span class="text-danger">
+            <strong>{{ previa.totalErrores }}</strong>
+            con error
+          </span>
+          <div class="form-check ms-auto">
+            <input class="form-check-input" type="checkbox" id="soloErr" [(ngModel)]="soloErrores" />
+            <label class="form-check-label" for="soloErr">Ver solo errores</label>
+          </div>
+          @if (previa.totalErrores > 0) {
+            <button class="btn btn-outline-danger btn-sm" (click)="descargarErrores()">Descargar errores</button>
+          }
+          <button class="btn btn-success" [disabled]="previa.totalValidos === 0 || procesando" (click)="confirmar()">
+            Cargar {{ previa.totalValidos }} válidas
+          </button>
+        </div>
+        <div class="table-responsive" style="max-height: 460px; overflow: auto">
+          <table class="table table-sm table-striped align-middle">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>Fila</th>
+                <th>Estado</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Lote</th>
+                <th>Vence</th>
+                <th class="text-end">Cant.</th>
+                <th class="text-end">P. compra</th>
+                <th class="text-end">P. venta</th>
+                <th>Errores</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (f of filasMostradas; track f) {
+                <tr [class.table-danger]="!f.valida">
+                  <td>{{ f.fila }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="f.valida ? 'bg-success' : 'bg-danger'">{{ f.valida ? 'OK' : 'Error' }}</span>
+                  </td>
+                  <td>{{ f.datos.codigo }}</td>
+                  <td>{{ f.datos.nombre }}</td>
+                  <td>{{ f.datos.tipo }}</td>
+                  <td>{{ f.datos.lote }}</td>
+                  <td>{{ f.datos.fechaVencimiento }}</td>
+                  <td class="text-end">{{ f.datos.cantidad }}</td>
+                  <td class="text-end">{{ f.datos.precioCompra }}</td>
+                  <td class="text-end">{{ f.datos.precioVenta }}</td>
+                  <td class="small">
+                    @for (e of f.errores; track e) {
+                      <div>• {{ e }}</div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ================= HISTORIAL DE CARGAS ================= -->
+    @if (pestana === 'logs') {
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Archivo</th>
+              <th>Usuario</th>
+              <th class="text-end">Leídos</th>
+              <th class="text-end">Cargados</th>
+              <th class="text-end">Errores</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of logs; track l) {
+              <tr>
+                <td>{{ l.id }}</td>
+                <td>{{ l.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <td>{{ l.nombreArchivo }}</td>
+                <td>{{ l.usuario }}</td>
+                <td class="text-end">{{ l.totalLeidos }}</td>
+                <td class="text-end">{{ l.totalCargados }}</td>
+                <td class="text-end">{{ l.totalErrores }}</td>
+                <td>{{ l.estado }}</td>
+                <td><button class="btn btn-sm btn-outline-secondary" (click)="informeLog(l.id)">Informe de errores</button></td>
+              </tr>
+            }
+            @if (logs.length === 0) {
+              <tr><td colspan="9" class="text-center text-muted">Aún no hay cargas masivas.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ================= MODAL PRODUCTO ================= -->
+@if (mostrarForm) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editandoId === null ? 'Nuevo producto' : 'Editar producto' }}</h5>
+          <button type="button" class="btn-close" (click)="mostrarForm = false"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorForm) {
+            <div class="alert alert-danger">{{ errorForm }}</div>
+          }
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Código *</label>
+              <input
+                class="form-control"
+                maxlength="8"
+                placeholder="8 caracteres (MED00001)"
+                [(ngModel)]="form.codigo"
+                [disabled]="editandoId !== null"
+              />
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Nombre *</label>
+              <input class="form-control" maxlength="150" [(ngModel)]="form.nombre" />
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Tipo *</label>
+              <select class="form-select" [(ngModel)]="form.tipo" [disabled]="editandoId !== null">
+                @for (t of tipos; track t) {
+                  <option [value]="t.valor">{{ t.texto }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Presentación</label>
+              <input class="form-control" maxlength="100" [(ngModel)]="form.presentacion" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Unidad</label>
+              <input class="form-control" maxlength="20" [(ngModel)]="form.unidadMedida" />
+            </div>
+            @if (requiereInvima) {
+              <div class="col-md-8">
+                <label class="form-label">Registro INVIMA *</label>
+                <input class="form-control" placeholder="INVIMA 2021M-0012345-R1" [(ngModel)]="form.registroInvima" />
+              </div>
+            }
+            @if (!requiereInvima) {
+              <div class="col-md-8">
+                <label class="form-label">Registro INVIMA</label>
+                <input class="form-control" value="No aplica para este tipo de producto" disabled />
+              </div>
+            }
+            <div class="col-md-4">
+              <label class="form-label">Stock mínimo *</label>
+              <input type="number" min="0" class="form-control" [(ngModel)]="form.stockMinimo" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Fecha del próximo pedido</label>
+              <input type="date" class="form-control" [(ngModel)]="form.fechaProximoPedido" />
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Precio de venta *</label>
+              <input type="number" min="1" class="form-control" [(ngModel)]="form.precioVenta" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="iva" [(ngModel)]="form.aplicaIva" />
+                <label class="form-check-label" for="iva">Aplica IVA</label>
+              </div>
+            </div>
+          </div>
+          @if (editandoId === null) {
+            <hr />
+            <h6>Lote inicial</h6>
+            <div class="row g-2">
+              <div class="col-md-2">
+                <label class="form-label">Lote *</label>
+                <input class="form-control" maxlength="50" [(ngModel)]="form.numeroLote" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Fecha de compra</label>
+                <input type="date" class="form-control" [(ngModel)]="form.fechaCompra" />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Vencimiento</label>
+                <input type="date" class="form-control" [(ngModel)]="form.fechaVencimiento" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Cantidad *</label>
+                <input type="number" min="1" class="form-control" [(ngModel)]="form.cantidad" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Precio compra *</label>
+                <input type="number" min="1" class="form-control" [(ngModel)]="form.precioCompra" />
+              </div>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="mostrarForm = false">Cancelar</button>
+          <button class="btn btn-primary" [disabled]="enviando" (click)="guardar()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL DETALLE ================= -->
+@if (detalle) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ detalle.producto.codigo }} · {{ detalle.producto.nombre }}</h5>
+          <button type="button" class="btn-close" (click)="detalle = null"></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Stock vigente:
+            <strong>{{ detalle.producto.stock }}</strong>
+            · Reservado por fórmulas:
+            <strong>{{ detalle.producto.reservado }}</strong>
+            · Precio de venta:
+            <strong>{{ detalle.producto.precioVenta | currency: 'COP' : '$' : '1.0-0' }}</strong>
+          </p>
+          <h6>Lotes</h6>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th>Ingreso</th>
+                  <th>Vence</th>
+                  <th class="text-end">Inicial</th>
+                  <th class="text-end">Disponible</th>
+                  <th class="text-end">P. compra</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of detalle.lotes; track l) {
+                  <tr [class.table-danger]="l.vencido">
+                    <td>
+                      {{ l.numeroLote }}
+                      @if (l.vencido) {
+                        <span class="badge bg-danger">Vencido</span>
+                      }
+                    </td>
+                    <td>{{ l.fechaIngreso }}</td>
+                    <td>{{ l.fechaVencimiento || 'No vence' }}</td>
+                    <td class="text-end">{{ l.cantidadInicial }}</td>
+                    <td class="text-end">{{ l.cantidadDisponible }}</td>
+                    <td class="text-end">{{ l.precioCompra | currency: 'COP' : '$' : '1.0-0' }}</td>
+                    <td>
+                      @if (!soloConsulta) {
+                        <button class="btn btn-sm btn-outline-secondary" (click)="ajustarLote(l.id, l.cantidadDisponible)">Ajustar</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (!soloConsulta) {
+            <h6 class="mt-3">Registrar entrada de un lote nuevo</h6>
+            @if (errorLote) {
+              <div class="alert alert-danger py-1">{{ errorLote }}</div>
+            }
+            <div class="row g-2 mb-3">
+              <div class="col-md-2"><input class="form-control" placeholder="Lote" [(ngModel)]="loteNuevo.numeroLote" /></div>
+              <div class="col-md-2">
+                <input type="date" class="form-control" title="Fecha de compra" [(ngModel)]="loteNuevo.fechaCompra" />
+              </div>
+              <div class="col-md-2">
+                <input type="date" class="form-control" title="Fecha de vencimiento" [(ngModel)]="loteNuevo.fechaVencimiento" />
+              </div>
+              <div class="col-md-2">
+                <input type="number" min="1" class="form-control" placeholder="Cantidad" [(ngModel)]="loteNuevo.cantidad" />
+              </div>
+              <div class="col-md-2">
+                <input type="number" min="1" class="form-control" placeholder="P. compra" [(ngModel)]="loteNuevo.precioCompra" />
+              </div>
+              <div class="col-md-2 d-grid"><button class="btn btn-primary" (click)="registrarLote()">Registrar</button></div>
+            </div>
+          }
+          <h6>Kárdex (últimos movimientos)</h6>
+          <div class="table-responsive" style="max-height: 240px; overflow: auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th class="text-end">Cantidad</th>
+                  <th>Lote</th>
+                  <th>Referencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of detalle.movimientos; track m) {
+                  <tr>
+                    <td>{{ m.fecha | date: 'yyyy-MM-dd HH:mm' }}</td>
+                    <td>{{ m.tipo }}</td>
+                    <td class="text-end">{{ m.cantidad }}</td>
+                    <td>{{ m.numeroLote }}</td>
+                    <td>{{ m.referencia }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" (click)="detalle = null">Cerrar</button></div>
+      </div>
+    </div>
+  </div>
+}

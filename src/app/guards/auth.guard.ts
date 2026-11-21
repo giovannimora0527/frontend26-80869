@@ -25,7 +25,8 @@ export const menuGuard: CanActivateChildFn = (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const url = state.url.split('?')[0].split('#')[0];
-  if (url === '/inicio' || url === '/inicio/') {
+  // "Mi perfil" no es un menú de la base de datos: todo usuario con sesión puede abrirlo.
+  if (url === '/inicio' || url === '/inicio/' || url === '/inicio/perfil') {
     return true;
   }
   const permitido = auth.getMenus().some((m) => url === m.url || url.startsWith(m.url + '/'));

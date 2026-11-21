@@ -53,7 +53,7 @@ export class FormulaService {
     return this.backendService.put(environment.apiUrlAuth, this.api, String(id), formula);
   }
 
-  /** Activa o inactiva una fórmula (PATCH); no existe borrado físico. */
+  /** Activa o desactivada una fórmula (PATCH); no existe borrado físico. */
   cambiarEstado(id: number, activo: boolean): Observable<MiRespuesta> {
     return this.backendService.patch(environment.apiUrlAuth, this.api, `${id}/estado`, { activo });
   }

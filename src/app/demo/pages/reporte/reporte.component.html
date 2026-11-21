@@ -1,0 +1,120 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fa-solid fa-chart-column me-2"></i>
+      Reportes
+    </h5>
+  </div>
+  <div class="card-body">
+    @if (tipos.length === 0) {
+      <div class="alert alert-warning">Tu perfil no tiene reportes disponibles.</div>
+    }
+    @if (tipo) {
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small mb-0">Reporte</label>
+          <select class="form-select" [(ngModel)]="tipo" (change)="cambiarTipo()">
+            @for (t of tipos; track t) {
+              <option [ngValue]="t">{{ t.grupo }} · {{ t.nombre }}</option>
+            }
+          </select>
+        </div>
+        @if (tipo.fechas) {
+          <div class="col-md-2">
+            <label class="form-label small mb-0">Desde</label>
+            <input type="date" class="form-control" [(ngModel)]="desde" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small mb-0">Hasta</label>
+            <input type="date" class="form-control" [(ngModel)]="hasta" />
+          </div>
+        }
+        @if (tipo.agrupa) {
+          <div class="col-md-2">
+            <label class="form-label small mb-0">Agrupar por</label>
+            <select class="form-select" [(ngModel)]="agrupacion">
+              <option value="DIA">Día</option>
+              <option value="MES">Mes</option>
+              <option value="ANIO">Año</option>
+            </select>
+          </div>
+        }
+        @if (tipo.producto) {
+          <div class="col-md-3">
+            <label class="form-label small mb-0">Medicamento / producto</label>
+            <select class="form-select" [(ngModel)]="productoId">
+              <option [ngValue]="null">Todos</option>
+              @for (p of productos; track p) {
+                <option [ngValue]="p.id">{{ p.codigo }} · {{ p.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+        @if (tipo.estados) {
+          <div class="col-md-2">
+            <label class="form-label small mb-0">Estado</label>
+            <select class="form-select" [(ngModel)]="estado">
+              <option value="">{{ tipo.id === 'medico-diario' ? 'Atendidas' : 'Todos' }}</option>
+              @for (e of tipo.estados; track e) {
+                <option [value]="e">{{ e }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+      <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-primary" (click)="consultar()" [disabled]="cargando">Consultar</button>
+        <button class="btn btn-outline-success" (click)="descargar('xlsx')" [disabled]="!reporte">
+          <i class="fa-solid fa-file-excel me-1"></i>
+          Excel
+        </button>
+        <button class="btn btn-outline-danger" (click)="descargar('pdf')" [disabled]="!reporte">
+          <i class="fa-solid fa-file-pdf me-1"></i>
+          PDF
+        </button>
+      </div>
+    }
+    @if (error) {
+      <div class="alert alert-danger">{{ error }}</div>
+    }
+    @if (cargando) {
+      <div class="text-center py-3">Generando...</div>
+    }
+    @if (reporte) {
+      <h6 class="mb-0">{{ reporte.titulo }}</h6>
+      <p class="text-muted small">{{ reporte.subtitulo }}</p>
+      <div class="table-responsive" style="max-height: 520px; overflow: auto">
+        <table class="table table-sm table-striped align-middle">
+          <thead class="table-dark sticky-top">
+            <tr>
+              @for (c of reporte.columnas; track c) {
+                <th>{{ c }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of reporte.filas; track f) {
+              <tr>
+                @for (v of f; track v) {
+                  <td [class.text-end]="esNumero(v)">{{ esNumero(v) ? (v | number: '1.0-2') : v }}</td>
+                }
+              </tr>
+            }
+            @if (reporte.filas.length === 0) {
+              <tr><td [attr.colspan]="reporte.columnas.length" class="text-center text-muted">Sin datos en el rango.</td></tr>
+            }
+          </tbody>
+          @if (reporte.totales && reporte.totales.length > 0) {
+            <tfoot>
+              <tr class="table-secondary fw-bold">
+                @for (v of reporte.totales; track v) {
+                  <td [class.text-end]="esNumero(v)">{{ esNumero(v) ? (v | number: '1.0-2') : v }}</td>
+                }
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+    }
+  </div>
+</div>

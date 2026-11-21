@@ -21,7 +21,7 @@ export class ClienteService {
 
   }
 
-  /** Lista todos los clientes (activos e inactivos). */
+  /** Lista todos los clientes (activos y desactivados). */
   listarClientes(): Observable<Cliente[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar");
   }

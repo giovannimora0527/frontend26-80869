@@ -60,7 +60,7 @@ function duracionValida(control: AbstractControl): ValidationErrors | null {
 /**
  * Gestión de fórmulas médicas: listado resumido y paginado en el servidor (orden inicial por
  * fecha de creación descendente), filtros, creación con combos dependientes
- * Cliente → Mascota → Consulta, edición, detalle completo e inactivación (sin borrado físico).
+ * Cliente → Mascota → Consulta, edición, detalle completo e desactivación (sin borrado físico).
  */
 @Component({
   selector: 'app-formula-medica',
@@ -254,12 +254,12 @@ export class FormulaMedicaComponent implements OnInit {
     this.modalDetalle?.hide();
   }
 
-  /** Inactiva o reactiva la fórmula: nunca se elimina físicamente porque hace parte del historial clínico. */
+  /** Desactivada o reactiva la fórmula: nunca se elimina físicamente porque hace parte del historial clínico. */
   cambiarEstado(fila: FormulaResumen): void {
     const activar = !fila.activo;
     Swal.fire({
-      title: activar ? '¿Activar la fórmula?' : '¿Inactivar la fórmula?',
-      text: activar ? 'Podrá volver a editarse.' : 'No se elimina: queda inactiva y ya no se podrá editar.',
+      title: activar ? '¿Activar la fórmula?' : '¿Desactivar la fórmula?',
+      text: activar ? 'Podrá volver a editarse.' : 'No se elimina: queda desactivada y ya no se podrá editar.',
       icon: 'question', showCancelButton: true, confirmButtonText: 'Sí', cancelButtonText: 'No'
     }).then((r) => {
       if (r.isConfirmed) {
@@ -310,7 +310,7 @@ export class FormulaMedicaComponent implements OnInit {
 
   abrirEdicion(fila: FormulaResumen): void {
     if (!fila.activo) {
-      Swal.fire('Fórmula inactiva', 'Una fórmula inactiva no se puede editar. Actívala primero.', 'warning');
+      Swal.fire('Fórmula desactivada', 'Una fórmula desactivada no se puede editar. Actívala primero.', 'warning');
       return;
     }
     this.modoFormulario = 'E';

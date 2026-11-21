@@ -1,0 +1,246 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fa-solid fa-clipboard-list me-2"></i>
+      Fórmulas médicas
+    </h5>
+    <button class="btn btn-primary btn-sm" (click)="nueva()">
+      <i class="fa-solid fa-plus me-1"></i>
+      Nueva fórmula
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="row g-2 mb-3">
+      <div class="col-md-9">
+        <input
+          class="form-control"
+          placeholder="Buscar por mascota, propietario, veterinario o medicamento"
+          [(ngModel)]="texto"
+          (keyup.enter)="cargar(0)"
+        />
+      </div>
+      <div class="col-md-3 d-grid"><button class="btn btn-outline-primary" (click)="cargar(0)">Buscar</button></div>
+    </div>
+    @if (error) {
+      <div class="alert alert-danger">{{ error }}</div>
+    }
+    @if (cargando) {
+      <div class="text-center py-3">Cargando...</div>
+    }
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Emisión</th>
+            <th>Mascota</th>
+            <th>Propietario</th>
+            <th>Veterinario</th>
+            <th>Medicamento(s)</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of formulas; track f) {
+            <tr [class.text-muted]="!f.activo">
+              <td>{{ f.id }}</td>
+              <td>{{ f.fechaEmision | date: 'yyyy-MM-dd HH:mm' }}</td>
+              <td>{{ f.mascotaNombre }}</td>
+              <td>{{ f.clienteNombre }}</td>
+              <td>{{ f.medicoNombre }}</td>
+              <td>{{ f.medicamentoNombre }}</td>
+              <td>
+                <span class="badge" [ngClass]="f.activo ? 'bg-success' : 'bg-secondary'">{{ f.activo ? 'Activa' : 'Inactiva' }}</span>
+              </td>
+              <td class="text-nowrap">
+                <button class="btn btn-sm btn-outline-primary me-1" (click)="ver(f)">Ver</button>
+                <button class="btn btn-sm btn-outline-secondary" (click)="pdf(f.id)"><i class="fa-solid fa-file-pdf"></i></button>
+              </td>
+            </tr>
+          }
+          @if (!cargando && formulas.length === 0) {
+            <tr><td colspan="8" class="text-center text-muted">No hay fórmulas.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (totalPaginas > 1) {
+      <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm" [disabled]="pagina === 0" (click)="cargar(pagina - 1)">Anterior</button>
+        <button class="btn btn-outline-secondary btn-sm" disabled>{{ pagina + 1 }} / {{ totalPaginas }}</button>
+        <button class="btn btn-outline-secondary btn-sm" [disabled]="pagina + 1 >= totalPaginas" (click)="cargar(pagina + 1)">
+          Siguiente
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+@if (mostrarForm) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nueva fórmula médica</h5>
+          <button type="button" class="btn-close" (click)="mostrarForm = false"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorForm) {
+            <div class="alert alert-danger">{{ errorForm }}</div>
+          }
+          <div class="row g-2 mb-3">
+            <div class="col-md-12">
+              <label class="form-label">Cita *</label>
+              <select class="form-select" [(ngModel)]="citaId">
+                <option [ngValue]="null">Selecciona la cita</option>
+                @for (c of citas; track c) {
+                  <option [ngValue]="c.id">{{ nombreCita(c) }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <h6>Medicamentos</h6>
+          @for (it of items; track it; let i = $index) {
+            <div class="border rounded p-2 mb-2">
+              <div class="row g-2">
+                <div class="col-md-5">
+                  <label class="form-label small mb-0">Medicamento *</label>
+                  <select class="form-select form-select-sm" [(ngModel)]="it.productoId">
+                    <option [ngValue]="null">Selecciona</option>
+                    @for (m of medicamentos; track m) {
+                      <option [ngValue]="m.id">{{ m.nombre }} · {{ m.presentacion }} (disp. {{ m.stock - m.reservado }})</option>
+                    }
+                  </select>
+                  @if (disponible(it.productoId) !== null) {
+                    <small class="text-muted">Disponible para formular: {{ disponible(it.productoId) }}</small>
+                  }
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small mb-0">Dosis * (ej. 0.5 ml)</label>
+                  <input class="form-control form-control-sm" maxlength="40" [(ngModel)]="it.dosis" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small mb-0">Frecuencia * (ej. cada 8 horas)</label>
+                  <input class="form-control form-control-sm" maxlength="100" [(ngModel)]="it.frecuencia" />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small mb-0">Duración * (ej. 5 días)</label>
+                  <input class="form-control form-control-sm" maxlength="30" [(ngModel)]="it.duracion" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small mb-0">Vía de administración *</label>
+                  <select class="form-select form-select-sm" [(ngModel)]="it.viaAdministracion">
+                    @for (v of vias; track v) {
+                      <option [value]="v">{{ v }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small mb-0">Cantidad a entregar *</label>
+                  <input type="number" min="1" max="999" class="form-control form-control-sm" [(ngModel)]="it.cantidad" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small mb-0">Indicaciones especiales</label>
+                  <input class="form-control form-control-sm" maxlength="500" [(ngModel)]="it.indicaciones" />
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                  <button class="btn btn-sm btn-outline-danger" title="Quitar" (click)="quitar(i)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+          <button class="btn btn-outline-primary btn-sm mb-3" (click)="agregar()" [disabled]="items.length >= 15">
+            <i class="fa-solid fa-plus me-1"></i>
+            Agregar medicamento
+          </button>
+          <div>
+            <label class="form-label">Indicaciones generales</label>
+            <textarea class="form-control" rows="2" maxlength="1000" [(ngModel)]="indicaciones"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="mostrarForm = false">Cancelar</button>
+          <button class="btn btn-primary" [disabled]="enviando" (click)="guardar()">Guardar fórmula</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (detalle) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Fórmula #{{ detalle.id }}
+            <span class="badge bg-info ms-2">{{ detalle.estadoDespacho }}</span>
+          </h5>
+          <button type="button" class="btn-close" (click)="detalle = null"></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Propietario:</strong>
+            {{ detalle.cliente }} ·
+            <strong>Mascota:</strong>
+            {{ detalle.mascota }} ·
+            <strong>Veterinario:</strong>
+            {{ detalle.veterinario }} ·
+            <strong>Cita:</strong>
+            #{{ detalle.citaId }}
+          </p>
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Medicamento</th>
+                <th>Dosis</th>
+                <th>Frecuencia</th>
+                <th>Duración</th>
+                <th>Vía</th>
+                <th class="text-end">Formulado</th>
+                <th class="text-end">Entregado</th>
+                <th>Indicaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (i of detalle.items; track i) {
+                <tr>
+                  <td>
+                    {{ i.medicamento }}
+                    <div class="small text-muted">{{ i.presentacion }}</div>
+                  </td>
+                  <td>{{ i.dosis }}</td>
+                  <td>{{ i.frecuencia }}</td>
+                  <td>{{ i.duracion }}</td>
+                  <td>{{ i.viaAdministracion }}</td>
+                  <td class="text-end">{{ i.cantidad }}</td>
+                  <td class="text-end">{{ i.cantidadDespachada }}</td>
+                  <td>{{ i.indicaciones }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (detalle.indicaciones) {
+            <p>
+              <strong>Indicaciones generales:</strong>
+              {{ detalle.indicaciones }}
+            </p>
+          }
+        </div>
+        <div class="modal-footer">
+          @if (detalle.activo) {
+            <button class="btn btn-outline-danger me-auto" (click)="desactivar(detalle.id)">Desactivar</button>
+          }
+          <button class="btn btn-outline-secondary" (click)="pdf(detalle.id)">
+            <i class="fa-solid fa-file-pdf me-1"></i>
+            PDF
+          </button>
+          <button class="btn btn-secondary" (click)="detalle = null">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

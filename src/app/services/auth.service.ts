@@ -21,6 +21,9 @@ export class AuthService {
 
   private api = 'auth';
 
+  /** Segmento del backend con los servicios de la cuenta (contraseña, perfil, registro). */
+  private cuenta = 'cuenta';
+
   /** Paso 1: usuario y contraseña. El backend envía el OTP al correo. */
   login(rq: LoginRq): Observable<AuthRS> {
     return this.backend.post<AuthRS>(environment.apiUrlAuth, this.api, 'login', rq);
@@ -37,19 +40,36 @@ export class AuthService {
     return this.backend.post<AuthRS>(environment.apiUrlAuth, this.api, 'reenviar-otp', { usuarioId });
   }
 
-  /** Cambiar contraseña con sesión iniciada (pide la actual). */
+  /** Cambiar contraseña con sesión iniciada (pide la actual). El usuario sale del token. */
   cambiarPassword(rq: CambiarPasswordRq): Observable<MiRespuesta> {
-    return this.backend.post<MiRespuesta>(environment.apiUrlAuth, this.api, 'cambiar-password', rq);
+    return this.backend.put<MiRespuesta>(environment.apiUrlAuth, this.cuenta, 'cambiar-contrasena', {
+      contrasenaActual: rq.passwordActual,
+      nuevaContrasena: rq.nuevaPassword
+    });
   }
 
-  /** Olvidé mi contraseña, paso 1: envía un código al correo. */
+  /** Olvidé mi contraseña, paso 1: envía un código al correo (el usuario puede escribir su usuario o su correo). */
   olvidePassword(rq: OlvidePasswordRq): Observable<MiRespuesta> {
-    return this.backend.post<MiRespuesta>(environment.apiUrlAuth, this.api, 'olvide-password', rq);
+    return this.backend.post<MiRespuesta>(environment.apiUrlAuth, this.cuenta, 'olvide-contrasena', {
+      identificador: rq.username
+    });
   }
 
   /** Olvidé mi contraseña, paso 2: código + contraseña nueva. */
   restablecerPassword(rq: RestablecerPasswordRq): Observable<MiRespuesta> {
-    return this.backend.post<MiRespuesta>(environment.apiUrlAuth, this.api, 'restablecer-password', rq);
+    return this.backend.post<MiRespuesta>(environment.apiUrlAuth, this.cuenta, 'restablecer-contrasena', {
+      identificador: rq.username,
+      codigo: rq.codigo,
+      nuevaContrasena: rq.nuevaPassword
+    });
+  }
+
+  /** Actualiza datos del usuario guardado en la sesión (por ejemplo, el correo tras editar el perfil). */
+  actualizarSesion(cambios: Partial<UsuarioSesion>): void {
+    const actual = this.getUsuario();
+    if (actual) {
+      localStorage.setItem(KEY_USUARIO, JSON.stringify({ ...actual, ...cambios }));
+    }
   }
 
   private guardarSesion(rs: LoginRS): void {

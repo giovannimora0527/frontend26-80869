@@ -1,6 +1,7 @@
 /** Cambiar contraseña con sesión iniciada. */
 export interface CambiarPasswordRq {
-  username: string;
+  /** Ya no se envía al backend: el usuario sale del token de la sesión. */
+  username?: string;
   passwordActual: string;
   nuevaPassword: string;
 }

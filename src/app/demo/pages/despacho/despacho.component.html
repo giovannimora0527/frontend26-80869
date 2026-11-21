@@ -1,0 +1,315 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fa-solid fa-truck-medical me-2"></i>
+      Despacho de fórmulas
+    </h5>
+  </div>
+  <div class="card-body">
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="vista === 'pendientes'" role="button" (click)="cambiarVista('pendientes')">
+          Fórmulas por despachar
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="vista === 'historial'" role="button" (click)="cambiarVista('historial')">
+          Historial de despachos
+        </a>
+      </li>
+    </ul>
+    @if (esAdmin) {
+      <div class="alert alert-info py-2">
+        Como administrador puedes consultar los despachos y autorizar reversiones; la entrega la realiza el perfil DESPACHO_MEDICO.
+      </div>
+    }
+    @if (error) {
+      <div class="alert alert-danger">{{ error }}</div>
+    }
+    @if (cargando) {
+      <div class="text-center py-3">Cargando...</div>
+    }
+
+    @if (vista === 'pendientes') {
+      <div class="row g-2 mb-3">
+        <div class="col-md-3">
+          <select class="form-select" [(ngModel)]="estado" (change)="cargar()">
+            <option value="">Pendientes de entrega</option>
+            @for (e of estados; track e) {
+              <option [value]="e">{{ e }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-4">
+          <input
+            class="form-control"
+            placeholder="N° de fórmula, propietario, mascota o veterinario"
+            [(ngModel)]="texto"
+            (keyup.enter)="cargar()"
+          />
+        </div>
+        <div class="col-md-2"><input type="date" class="form-control" title="Fecha de generación desde" [(ngModel)]="desde" /></div>
+        <div class="col-md-2"><input type="date" class="form-control" title="Fecha de generación hasta" [(ngModel)]="hasta" /></div>
+        <div class="col-md-1 d-grid">
+          <button class="btn btn-outline-primary" (click)="cargar()"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Fórmula</th>
+              <th>Generación</th>
+              <th>Propietario</th>
+              <th>Mascota</th>
+              <th>Veterinario</th>
+              <th>Medicamentos</th>
+              <th class="text-end">Unid. pendientes</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of lista; track d) {
+              <tr>
+                <td>#{{ d.formulaId }}</td>
+                <td>{{ d.fechaEmision | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <td>{{ d.cliente }}</td>
+                <td>{{ d.mascota }}</td>
+                <td>{{ d.veterinario }}</td>
+                <td class="small">
+                  @for (i of d.items; track i) {
+                    <div>{{ i.medicamento }} × {{ i.cantidadFormulada }}</div>
+                  }
+                </td>
+                <td class="text-end">{{ pendientes(d) }}</td>
+                <td>
+                  <span class="badge" [ngClass]="claseEstado(d.estado)">{{ d.estado }}</span>
+                </td>
+                <td><button class="btn btn-sm btn-outline-primary" (click)="abrir(d)">Abrir</button></td>
+              </tr>
+            }
+            @if (!cargando && lista.length === 0) {
+              <tr><td colspan="9" class="text-center text-muted">No hay fórmulas con ese filtro.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (vista === 'historial') {
+      <div class="row g-2 mb-3">
+        <div class="col-md-2"><input type="date" class="form-control" [(ngModel)]="hDesde" /></div>
+        <div class="col-md-2"><input type="date" class="form-control" [(ngModel)]="hHasta" /></div>
+        <div class="col-md-6">
+          <input
+            class="form-control"
+            placeholder="Fórmula, propietario, mascota, veterinario o medicamento"
+            [(ngModel)]="hTexto"
+            (keyup.enter)="cargarHistorico()"
+          />
+        </div>
+        <div class="col-md-2 d-grid"><button class="btn btn-outline-primary" (click)="cargarHistorico()">Consultar</button></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Entrega</th>
+              <th>Fórmula</th>
+              <th>Mascota / propietario</th>
+              <th>Veterinario</th>
+              <th>Despachó</th>
+              <th>Medicamentos entregados (lote)</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of historico; track h) {
+              <tr>
+                <td>{{ h.fechaEntrega | date: 'yyyy-MM-dd HH:mm' }}</td>
+                <td>#{{ h.formulaId }}</td>
+                <td>
+                  {{ h.mascota }}
+                  <div class="small text-muted">{{ h.cliente }}</div>
+                </td>
+                <td>{{ h.veterinario }}</td>
+                <td>{{ h.usuarioDespacho }}</td>
+                <td class="small">
+                  @for (e of h.entregas; track e) {
+                    <div [class.text-decoration-line-through]="e.revertido">
+                      {{ e.cantidad }} × {{ e.producto }} (lote {{ e.lote }})
+                      @if (e.revertido) {
+                        <span class="badge bg-warning text-dark">Revertido</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="claseEstado(h.estado)">{{ h.estado }}</span>
+                </td>
+              </tr>
+            }
+            @if (!cargando && historico.length === 0) {
+              <tr><td colspan="7" class="text-center text-muted">No hay despachos en el rango.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (actual) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Fórmula #{{ actual.formulaId }}
+            <span class="badge ms-2" [ngClass]="claseEstado(actual.estado)">{{ actual.estado }}</span>
+          </h5>
+          <button type="button" class="btn-close" (click)="actual = null"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorDetalle) {
+            <div class="alert alert-danger">{{ errorDetalle }}</div>
+          }
+          <p>
+            <strong>Propietario:</strong>
+            {{ actual.cliente }} ·
+            <strong>Mascota:</strong>
+            {{ actual.mascota }} ·
+            <strong>Veterinario:</strong>
+            {{ actual.veterinario }} ·
+            <strong>Generada:</strong>
+            {{ actual.fechaEmision | date: 'yyyy-MM-dd HH:mm' }}
+          </p>
+          <p class="small text-muted mb-2">
+            Dosis, frecuencia, duración e indicaciones son de solo lectura (las definió el veterinario). Elige de qué lote sale cada unidad:
+            se sugiere el que vence primero y los lotes vencidos no se pueden entregar.
+          </p>
+          @for (i of actual.items; track i) {
+            <div
+              class="border rounded p-2 mb-3"
+              [class.border-warning]="i.stockDisponible < i.cantidadPendiente && i.cantidadPendiente > 0"
+            >
+              <div class="d-flex flex-wrap justify-content-between">
+                <div>
+                  <strong>{{ i.medicamento }}</strong>
+                  <span class="text-muted">{{ i.presentacion }}</span>
+                  <div class="small">Dosis {{ i.dosis }} · {{ i.frecuencia }} · {{ i.duracion }} · vía {{ i.viaAdministracion }}</div>
+                  @if (i.indicaciones) {
+                    <div class="small">Indicaciones: {{ i.indicaciones }}</div>
+                  }
+                </div>
+                <div class="text-end small">
+                  Formulado
+                  <strong>{{ i.cantidadFormulada }}</strong>
+                  · Entregado
+                  <strong>{{ i.cantidadDespachada }}</strong>
+                  · Pendiente
+                  <strong>{{ i.cantidadPendiente }}</strong>
+                  <br />
+                  Stock vigente:
+                  <strong>{{ i.stockDisponible }}</strong>
+                  @if (i.stockDisponible < i.cantidadPendiente && i.cantidadPendiente > 0) {
+                    <span class="badge bg-danger ms-1">Stock insuficiente</span>
+                  }
+                </div>
+              </div>
+              @if (i.cantidadPendiente > 0) {
+                <table class="table table-sm mt-2 mb-1">
+                  <thead>
+                    <tr>
+                      <th>Lote</th>
+                      <th>Vence</th>
+                      <th class="text-end">Disponible</th>
+                      <th style="width: 130px">Entregar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (l of i.lotes; track l) {
+                      <tr [class.table-danger]="l.vencido" [class.table-warning]="l.porVencer">
+                        <td>
+                          {{ l.numeroLote }}
+                          @if (l.vencido) {
+                            <span class="badge bg-danger">Vencido</span>
+                          }
+                          @if (l.porVencer) {
+                            <span class="badge bg-warning text-dark">Próximo a vencer</span>
+                          }
+                        </td>
+                        <td>{{ l.fechaVencimiento || 'No vence' }}</td>
+                        <td class="text-end">{{ l.cantidadDisponible }}</td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            [max]="l.cantidadDisponible"
+                            class="form-control form-control-sm"
+                            [disabled]="!puedeEntregar || l.vencido"
+                            [ngModel]="seleccion[i.formulaDetalleId][l.loteId] || 0"
+                            (ngModelChange)="cambiarLote(i, l.loteId, $event)"
+                          />
+                        </td>
+                      </tr>
+                    }
+                    @if (i.lotes.length === 0) {
+                      <tr><td colspan="4" class="text-danger">Sin lotes con existencias: queda pendiente por disponibilidad.</td></tr>
+                    }
+                  </tbody>
+                </table>
+              }
+              @if (i.cantidadPendiente > 0 && puedeEntregar) {
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-sm btn-outline-secondary" (click)="sugerir(i)">Sugerir lotes (vencen primero)</button>
+                  <span>
+                    A entregar:
+                    <strong>{{ total(i) }}</strong>
+                    de {{ i.cantidadPendiente }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+          @if (puedeEntregar) {
+            <div>
+              <label class="form-label">Observaciones de la entrega</label>
+              <input class="form-control" maxlength="500" [(ngModel)]="observaciones" />
+            </div>
+          }
+          <h6 class="mt-3">Historial de estados</h6>
+          <ul class="small">
+            @for (h of historial; track h) {
+              <li>
+                {{ h.fecha | date: 'yyyy-MM-dd HH:mm' }} · {{ h.estadoAnterior || '—' }} →
+                <strong>{{ h.estadoNuevo }}</strong>
+                {{ h.detalle ? '· ' + h.detalle : '' }}
+              </li>
+            }
+          </ul>
+        </div>
+        <div class="modal-footer">
+          @if (puedeEntregar) {
+            <button class="btn btn-outline-danger me-auto" (click)="cancelar()">Cancelar despacho</button>
+          }
+          @if (esAdmin && hayEntregas) {
+            <button class="btn btn-outline-warning me-auto" (click)="reversar()">Autorizar reversión</button>
+          }
+          <button class="btn btn-outline-secondary" (click)="comprobante()">
+            <i class="fa-solid fa-file-pdf me-1"></i>
+            Comprobante
+          </button>
+          @if (puedeEntregar && actual.estado !== 'EN_PREPARACION') {
+            <button class="btn btn-outline-primary" (click)="preparar()">Marcar en preparación</button>
+          }
+          @if (puedeEntregar) {
+            <button class="btn btn-success" [disabled]="procesando" (click)="confirmar()">Confirmar entrega</button>
+          }
+          <button class="btn btn-secondary" (click)="actual = null">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

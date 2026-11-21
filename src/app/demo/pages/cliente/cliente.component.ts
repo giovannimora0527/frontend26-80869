@@ -14,7 +14,7 @@ import { fechaLocalISO, fechaNoFutura } from 'src/app/utils/validadores';
 import { ClienteService } from './service/cliente.service';
 
 /** Opciones del filtro por estado del listado. */
-type FiltroEstado = 'todos' | 'activos' | 'inactivos';
+type FiltroEstado = 'todos' | 'activos' | 'desactivados';
 
 /**
  * Pantalla de gestión de clientes: listar, buscar, crear, editar y activar/desactivar.
@@ -149,7 +149,7 @@ export class ClienteComponent implements OnInit {
       if (this.filtroEstado === 'activos' && !cliente.activo) {
         return false;
       }
-      if (this.filtroEstado === 'inactivos' && cliente.activo) {
+      if (this.filtroEstado === 'desactivados' && cliente.activo) {
         return false;
       }
       if (!termino) {

@@ -3,6 +3,7 @@ import { Component, TemplateRef, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 
 // bootstrap import
+import { Router } from '@angular/router';
 import { NgbDropdownConfig, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import Swal from 'sweetalert2';
 
@@ -10,16 +11,7 @@ import Swal from 'sweetalert2';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
 import { AuthService } from 'src/app/services/auth.service';
 import { mensajeError } from 'src/app/utils/http-utils';
-
-/** Regla del backend: 8 a 64 caracteres, con al menos una letra y un número. */
-function validarFormatoPassword(control: AbstractControl): ValidationErrors | null {
-  const valor: string = control.value ?? '';
-  if (!valor) {
-    return null;
-  }
-  const valida = valor.length >= 8 && valor.length <= 64 && /[A-Za-z]/.test(valor) && /\d/.test(valor);
-  return valida ? null : { formatoPassword: true };
-}
+import { formatoPassword } from 'src/app/utils/validadores';
 
 /** La confirmación debe ser igual a la contraseña nueva. */
 function confirmacionIgual(grupo: AbstractControl): ValidationErrors | null {
@@ -43,6 +35,7 @@ export class NavRightComponent {
   private auth = inject(AuthService);
   private modales = inject(NgbModal);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
 
   usuario = this.auth.getUsuario();
 
@@ -58,7 +51,7 @@ export class NavRightComponent {
 
   formCambiar = this.fb.group({
     passwordActual: ['', Validators.required],
-    nuevaPassword: ['', [Validators.required, validarFormatoPassword]],
+    nuevaPassword: ['', [Validators.required, formatoPassword]],
     confirmar: ['', Validators.required]
   }, { validators: confirmacionIgual });
 
@@ -68,7 +61,7 @@ export class NavRightComponent {
 
   formRestablecer = this.fb.group({
     codigo: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
-    nuevaPassword: ['', [Validators.required, validarFormatoPassword]],
+    nuevaPassword: ['', [Validators.required, formatoPassword]],
     confirmar: ['', Validators.required]
   }, { validators: confirmacionIgual });
 
@@ -78,6 +71,11 @@ export class NavRightComponent {
   }
 
   /** Abre el modal de cambiar contraseña. */
+  /** Abre la pantalla "Mi perfil". */
+  irAPerfil(): void {
+    this.router.navigate(['/inicio/perfil']);
+  }
+
   abrirCambiar(contenido: TemplateRef<unknown>): void {
     this.formCambiar.reset();
     this.error = '';

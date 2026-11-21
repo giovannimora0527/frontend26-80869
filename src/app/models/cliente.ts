@@ -20,7 +20,7 @@ export class Cliente {
   genero?: string;
   /** Teléfono de contacto (opcional). */
   telefono?: string;
-  /** `true` si el cliente está activo; los inactivos no pueden agendar citas. */
+  /** `true` si el cliente está activo; los desactivados no pueden agendar citas. */
   activo?: boolean;
   /** Usuario del sistema asociado (opcional). */
   usuarioId?: number;

@@ -1,6 +1,7 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { formatoPassword } from 'src/app/utils/validadores';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -9,15 +10,17 @@ import { Modal } from 'bootstrap';
 import { Usuario } from 'src/app/models/usuario';
 import { UsuarioRq } from 'src/app/models/usuario-rq';
 import { AuthService } from 'src/app/services/auth.service';
+import { CuentaService } from 'src/app/services/cuenta.service';
+import { ClienteService } from 'src/app/demo/pages/cliente/service/cliente.service';
+import { MedicoService } from 'src/app/demo/pages/medico/service/medico.service';
 import { PaginacionComponent } from 'src/app/theme/shared/components/paginacion/paginacion.component';
 import { obtenerMensajeError } from 'src/app/utils/mensajes-error';
 import { UsuarioService } from './service/usuario.service';
 
 /** Opciones del filtro por estado del listado. */
-type FiltroEstado = 'todos' | 'activos' | 'inactivos';
+type FiltroEstado = 'todos' | 'activos' | 'desactivados';
 
 /** Largo mínimo de la contraseña (igual que en el backend). */
-const PASSWORD_MIN = 6;
 
 /**
  * Pantalla de gestión de usuarios: listar, buscar, crear, editar y activar/desactivar.
@@ -37,12 +40,16 @@ export class UsuarioComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly usuarioService = inject(UsuarioService);
   private readonly authService = inject(AuthService);
+  private readonly cuentaService = inject(CuentaService);
+  private readonly clienteService = inject(ClienteService);
+  private readonly medicoService = inject(MedicoService);
 
   /** Perfiles disponibles (ids definidos en la tabla `perfil`). */
   readonly perfiles = [
     { valor: 1, etiqueta: 'Administrador' },
     { valor: 2, etiqueta: 'Recepción' },
-    { valor: 3, etiqueta: 'Médico' }
+    { valor: 3, etiqueta: 'Médico' },
+    { valor: 4, etiqueta: 'Cliente' }
   ] as const;
 
   /** Id del usuario que tiene la sesión abierta (no puede desactivarse a sí mismo). */
@@ -50,7 +57,7 @@ export class UsuarioComponent implements OnInit {
 
   /** Formulario reactivo de creación y edición. */
   readonly form = this.formBuilder.nonNullable.group({
-    username: ['', [Validators.required, Validators.pattern(/^\S+$/), Validators.maxLength(50)]],
+    username: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9._-]{4,30}$/)]],
     email: ['', [Validators.required, Validators.pattern(/^[^@\s]+@[^@\s]+\.[^@\s]+$/), Validators.maxLength(255)]],
     rol: [0, Validators.min(1)],
     password: [''],
@@ -61,8 +68,7 @@ export class UsuarioComponent implements OnInit {
   private readonly mensajes: Record<string, Record<string, string>> = {
     username: {
       required: 'El nombre de usuario es obligatorio.',
-      pattern: 'El nombre de usuario no puede tener espacios.',
-      maxlength: 'Máximo 50 caracteres.'
+      pattern: 'Entre 4 y 30 caracteres: letras, números, punto, guion o guion bajo (se guarda en minúscula).'
     },
     email: {
       required: 'El correo electrónico es obligatorio.',
@@ -72,7 +78,7 @@ export class UsuarioComponent implements OnInit {
     rol: { min: 'Selecciona un perfil.' },
     password: {
       required: 'La contraseña es obligatoria.',
-      minlength: `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres.`
+      formatoPassword: 'Entre 8 y 100 caracteres, con al menos una letra y un número.'
     },
     confirmarPassword: {
       required: 'Confirma la contraseña.',
@@ -100,6 +106,18 @@ export class UsuarioComponent implements OnInit {
 
   // Modal
   private modalInstance: Modal | null = null;
+
+  // Asociar usuario a persona (cliente o médico)
+  private modalAsociar: Modal | null = null;
+  /** Usuario al que se le está asociando una persona. */
+  usuarioAAsociar: Usuario | null = null;
+  /** Personas que aún no tienen usuario, del tipo que corresponde al perfil del usuario. */
+  personasDisponibles: { id: number; etiqueta: string }[] = [];
+  /** Persona elegida en la lista. */
+  personaSeleccionadaId: number | null = null;
+  cargandoPersonas = false;
+  asociando = false;
+  errorAsociar = '';
   titleModal = '';
   titleBoton = '';
 
@@ -110,7 +128,10 @@ export class UsuarioComponent implements OnInit {
   readonly registrosPorPagina = 5;
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.modalInstance?.dispose());
+    this.destroyRef.onDestroy(() => {
+      this.modalInstance?.dispose();
+      this.modalAsociar?.dispose();
+    });
   }
 
   ngOnInit(): void {
@@ -147,7 +168,7 @@ export class UsuarioComponent implements OnInit {
       if (this.filtroEstado === 'activos' && !usuario.activo) {
         return false;
       }
-      if (this.filtroEstado === 'inactivos' && usuario.activo) {
+      if (this.filtroEstado === 'desactivados' && usuario.activo) {
         return false;
       }
       if (!termino) {
@@ -194,6 +215,7 @@ export class UsuarioComponent implements OnInit {
       case 1: return 'bg-primary';
       case 2: return 'bg-info';
       case 3: return 'bg-warning text-dark';
+      case 4: return 'bg-dark';
       default: return 'bg-secondary';
     }
   }
@@ -276,8 +298,8 @@ export class UsuarioComponent implements OnInit {
     }
     const valores = this.form.getRawValue();
     const datos: UsuarioRq = {
-      username: valores.username.trim(),
-      email: valores.email.trim(),
+      username: valores.username.trim().toLowerCase(),
+      email: valores.email.trim().toLowerCase(),
       rol: Number(valores.rol),
       password: valores.password ? valores.password : null
     };
@@ -353,8 +375,8 @@ export class UsuarioComponent implements OnInit {
     const password = this.form.controls.password;
     const confirmar = this.form.controls.confirmarPassword;
     password.setValidators(obligatoria
-      ? [Validators.required, Validators.minLength(PASSWORD_MIN)]
-      : [Validators.minLength(PASSWORD_MIN)]);
+      ? [Validators.required, formatoPassword]
+      : [formatoPassword]);
     confirmar.setValidators(obligatoria ? [Validators.required] : []);
     password.updateValueAndValidity();
     confirmar.updateValueAndValidity();
@@ -365,6 +387,105 @@ export class UsuarioComponent implements OnInit {
     const password = grupo.get('password')?.value ?? '';
     const confirmar = grupo.get('confirmarPassword')?.value ?? '';
     return password === confirmar ? null : { noCoincide: true };
+  }
+
+  /** Solo los usuarios activos con perfil Cliente (4) o Médico (3) se asocian a una persona. */
+  puedeAsociar(usuario: Usuario): boolean {
+    return !!usuario.activo && (usuario.rol === 3 || usuario.rol === 4);
+  }
+
+  /** Tipo de persona que corresponde al perfil del usuario. */
+  tipoPersonaDe(usuario: Usuario | null): 'CLIENTE' | 'MEDICO' | null {
+    if (usuario?.rol === 4) {
+      return 'CLIENTE';
+    }
+    return usuario?.rol === 3 ? 'MEDICO' : null;
+  }
+
+  /** Abre el modal y carga las personas que todavía no tienen usuario. */
+  abrirAsociacion(usuario: Usuario): void {
+    const tipo = this.tipoPersonaDe(usuario);
+    if (!tipo) {
+      return;
+    }
+    this.usuarioAAsociar = usuario;
+    this.personasDisponibles = [];
+    this.personaSeleccionadaId = null;
+    this.errorAsociar = '';
+    this.cargandoPersonas = true;
+    this.mostrarModalAsociar();
+
+    if (tipo === 'CLIENTE') {
+      this.clienteService.listarClientesActivos().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (clientes) => {
+          this.personasDisponibles = clientes
+            .filter((c) => !c.usuarioId && c.id !== undefined)
+            .map((c) => ({ id: c.id as number, etiqueta: `${c.tipoDocumento} ${c.numeroDocumento} - ${c.nombres} ${c.apellidos}` }));
+          this.cargandoPersonas = false;
+        },
+        error: (err) => this.falloCargaPersonas(err)
+      });
+    } else {
+      this.medicoService.listar().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (medicos) => {
+          this.personasDisponibles = medicos
+            .filter((m) => !m.usuarioId && m.estado !== false)
+            .map((m) => ({ id: m.id, etiqueta: `${m.tipoDocumento} ${m.numeroDocumento} - ${m.nombres} ${m.apellidos}` }));
+          this.cargandoPersonas = false;
+        },
+        error: (err) => this.falloCargaPersonas(err)
+      });
+    }
+  }
+
+  /** Guarda en `personaSeleccionadaId` la opción elegida en la lista. */
+  seleccionarPersona(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    this.personaSeleccionadaId = valor ? Number(valor) : null;
+  }
+
+  /** Envía la asociación al backend (las reglas se validan allá). */
+  confirmarAsociacion(): void {
+    const tipo = this.tipoPersonaDe(this.usuarioAAsociar);
+    if (!this.usuarioAAsociar || !tipo || this.personaSeleccionadaId === null || this.asociando) {
+      this.errorAsociar = 'Selecciona la persona que quieres asociar.';
+      return;
+    }
+    this.asociando = true;
+    this.errorAsociar = '';
+    this.cuentaService.asociarPersona({
+      usuarioId: this.usuarioAAsociar.id as number,
+      tipoPersona: tipo,
+      personaId: this.personaSeleccionadaId
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (rs) => {
+        this.asociando = false;
+        this.cerrarAsociar();
+        void Swal.fire('Listo', rs.message, 'success');
+      },
+      error: (err) => {
+        this.asociando = false;
+        this.errorAsociar = obtenerMensajeError(err, 'No fue posible asociar el usuario. Intenta de nuevo.');
+      }
+    });
+  }
+
+  /** Cierra el modal de asociación. */
+  cerrarAsociar(): void {
+    this.modalAsociar?.hide();
+  }
+
+  private falloCargaPersonas(err: unknown): void {
+    this.cargandoPersonas = false;
+    this.errorAsociar = obtenerMensajeError(err, 'No fue posible cargar la lista de personas.');
+  }
+
+  private mostrarModalAsociar(): void {
+    const elemento = document.getElementById('modalAsociar');
+    if (elemento) {
+      this.modalAsociar ??= new Modal(elemento, { backdrop: 'static', keyboard: false });
+      this.modalAsociar.show();
+    }
   }
 
   /** Muestra el modal de Bootstrap (se crea la instancia la primera vez). */

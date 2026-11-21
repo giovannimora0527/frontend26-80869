@@ -1,0 +1,389 @@
+<div class="card">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h5 class="mb-0">
+      <i class="fa-solid fa-calendar-days me-2"></i>
+      Calendario de citas
+    </h5>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      @if (ultimaActualizacion) {
+        <span class="text-muted small">Actualizado {{ ultimaActualizacion }}</span>
+      }
+      <select class="form-select form-select-sm w-auto" [(ngModel)]="filtroEstado" (change)="filtrar()">
+        <option value="">Todos los estados</option>
+        <option value="PROGRAMADA">Pendientes (programadas)</option>
+        <option value="CONFIRMADA">Confirmadas</option>
+        <option value="ATENDIDA">Finalizadas</option>
+        <option value="CANCELADA">Canceladas</option>
+      </select>
+      <button class="btn btn-primary btn-sm" (click)="nueva()">
+        <i class="fa-solid fa-plus me-1"></i>
+        Nueva cita
+      </button>
+      @if (esMedico) {
+        <button class="btn btn-outline-secondary btn-sm" (click)="abrirHorarios()">
+          <i class="fa-solid fa-clock me-1"></i>
+          Mi horario
+        </button>
+      }
+      <button class="btn btn-outline-success btn-sm" (click)="mostrarInforme = true">
+        <i class="fa-solid fa-file-excel me-1"></i>
+        Informe Excel
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="cargar()" title="Actualizar"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </div>
+  <div class="card-body">
+    @if (error) {
+      <div class="alert alert-danger">{{ error }}</div>
+    }
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary" (click)="mover(-1)">&laquo;</button>
+        <button class="btn btn-outline-secondary" (click)="irAHoy()">Hoy</button>
+        <button class="btn btn-outline-secondary" (click)="mover(1)">&raquo;</button>
+      </div>
+      <strong class="text-capitalize">{{ titulo }}</strong>
+      <div class="btn-group btn-group-sm">
+        <button class="btn" [ngClass]="vista === 'dia' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarVista('dia')">Día</button>
+        <button class="btn" [ngClass]="vista === 'semana' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarVista('semana')">
+          Semana
+        </button>
+        <button class="btn" [ngClass]="vista === 'mes' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarVista('mes')">Mes</button>
+      </div>
+    </div>
+
+    <!-- ================= MES ================= -->
+    @if (vista === 'mes') {
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="table-responsive">
+            <table class="table table-bordered text-center mb-0" style="table-layout: fixed; min-width: 560px">
+              <thead class="table-light">
+                <tr>
+                  @for (d of diasSemana; track d) {
+                    <th>{{ d }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of [0, 1, 2, 3, 4, 5]; track fila) {
+                  <tr>
+                    @for (d of dias.slice(fila * 7, fila * 7 + 7); track d) {
+                      <td
+                        role="button"
+                        (click)="seleccionar(d)"
+                        (dblclick)="abrirDia(d)"
+                        class="align-top p-1"
+                        [class.bg-light]="!d.delMes"
+                        [class.border-primary]="d.fecha === seleccionado"
+                        [style.border-width.px]="d.fecha === seleccionado ? 2 : 1"
+                        style="height: 84px"
+                      >
+                        <div class="small" [class.fw-bold]="d.hoy" [class.text-primary]="d.hoy" [class.text-muted]="!d.delMes">
+                          {{ d.numero }}
+                        </div>
+                        @if (d.citas.length > 0) {
+                          <div class="d-flex flex-wrap justify-content-center gap-1">
+                            @for (c of d.citas.slice(0, 3); track c) {
+                              <span
+                                class="badge"
+                                [ngClass]="'bg-' + (colores[c.estado] || 'secondary')"
+                                title="{{ hora(c) }} {{ c.mascota?.nombreMascota }}"
+                              >
+                                {{ hora(c) }}
+                              </span>
+                            }
+                            @if (d.citas.length > 3) {
+                              <span class="badge bg-dark">+{{ d.citas.length - 3 }}</span>
+                            }
+                          </div>
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="small text-muted mt-1">Clic para ver las citas del día; doble clic para abrir la vista de día.</div>
+        </div>
+        <div class="col-lg-4">
+          <h6>Citas del {{ seleccionado }}</h6>
+          @if (citasDelDia.length === 0) {
+            <p class="text-muted">No hay citas este día.</p>
+          }
+          @for (c of citasDelDia; track c) {
+            <ng-container *ngTemplateOutlet="tarjeta; context: { c: c }"></ng-container>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ================= SEMANA ================= -->
+    @if (vista === 'semana') {
+      <div class="table-responsive">
+        <table class="table table-bordered align-top mb-0" style="table-layout: fixed; min-width: 900px">
+          <thead class="table-light">
+            <tr>
+              @for (d of semana; track d) {
+                <th [class.table-primary]="d.hoy">{{ diasSemana[semana.indexOf(d)] }} {{ d.numero }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              @for (d of semana; track d) {
+                <td style="vertical-align: top; min-height: 200px">
+                  @if (d.citas.length === 0) {
+                    <div class="text-muted small text-center">—</div>
+                  }
+                  @for (c of d.citas; track c) {
+                    <div
+                      class="border rounded p-1 mb-1 small"
+                      [ngClass]="'border-' + (colores[c.estado] || 'secondary')"
+                      role="button"
+                      (click)="seleccionado = d.fecha; abrirDia(d)"
+                    >
+                      <span class="badge" [ngClass]="'bg-' + (colores[c.estado] || 'secondary')">{{ hora(c) }}–{{ horaFin(c) }}</span>
+                      <div>
+                        <strong>{{ c.mascota?.nombreMascota }}</strong>
+                      </div>
+                      <div class="text-muted">{{ c.cliente?.nombres }} {{ c.cliente?.apellidos }}</div>
+                    </div>
+                  }
+                </td>
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- ================= DÍA ================= -->
+    @if (vista === 'dia') {
+      <div>
+        @if (citasDelDia.length === 0) {
+          <p class="text-muted">No hay citas este día.</p>
+        }
+        @for (c of citasDelDia; track c) {
+          <ng-container *ngTemplateOutlet="tarjeta; context: { c: c }"></ng-container>
+        }
+      </div>
+    }
+
+    <div class="small mt-2">
+      <span class="badge bg-primary me-1">Pendiente / programada</span>
+      <span class="badge bg-info me-1">Confirmada</span>
+      <span class="badge bg-success me-1">Finalizada</span>
+      <span class="badge bg-secondary">Cancelada</span>
+    </div>
+  </div>
+</div>
+
+<ng-template #tarjeta let-c="c">
+  <div class="border rounded p-2 mb-2">
+    <div class="d-flex justify-content-between">
+      <strong>{{ hora(c) }} – {{ horaFin(c) }} · {{ c.mascota?.nombreMascota }}</strong>
+      <span class="badge" [ngClass]="'bg-' + (colores[c.estado] || 'secondary')">{{ c.estado }}</span>
+    </div>
+    <div class="small">
+      <strong>Propietario:</strong>
+      {{ c.cliente?.nombres }} {{ c.cliente?.apellidos }}
+    </div>
+    @if (!esMedico) {
+      <div class="small text-muted">Vet.: {{ c.medico?.nombres }} {{ c.medico?.apellidos }}</div>
+    }
+    <div class="small">
+      <strong>Motivo:</strong>
+      {{ c.motivo }}
+    </div>
+    <div class="d-flex flex-wrap gap-1 mt-1">
+      @if (c.estado === 'PROGRAMADA') {
+        <button class="btn btn-sm btn-outline-info" (click)="cambiarEstado(c, 'CONFIRMADA')">Confirmar</button>
+      }
+      @if (c.estado !== 'CANCELADA') {
+        <button class="btn btn-sm btn-outline-success" (click)="atender(c)">
+          {{ c.estado === 'ATENDIDA' ? 'Ver atención' : 'Atender' }}
+        </button>
+      }
+      @if (c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA') {
+        <button class="btn btn-sm btn-outline-primary" (click)="editar(c)">Editar / reprogramar</button>
+      }
+      @if (c.estado === 'PROGRAMADA' || c.estado === 'CONFIRMADA') {
+        <button class="btn btn-sm btn-outline-danger" (click)="cambiarEstado(c, 'CANCELADA')">Cancelar</button>
+      }
+      <button class="btn btn-sm btn-outline-secondary" (click)="verHistorial(c)">Historial de la mascota</button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- ================= NUEVA / EDITAR CITA ================= -->
+@if (mostrarCita) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editando ? 'Editar cita #' + editando.id : 'Nueva cita' }}</h5>
+          <button type="button" class="btn-close" (click)="mostrarCita = false"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorCita) {
+            <div class="alert alert-danger">{{ errorCita }}</div>
+          }
+          <div class="mb-2">
+            <label class="form-label">Propietario *</label>
+            <select class="form-select" [(ngModel)]="form.clienteId" (change)="alCambiarCliente()" [disabled]="!!editando">
+              <option [ngValue]="null">Selecciona</option>
+              @for (c of clientes; track c) {
+                <option [ngValue]="c.id">{{ c.nombres }} {{ c.apellidos }} {{ c.numeroDocumento ? '· ' + c.numeroDocumento : '' }}</option>
+              }
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Mascota *</label>
+            <select class="form-select" [(ngModel)]="form.mascotaId" [disabled]="!!editando">
+              <option [ngValue]="null">Selecciona</option>
+              @for (m of mascotas; track m) {
+                <option [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
+              }
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Veterinario *</label>
+            <select class="form-select" [(ngModel)]="form.medicoId" [disabled]="esMedico">
+              <option [ngValue]="null">Selecciona</option>
+              @for (m of medicos; track m) {
+                <option [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option>
+              }
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Fecha y hora de inicio *</label>
+            <input type="datetime-local" class="form-control" [(ngModel)]="form.fechaHora" />
+            <small class="text-muted">
+              Duración de la cita: 30 minutos. El sistema valida el horario del veterinario y que ni él ni la mascota tengan otra cita
+              simultánea.
+            </small>
+          </div>
+          <div>
+            <label class="form-label">Motivo de la consulta *</label>
+            <input class="form-control" maxlength="500" [(ngModel)]="form.motivo" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="mostrarCita = false">Cancelar</button>
+          <button class="btn btn-primary" [disabled]="enviando" (click)="guardarCita()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= HISTORIAL DE LA MASCOTA ================= -->
+@if (historial) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Historial de citas de {{ historial.mascota }}</h5>
+          <button type="button" class="btn-close" (click)="historial = null"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Veterinario</th>
+                <th>Motivo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of historial.citas; track c) {
+                <tr>
+                  <td>{{ c.fechaHora | date: 'yyyy-MM-dd HH:mm' }}</td>
+                  <td>{{ c.medico?.nombres }} {{ c.medico?.apellidos }}</td>
+                  <td>{{ c.motivo }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="'bg-' + (colores[c.estado] || 'secondary')">{{ c.estado }}</span>
+                  </td>
+                </tr>
+              }
+              @if (historial.citas.length === 0) {
+                <tr><td colspan="4" class="text-center text-muted">Sin citas.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" (click)="historial = null">Cerrar</button></div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= HORARIO DE DISPONIBILIDAD ================= -->
+@if (mostrarHorarios) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Mi horario de disponibilidad</h5>
+          <button type="button" class="btn-close" (click)="mostrarHorarios = false"></button>
+        </div>
+        <div class="modal-body">
+          @if (errorHorario) {
+            <div class="alert alert-danger py-1">{{ errorHorario }}</div>
+          }
+          <ul class="list-group mb-3">
+            @for (h of horarios; track h) {
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ nombresDia[h.diaSemana] }} · {{ h.horaInicio }} – {{ h.horaFin }}
+                <button class="btn btn-sm btn-outline-danger" (click)="quitarHorario(h)"><i class="fa-solid fa-trash"></i></button>
+              </li>
+            }
+            @if (horarios.length === 0) {
+              <li class="list-group-item text-muted">Sin franjas: no hay restricción de horario.</li>
+            }
+          </ul>
+          <div class="row g-2">
+            <div class="col-4">
+              <select class="form-select" [(ngModel)]="horarioNuevo.diaSemana">
+                @for (n of [1, 2, 3, 4, 5, 6, 7]; track n) {
+                  <option [ngValue]="n">{{ nombresDia[n] }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-3"><input type="time" class="form-control" [(ngModel)]="horarioNuevo.horaInicio" /></div>
+            <div class="col-3"><input type="time" class="form-control" [(ngModel)]="horarioNuevo.horaFin" /></div>
+            <div class="col-2 d-grid"><button class="btn btn-primary" (click)="agregarHorario()">+</button></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" (click)="mostrarHorarios = false">Cerrar</button></div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= INFORME EXCEL ================= -->
+@if (mostrarInforme) {
+  <div class="modal d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.5)">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Citas en Excel</h5>
+          <button type="button" class="btn-close" (click)="mostrarInforme = false"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Fecha inicial</label>
+          <input type="date" class="form-control mb-2" [(ngModel)]="informeDesde" />
+          <label class="form-label">Fecha final</label>
+          <input type="date" class="form-control" [(ngModel)]="informeHasta" />
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="mostrarInforme = false">Cancelar</button>
+          <button class="btn btn-success" (click)="descargarInforme()">Descargar .xlsx</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

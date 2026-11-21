@@ -1,4 +1,4 @@
-import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 /**
  * Devuelve la fecha local en formato `AAAA-MM-DD` (el que usan los `input type="date"`).
@@ -36,4 +36,35 @@ export function vencimientoPosterior(grupo: AbstractControl): ValidationErrors |
   const compra = grupo.get('fechaCompra')?.value as string | null;
   const vence = grupo.get('fechaVence')?.value as string | null;
   return compra && vence && vence <= compra ? { vencimientoInvalido: true } : null;
+}
+
+/**
+ * Validador de control: contraseña de 8 a 100 caracteres con al menos una letra y un número
+ * (el backend aplica esta misma regla).
+ *
+ * @param control campo con la contraseña.
+ * @returns `{ formatoPassword: true }` si no cumple; `null` si cumple o está vacío.
+ */
+export function formatoPassword(control: AbstractControl): ValidationErrors | null {
+  const valor: string = control.value ?? '';
+  if (!valor) {
+    return null;
+  }
+  const valida = valor.length >= 8 && valor.length <= 100 && /[A-Za-z]/.test(valor) && /\d/.test(valor);
+  return valida ? null : { formatoPassword: true };
+}
+
+/**
+ * Validador de grupo: el campo de confirmación debe ser igual al de la contraseña.
+ *
+ * @param campo nombre del control con la contraseña.
+ * @param confirmacion nombre del control con la confirmación.
+ * @returns validador que devuelve `{ noCoincide: true }` si los textos son distintos.
+ */
+export function confirmacionIgual(campo: string, confirmacion: string): ValidatorFn {
+  return (grupo: AbstractControl): ValidationErrors | null => {
+    const a = grupo.get(campo)?.value;
+    const b = grupo.get(confirmacion)?.value;
+    return a && b && a !== b ? { noCoincide: true } : null;
+  };
 }

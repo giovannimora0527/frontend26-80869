@@ -93,6 +93,54 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-users',
         classes: 'nav-item'
       },
+      {
+        id: 'inventario',
+        title: 'Inventario',
+        type: 'item',
+        url: '/inicio/inventario',
+        icon: 'fa-solid fa-boxes-stacked',
+        classes: 'nav-item'
+      },
+      {
+        id: 'servicios',
+        title: 'Especialidades y tarifas',
+        type: 'item',
+        url: '/inicio/servicios',
+        icon: 'fa-solid fa-tags',
+        classes: 'nav-item'
+      },
+      {
+        id: 'facturacion',
+        title: 'Facturación',
+        type: 'item',
+        url: '/inicio/facturacion',
+        icon: 'fa-solid fa-file-invoice-dollar',
+        classes: 'nav-item'
+      },
+      {
+        id: 'despacho',
+        title: 'Despacho de fórmulas',
+        type: 'item',
+        url: '/inicio/despacho',
+        icon: 'fa-solid fa-truck-medical',
+        classes: 'nav-item'
+      },
+      {
+        id: 'reportes',
+        title: 'Reportes',
+        type: 'item',
+        url: '/inicio/reportes',
+        icon: 'fa-solid fa-chart-column',
+        classes: 'nav-item'
+      },
+      {
+        id: 'agenda',
+        title: 'Calendario de citas',
+        type: 'item',
+        url: '/inicio/agenda',
+        icon: 'fa-solid fa-calendar-days',
+        classes: 'nav-item'
+      },
       /* ---------- Nuevos menus aqui -------------  */
     ]
   },

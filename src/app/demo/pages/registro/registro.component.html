@@ -1,0 +1,116 @@
+<div class="cuenta-page">
+  <div class="cuenta-card">
+    <img src="assets/images/logo_mascotas.png" alt="Logo de la clínica veterinaria" class="card-logo" />
+    <h2>Crear cuenta</h2>
+    <p class="subtitulo">Regístrate para usar el sistema de la clínica</p>
+
+    <form [formGroup]="form" (ngSubmit)="registrar()" novalidate autocomplete="off">
+      <fieldset [disabled]="enviando">
+        <div class="seccion">Datos de acceso</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="reg-username" class="form-label">Usuario</label>
+            <input id="reg-username" class="form-control" type="text" formControlName="username" maxlength="30"
+              autocomplete="username" [class.is-invalid]="invalido('username')" />
+            <div class="invalid-feedback">{{ mensajeError('username') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-email" class="form-label">Correo electrónico</label>
+            <input id="reg-email" class="form-control" type="email" formControlName="email" maxlength="255"
+              autocomplete="email" [class.is-invalid]="invalido('email')" />
+            <div class="invalid-feedback">{{ mensajeError('email') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-password" class="form-label">Contraseña</label>
+            <input id="reg-password" class="form-control" [type]="verClaves ? 'text' : 'password'"
+              formControlName="password" autocomplete="new-password" [class.is-invalid]="invalido('password')" />
+            <div class="invalid-feedback">{{ mensajeError('password') }}</div>
+            <div class="form-text">De 8 a 100 caracteres, con al menos una letra y un número.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-confirmar" class="form-label">Confirmar contraseña</label>
+            <input id="reg-confirmar" class="form-control" [type]="verClaves ? 'text' : 'password'"
+              formControlName="confirmar" autocomplete="new-password" [class.is-invalid]="invalido('confirmar')" />
+            <div class="invalid-feedback">{{ mensajeError('confirmar') }}</div>
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input id="reg-ver" class="form-check-input" type="checkbox" [checked]="verClaves"
+                (change)="verClaves = !verClaves" />
+              <label for="reg-ver" class="form-check-label">Mostrar contraseñas</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="seccion">Datos personales</div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="reg-tipo" class="form-label">Tipo de documento</label>
+            <select id="reg-tipo" class="form-select" formControlName="tipoDocumento">
+              @for (tipo of tiposDocumento; track tipo) {
+                <option [value]="tipo">{{ tipo }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label for="reg-documento" class="form-label">Número de documento</label>
+            <input id="reg-documento" class="form-control" type="text" formControlName="numeroDocumento" maxlength="20"
+              [class.is-invalid]="invalido('numeroDocumento')" />
+            <div class="invalid-feedback">{{ mensajeError('numeroDocumento') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-nombres" class="form-label">Nombres</label>
+            <input id="reg-nombres" class="form-control" type="text" formControlName="nombres" maxlength="100"
+              [class.is-invalid]="invalido('nombres')" />
+            <div class="invalid-feedback">{{ mensajeError('nombres') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-apellidos" class="form-label">Apellidos</label>
+            <input id="reg-apellidos" class="form-control" type="text" formControlName="apellidos" maxlength="100"
+              [class.is-invalid]="invalido('apellidos')" />
+            <div class="invalid-feedback">{{ mensajeError('apellidos') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-nacimiento" class="form-label">Fecha de nacimiento</label>
+            <input id="reg-nacimiento" class="form-control" type="date" formControlName="fechaNacimiento" [max]="hoy"
+              [class.is-invalid]="invalido('fechaNacimiento')" />
+            <div class="invalid-feedback">{{ mensajeError('fechaNacimiento') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-genero" class="form-label">Género <small class="text-muted">(opcional)</small></label>
+            <select id="reg-genero" class="form-select" formControlName="genero">
+              <option value="">Prefiero no decirlo</option>
+              <option value="F">Femenino</option>
+              <option value="M">Masculino</option>
+              <option value="O">Otro</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-telefono" class="form-label">Teléfono <small class="text-muted">(opcional)</small></label>
+            <input id="reg-telefono" class="form-control" type="tel" formControlName="telefono" maxlength="20"
+              [class.is-invalid]="invalido('telefono')" />
+            <div class="invalid-feedback">{{ mensajeError('telefono') }}</div>
+          </div>
+          <div class="col-md-6">
+            <label for="reg-direccion" class="form-label">Dirección <small class="text-muted">(opcional)</small></label>
+            <input id="reg-direccion" class="form-control" type="text" formControlName="direccion" maxlength="500"
+              [class.is-invalid]="invalido('direccion')" />
+            <div class="invalid-feedback">{{ mensajeError('direccion') }}</div>
+          </div>
+        </div>
+      </fieldset>
+
+      @if (error) {
+        <div class="alert alert-danger" role="alert">{{ error }}</div>
+      }
+
+      <button type="submit" class="btn btn-primary w-100 mt-3" [disabled]="enviando">
+        {{ enviando ? 'Registrando...' : 'Crear cuenta' }}
+      </button>
+    </form>
+
+    <div class="acciones">
+      <span>¿Ya tienes cuenta? <a routerLink="/login" class="btn-link">Iniciar sesión</a></span>
+    </div>
+  </div>
+</div>

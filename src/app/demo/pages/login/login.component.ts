@@ -1,13 +1,13 @@
 import { Component, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from 'src/app/services/auth.service';
 import { AuthRS } from 'src/app/models/auth';
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
@@ -61,7 +61,9 @@ export class LoginComponent implements OnDestroy {
     this.auth.validarOtp({ usuarioId: this.usuarioId as number, codigo: this.codigo.trim() }).subscribe({
       next: () => {
         this.cargando = false;
-        this.router.navigate(['/inicio']);
+        // Quien se registró solo (perfil Cliente, id 4) no tiene menús: se le lleva a su perfil.
+        const esCliente = this.auth.getUsuario()?.rol === 4;
+        this.router.navigate([esCliente ? '/inicio/perfil' : '/inicio']);
       },
       error: (err) => {
         this.cargando = false;
