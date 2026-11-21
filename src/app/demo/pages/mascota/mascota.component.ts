@@ -1,38 +1,39 @@
 import { Component } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
+import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { MascotaService } from './service/mascota.service';
 import { Mascota } from 'src/app/models/mascota';
 import { FormBuilder, FormGroup, Validators, AbstractControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import Swal from 'sweetalert2';
-
-import { Modal } from 'bootstrap';
 import { Raza } from 'src/app/models/raza';
 import { RazaService } from './service/raza.service';
 import { ClienteService } from '../cliente/service/cliente.service';
 import { Cliente } from 'src/app/models/cliente';
 
-type ColumnaOrden = 'nombre' | 'especie' | 'raza' | 'edad' | 'cliente' | 'fechaRegistro';
+type ColumnaOrden = 'nombre' | 'especie' | 'raza' | 'edad' | 'cliente' | 'fechaRegistro' | 'estado';
+type ModalBootstrap = { show(): void; hide(): void };
+type WindowBootstrap = Window & { bootstrap: { Modal: new (element: Element) => ModalBootstrap } };
 
 @Component({
   selector: 'app-mascota',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbTooltipModule],
   templateUrl: './mascota.component.html',
   styleUrl: './mascota.component.scss'
 })
 export class MascotaComponent {
   // Variables para el modal.
-  modalInstance: Modal | null = null;
+  modalInstance: ModalBootstrap | null = null;
   titleModal: string = "";
   modoFormulario: string = "";
   titleBoton: string = "";
 
-  // Variables para la paginación y búsqueda en la datatable.
+  // Variables para la paginación, ordenamiento y búsqueda en la datatable.
   listMascotas: Mascota[] = [];
   terminoBusqueda = '';
   paginaActual = 1;
-  readonly registrosPorPagina = 10;
+  readonly registrosPorPagina = 5;
   columnaOrden: ColumnaOrden = 'nombre';
   direccionOrden: 'asc' | 'desc' = 'asc';
 
@@ -107,8 +108,15 @@ export class MascotaComponent {
       if (!termino) {
         return true;
       }
+      if (termino === 'activo' || termino === 'true') {
+        return mascota.activo === true;
+      }
+      if (termino === 'inactivo' || termino === 'false') {
+        return mascota.activo === false;
+      }
 
       const valores = [
+        this.obtenerEstado(mascota),
         mascota.nombreMascota,
         mascota.raza?.especie,
         mascota.raza?.nombre,
@@ -149,7 +157,13 @@ export class MascotaComponent {
         return `${mascota.cliente?.nombres ?? ''} ${mascota.cliente?.apellidos ?? ''}`;
       case 'fechaRegistro':
         return mascota.fechaRegistro ? new Date(mascota.fechaRegistro).getTime() : 0;
+      case 'estado':
+        return this.obtenerEstado(mascota);
     }
+  }
+
+  obtenerEstado(mascota: Mascota): string {
+    return mascota.activo == null ? 'No informado' : mascota.activo ? 'Activo' : 'Inactivo';
   }
 
   ordenarPor(columna: ColumnaOrden): void {
@@ -328,8 +342,8 @@ export class MascotaComponent {
     const modalElement = document.getElementById('modalCrearMascota');
     if (modalElement) {
       // Verificar si ya existe una instancia del modal
-      this.modalInstance ??= new Modal(modalElement);
-      this.modalInstance.show();
+      this.modalInstance ??= new (window as unknown as WindowBootstrap).bootstrap.Modal(modalElement);
+        this.modalInstance.show();
     }
   }
 

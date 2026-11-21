@@ -1,35 +1,23 @@
+.estado-cita {
+  background-color: #e9ecef;
+  color: #212529;
 
-.table {
-vertical-align: middle;
-margin-top: 15px;
-}
+  &[data-estado='programada'] {
+    background-color: #ffc107;
+  }
 
-.table thead th {
-white-space: nowrap;
-font-weight: 600;
-}
+  &[data-estado='cancelada'] {
+    background-color: #dc3545;
+    color: #fff;
+  }
 
-.table tbody td {
-padding: 12px;
-}
+  &[data-estado='pendiente'] {
+    background-color: #fd7e14;
+  }
 
-.alert {
-margin-top: 15px;
-}
-
-button {
-transition: all 0.2s ease-in-out;
-}
-
-button:hover {
-transform: translateY(-1px);
-}
-
-p {
-color: #6c757d;
-margin-bottom: 20px;
-}
-
-.table-responsive {
-border-radius: 8px;
+  &[data-estado='confirmada'],
+  &[data-estado='atendida'] {
+    background-color: #198754;
+    color: #fff;
+  }
 }

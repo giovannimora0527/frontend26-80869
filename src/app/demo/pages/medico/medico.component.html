@@ -1,1 +1,162 @@
-<p>medico works!</p>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col col-md-9">
+                    <input class="form-control" placeholder="Buscar medico" type="text"
+                        (input)="actualizarBusqueda($event)" />
+                </div>
+                <div class="col col-md-3 text-end">
+                    <button
+                        class="btn btn-md btn-outline-primary d-inline-flex align-items-center justify-content-center"
+                        (click)="nuevoMedico('C')" title="Agregar medico">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        &nbsp; Nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div *ngIf="errorMedicos" class="alert alert-danger" role="alert">
+                {{ errorMedicos }} <button type="button" class="btn btn-link" (click)="listar()">Reintentar</button>
+            </div>
+            <div class="row">
+                <div class="table table-responsive table-condensed col col-md-12">
+                    <table class="table table-stripped table-condensed table-responsive">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Nombres</th>
+                                <th class="text-center">Apellidos</th>
+                                <th class="text-center">Especialización</th>
+                                <th class="text-center">Registro Profesional</th>
+                                <th class="text-center">Tipo de doc</th>
+                                <th class="text-center">Número de doc.</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody *ngIf="listMedicos.length === 0">
+                            <tr>
+                                <td colspan="8" class="text-center">No hay médicos registrados</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="listMedicos.length > 0 && medicoFiltrados.length === 0">
+                            <tr>
+                                <td colspan="8" class="text-center">No se encontraron médicos</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="medicoFiltrados.length > 0">
+                            <tr *ngFor="let medico of medicoPaginados">
+                                <td class="text-center">{{ medico.nombres }}</td>
+                                <td class="text-center">{{ medico.apellidos }}</td>
+                                <td class="text-center">{{ medico.especializacion?.nombre || 'No informada' }}</td>
+                                <td class="text-center">{{ medico.registroProfesional }}</td>
+                                <td class="text-center">{{ medico.tipoDocumento }}</td>
+                                <td class="text-center">{{ medico.numeroDocumento }}</td>
+                                <td class="text-center">
+                                    <span class="badge" [class.bg-success]="medico.estado === true"
+                                        [class.bg-secondary]="medico.estado !== true">{{ obtenerEstado(medico) }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-info d-inline-flex 
+                                    align-items-center justify-content-center" (click)="abrirEdicion(medico)">
+                                        <i class="fa fa-edit"></i>&nbsp;Editar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <nav *ngIf="totalPaginas > 1" aria-label="Paginación de médicos">
+                <ul class="pagination justify-content-end mb-0">
+                    <li class="page-item" [class.disabled]="paginaActual === 1">
+                        <button class="page-link" type="button" [disabled]="paginaActual === 1"
+                            (click)="cambiarPagina(paginaActual - 1)">Anterior</button>
+                    </li>
+                    <li class="page-item" *ngFor="let pagina of paginas" [class.active]="pagina === paginaActual">
+                        <button class="page-link" type="button"
+                            [attr.aria-current]="pagina === paginaActual ? 'page' : null"
+                            (click)="cambiarPagina(pagina)">{{ pagina }}</button>
+                    </li>
+                    <li class="page-item" [class.disabled]="paginaActual === totalPaginas">
+                        <button class="page-link" type="button" [disabled]="paginaActual === totalPaginas"
+                            (click)="cambiarPagina(paginaActual + 1)">Siguiente</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalCrearMedico" tabindex="-1" aria-labelledby="modalCrearMedicoLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalCrearMedicoLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" [disabled]="enviando" aria-label="Cerrar"
+                (click)="closeModal()"></button>
+            </div>
+            <form [formGroup]="form" (ngSubmit)="guardarMedico()">
+                <div class="modal-body">
+                    <div *ngIf="respuestaError" class="alert alert-danger" role="alert">{{ respuestaError }}</div>
+                    <div *ngIf="errorEspecializaciones" class="alert alert-danger" role="alert">
+                        {{ errorEspecializaciones }}
+                        <button type="button" class="btn btn-link" [disabled]="enviando || cargandoEspecializaciones"
+                            (click)="listarEspecializaciones()">Reintentar</button>
+                    </div>
+                    <fieldset [disabled]="enviando">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="medico-tipoDocumento" class="form-label">Tipo de documento</label>
+                                <select id="medico-tipoDocumento" class="form-select" formControlName="tipoDocumento" required
+                                    [class.is-invalid]="form.controls.tipoDocumento.touched && form.controls.tipoDocumento.invalid"
+                                    [attr.aria-invalid]="form.controls.tipoDocumento.touched && form.controls.tipoDocumento.invalid"
+                                    aria-describedby="error-tipoDocumento">
+                                    <option value="" disabled>Selecciona un tipo de documento</option>
+                                    <option *ngFor="let tipo of tiposDocumento" [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+                                </select>
+                                <div class="invalid-feedback" id="error-tipoDocumento">Selecciona un tipo de documento.</div>
+                            </div>
+                            <div class="col-md-6" *ngFor="let campo of campos">
+                                <label [for]="'medico-' + campo.clave" class="form-label">{{ campo.etiqueta }}</label>
+                                <input class="form-control" [id]="'medico-' + campo.clave" [formControlName]="campo.clave"
+                                    [type]="campo.clave === 'telefono' ? 'tel' : 'text'" required
+                                    [class.is-invalid]="form.controls[campo.clave].touched && form.controls[campo.clave].invalid"
+                                    [attr.aria-describedby]="'error-' + campo.clave"
+                                    [attr.aria-invalid]="form.controls[campo.clave].touched && form.controls[campo.clave].invalid">
+                                <div class="invalid-feedback" [id]="'error-' + campo.clave">
+                                    {{ campo.etiqueta }} es obligatorio y no puede contener solo espacios.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="medico-especializacion" class="form-label">Especialización</label>
+                                <select id="medico-especializacion" class="form-select" formControlName="especializacionId"
+                                    required [class.is-invalid]="form.controls.especializacionId.touched && form.controls.especializacionId.invalid"
+                                    aria-describedby="error-especializacion">
+                                    <option [ngValue]="null" disabled>
+                                        {{ cargandoEspecializaciones ? 'Cargando especializaciones...' : 'Selecciona una especialización' }}
+                                    </option>
+                                    <option *ngFor="let especializacion of listEspecializaciones" [ngValue]="especializacion.id">
+                                        {{ especializacion.nombre }}
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback" id="error-especializacion">Selecciona una especialización.</div>
+                                <p *ngIf="!cargandoEspecializaciones && !errorEspecializaciones && listEspecializaciones.length === 0"
+                                    class="text-muted">No hay especializaciones disponibles.</p>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" [disabled]="enviando" (click)="closeModal()">Cerrar</button>
+                    <button type="submit" class="btn btn-primary"
+                        [disabled]="enviando || cargandoEspecializaciones || !!errorEspecializaciones || listEspecializaciones.length === 0">
+                        {{ enviando ? 'Guardando...' : titleBoton }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
