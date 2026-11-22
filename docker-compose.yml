@@ -63,6 +63,11 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_TO: ${MAIL_TO:-}
+    # DNS explicito para resolver nombres de internet (smtp.gmail.com) desde
+    # la red interna de Docker.
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     ports:
       - "8080:8080"
     networks:

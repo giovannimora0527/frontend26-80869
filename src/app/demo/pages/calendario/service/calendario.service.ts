@@ -25,6 +25,27 @@ export interface MiRespuestaRs {
   message: string;
 }
 
+/** Medicamento prescrito al atender la cita (detalle de la formula). */
+export interface AtenderCitaMedicamento {
+  medicamentoId: number;
+  dosis: string;
+  frecuencia?: string;
+  duracion?: string;
+  cantidad: number;
+  viaAdministracion?: string;
+  indicaciones?: string;
+}
+
+/** Datos para atender una cita en un solo paso. */
+export interface AtenderCita {
+  citaId: number;
+  descripcion: string;
+  diagnostico: string;
+  observaciones: string;
+  indicaciones?: string;
+  medicamentos?: AtenderCitaMedicamento[];
+}
+
 /**
  * Servicio del modulo de calendario de citas.
  * Consume los endpoints del modulo /calendario del backend.
@@ -62,6 +83,19 @@ export class CalendarioService {
       this.api,
       'cambiar-estado',
       { citaId, estado }
+    );
+  }
+
+  /**
+   * Atiende una cita en un solo paso: registra la anotacion, crea la formula si
+   * hay medicamentos y marca la cita como ATENDIDA.
+   */
+  atenderCita(data: AtenderCita): Observable<MiRespuestaRs> {
+    return this.backendService.post<MiRespuestaRs>(
+      environment.apiUrlAuth,
+      this.api,
+      'atender-cita',
+      data
     );
   }
 
