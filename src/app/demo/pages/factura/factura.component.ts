@@ -6,6 +6,7 @@ import { environment } from 'src/environments/environment';
 import { ConsultaFacturasComponent } from './consulta-facturas.component';
 import { HistorialFacturacionComponent } from './historial-facturacion.component';
 import { ReporteIngresosComponent } from './reporte-ingresos.component';
+import { ReporteGestionMedicaComponent } from './reporte-gestion-medica.component';
 
 interface FacturaEmitida {
   facturaId: number;
@@ -24,7 +25,8 @@ interface FacturaEmitida {
   FormsModule,
   ConsultaFacturasComponent,
   HistorialFacturacionComponent,
-  ReporteIngresosComponent
+  ReporteIngresosComponent,
+  ReporteGestionMedicaComponent
 ],
   template: `
     <section class="card border-0 shadow-sm">
@@ -82,9 +84,9 @@ interface FacturaEmitida {
             </dl>
           </section>
         }
-        <app-historial-facturacion></app-historial-facturacion>
-        <app-historial-facturacion></app-historial-facturacion>
-<app-reporte-ingresos></app-reporte-ingresos>
+                <app-historial-facturacion></app-historial-facturacion>
+        <app-reporte-ingresos></app-reporte-ingresos>
+        <app-reporte-gestion-medica></app-reporte-gestion-medica>
       </div>
     </section>
   `
