@@ -1,4 +1,51 @@
-<div class="container">
-   <label>Usuario Component Funciona</label>
-</div>
+<section class="card border-0 shadow-sm">
+  <header class="card-header bg-success">
+    <h1 class="h4 mb-0 text-white">Usuarios registrados</h1>
+  </header>
 
+  <div class="card-body">
+    @if (cargando) {
+      <p role="status">Cargando usuarios…</p>
+    } @else if (error) {
+      <p class="alert alert-danger" role="alert">{{ error }}</p>
+      <button type="button" class="btn btn-outline-success" (click)="cargar()">
+        Reintentar
+      </button>
+    } @else {
+      <p class="text-secondary mb-2">Usuarios cargados: {{ usuarios.length }}</p>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col">Correo electrónico</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of usuarios; track u.id) {
+              <tr>
+                <th scope="row">{{ u.username }}</th>
+                <td>{{ u.email || 'Sin registrar' }}</td>
+                <td>
+                  @if (u.activo === true) {
+                    Activo
+                  } @else if (u.activo === false) {
+                    Inactivo
+                  } @else {
+                    Sin registrar
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3">Todavía no hay usuarios registrados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>
