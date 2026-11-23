@@ -1,0 +1,18 @@
+.dialogo-formula {
+  width: min(960px, 94vw);
+  max-height: 88vh;
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 20%);
+}
+
+.dialogo-formula::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.dialogo-formula > .card {
+  margin-bottom: 0 !important;
+}

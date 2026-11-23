@@ -47,6 +47,22 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'fa-solid fa-user-graduate',
         classes: 'nav-item'
       },
+            {
+        id: 'tarifas',
+        title: 'Tarifas de servicios',
+        type: 'item',
+        url: '/inicio/tarifas',
+        icon: 'fa-solid fa-tags',
+        classes: 'nav-item'
+      },
+            {
+        id: 'facturacion',
+        title: 'Facturación',
+        type: 'item',
+        url: '/inicio/facturacion',
+        icon: 'fa-solid fa-file-invoice-dollar',
+        classes: 'nav-item'
+      },
       {
         id: 'formulas',
         title: 'Gestión de Formulas',
@@ -77,6 +93,14 @@ export const NavigationItems: NavigationItem[] = [
         type: 'item',
         url: '/inicio/medicamentos',
         icon: 'fa-solid fa-capsules',
+        classes: 'nav-item'
+      },
+            {
+        id: 'despacho',
+        title: 'Despacho de medicamentos',
+        type: 'item',
+        url: '/inicio/despacho',
+        icon: 'bi bi-box-seam',
         classes: 'nav-item'
       },
       {

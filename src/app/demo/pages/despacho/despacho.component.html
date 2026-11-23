@@ -1,0 +1,253 @@
+<section class="card border-0 shadow-sm">
+  <header class="card-header bg-success">
+    <h1 class="h4 mb-0 text-white">Despacho de medicamentos</h1>
+  </header>
+
+  <div class="card-body">
+    <form class="d-flex align-items-end flex-wrap gap-2 mb-4"
+          (ngSubmit)="buscarPorNumero()">
+      <div>
+        <label for="despacho-formula" class="form-label">Número de fórmula</label>
+        <input id="despacho-formula" name="formula" type="number"
+               class="form-control" min="1" step="1" required
+               [(ngModel)]="formulaId" [disabled]="bloqueado" />
+      </div>
+      <button class="btn btn-outline-success" type="submit" [disabled]="bloqueado">
+        Buscar por número
+      </button>
+    </form>
+
+    <form class="border-top pt-3 mb-3" (ngSubmit)="buscarCoincidencias()">
+      <h2 class="h5">Buscar fórmulas pendientes de despacho</h2>
+
+      <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+          <label for="despacho-texto" class="form-label">
+            Documento del propietario, nombre del propietario o mascota
+          </label>
+          <input id="despacho-texto" name="texto" type="search"
+                 class="form-control" placeholder="Ej. Max"
+                 [(ngModel)]="texto" [disabled]="bloqueado" />
+        </div>
+
+        <div class="col-md-3">
+          <label for="despacho-fecha" class="form-label">Fecha de generación</label>
+          <input id="despacho-fecha" name="fecha" type="date"
+                 class="form-control" [(ngModel)]="fecha" [disabled]="bloqueado" />
+        </div>
+
+        <div class="col-md-auto">
+          <button type="submit" class="btn btn-success" [disabled]="bloqueado">
+            Buscar coincidencias
+          </button>
+        </div>
+      </div>
+    </form>
+
+    @if (!detalleEnModal) {
+      <ng-container [ngTemplateOutlet]="avisos"></ng-container>
+    }
+
+    @if (busquedaRealizada) {
+      @if (resultados.length === 0) {
+        <p role="status" class="text-secondary">
+          Ninguna fórmula pendiente coincide con la búsqueda.
+        </p>
+      } @else {
+        <div class="table-responsive mb-4">
+          <table class="table table-hover align-middle">
+            <caption class="caption-top">Fórmulas encontradas</caption>
+            <thead>
+              <tr>
+                <th scope="col">Fórmula</th>
+                <th scope="col">Fecha</th>
+                <th scope="col">Propietario</th>
+                <th scope="col">Mascota</th>
+                <th scope="col">Médico</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of resultados; track fila.formulaId) {
+                <tr>
+                  <th scope="row">{{ fila.formulaId }}</th>
+                  <td>{{ fila.fechaGeneracion || 'Sin registrar' }}</td>
+                  <td>{{ fila.propietario }}</td>
+                  <td>{{ fila.mascota }}</td>
+                  <td>{{ fila.medico }}</td>
+                  <td>{{ fila.estado }}</td>
+                  <td>
+                    <button type="button" class="btn btn-outline-success btn-sm"
+                            [disabled]="bloqueado"
+                            [attr.aria-label]="'Abrir fórmula ' + fila.formulaId"
+                            (click)="abrirResultado(fila.formulaId, modalFormula)">
+                      Abrir
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+        @if (!detalleEnModal && lineas.length > 0) {
+      <h2 class="h5">Fórmula {{ lineas[0].formulaId }}</h2>
+      <ng-container [ngTemplateOutlet]="detalleFormula"></ng-container>
+    }
+    <app-salidas-medicamento></app-salidas-medicamento>
+  </div>
+</section>
+
+<ng-template #avisos>
+  @if (mensaje) {
+    <div role="status" class="alert alert-success">{{ mensaje }}</div>
+  }
+  @if (error) {
+    <div role="alert" class="alert alert-danger">{{ error }}</div>
+  }
+  @if (reintento; as entregaPendiente) {
+    <button type="button" class="btn btn-warning mb-3" [disabled]="ocupado"
+            (click)="enviar(entregaPendiente)">
+      Comprobar la última entrega
+    </button>
+  }
+</ng-template>
+
+<ng-template #modalFormula let-modal>
+  <div class="modal-header">
+    <h2 id="titulo-modal-despacho" class="modal-title h5">
+      Detalle de la fórmula {{ formulaId }}
+    </h2>
+    <button type="button" class="btn-close" aria-label="Cerrar"
+            [disabled]="ocupado" (click)="modal.close()"></button>
+  </div>
+
+  <div class="modal-body">
+    <ng-container [ngTemplateOutlet]="avisos"></ng-container>
+    <ng-container [ngTemplateOutlet]="detalleFormula"></ng-container>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary"
+            [disabled]="ocupado" (click)="modal.close()">
+      Cerrar
+    </button>
+  </div>
+</ng-template>
+
+<ng-template #detalleFormula>
+   @if (lineas.length > 0) {
+    <p><strong>Estado del despacho:</strong> {{ lineas[0].estado }}</p>
+
+    @if (lineas[0].estado === 'FORMULADO') {
+      <button type="button"
+              class="btn btn-outline-primary mb-3"
+              [disabled]="bloqueado"
+              (click)="iniciarPreparacion()">
+        Iniciar preparación
+      </button>
+    }
+        @if (lineas[0].estado === 'EN_PREPARACION' ||
+         lineas[0].estado === 'DESPACHO_PARCIAL') {
+      <button type="button"
+              class="btn btn-outline-warning mb-3"
+              [disabled]="bloqueado"
+              (click)="marcarPendientePorDisponibilidad()">
+        Marcar pendiente por disponibilidad
+      </button>
+    }
+        @if (puedeCancelar()) {
+      @if (cancelacionFormulaId !== lineas[0].formulaId) {
+        <button type="button" class="btn btn-outline-danger mb-3"
+                [disabled]="bloqueado" (click)="abrirCancelacion()">
+          Cancelar despacho
+        </button>
+      } @else {
+        <div class="border rounded p-3 mb-3">
+          <label for="motivo-cancelacion" class="form-label">
+            Motivo de cancelación de la fórmula {{ cancelacionFormulaId }}
+          </label>
+          <textarea id="motivo-cancelacion" class="form-control mb-2"
+                    rows="2" maxlength="100"
+                    [(ngModel)]="motivoCancelacion"
+                    [disabled]="bloqueado"></textarea>
+
+          <button type="button" class="btn btn-danger me-2"
+                  [disabled]="bloqueado || !motivoCancelacion.trim()"
+                  (click)="confirmarCancelacion()">
+            Confirmar cancelación
+          </button>
+          <button type="button" class="btn btn-outline-secondary"
+                  [disabled]="bloqueado" (click)="cerrarCancelacion()">
+            Volver
+          </button>
+        </div>
+      }
+    }
+
+    <app-comprobantes-despacho [formulaId]="lineas[0].formulaId">
+    </app-comprobantes-despacho>
+    <app-historial-despacho
+      [formulaId]="lineas[0].formulaId"
+      [estado]="lineas[0].estado">
+    </app-historial-despacho>
+  }
+
+  @for (linea of lineas; track linea.numeroLinea) {
+    <article class="border rounded p-3 mb-2">
+      <h3 class="h6">{{ linea.numeroLinea }}. {{ linea.medicamento }}</h3>
+      <dl class="row mb-2">
+        <dt class="col-sm-3">Dosis</dt>
+        <dd class="col-sm-9">{{ linea.dosis || 'Sin registrar' }}</dd>
+
+        <dt class="col-sm-3">Vía de administración</dt>
+        <dd class="col-sm-9">{{ linea.viaAdministracion || 'Sin registrar' }}</dd>
+
+        <dt class="col-sm-3">Frecuencia</dt>
+        <dd class="col-sm-9">{{ linea.frecuencia || 'Sin registrar' }}</dd>
+
+        <dt class="col-sm-3">Duración</dt>
+        <dd class="col-sm-9">{{ linea.duracionTratamiento || 'Sin registrar' }}</dd>
+
+        <dt class="col-sm-3">Indicaciones</dt>
+        <dd class="col-sm-9">{{ linea.indicaciones || 'Sin registrar' }}</dd>
+      </dl>
+      <p class="mb-1">
+        Prescrito: {{ linea.cantidadPrescrita ?? 'Sin registrar' }} ·
+        Entregado: {{ linea.cantidadEntregada }} ·
+        Pendiente: {{ pendiente(linea) ?? 'Sin determinar' }}
+      </p>
+
+      @if (linea.loteId !== null) {
+        <p class="mb-2">
+          Lote: {{ linea.numeroLote }} ·
+          Disponible: {{ linea.disponibleLote }} ·
+          Vence: {{ linea.fechaVence || 'Sin vencimiento' }}
+        </p>
+      } @else {
+        <p class="text-secondary mb-2">Sin lote vigente disponible.</p>
+      }
+
+      @if (maximo(linea) > 0) {
+        <div class="d-flex align-items-end flex-wrap gap-2">
+          <div>
+            <label [for]="'cantidad-' + linea.numeroLinea" class="form-label">
+              Unidades a entregar
+            </label>
+            <input type="number" min="1" step="1" class="form-control"
+                   [id]="'cantidad-' + linea.numeroLinea" [max]="maximo(linea)"
+                   [(ngModel)]="cantidades[linea.numeroLinea]" [disabled]="bloqueado" />
+          </div>
+
+          <button type="button" class="btn btn-success"
+                  [disabled]="bloqueado" (click)="confirmar(linea)">
+            Confirmar entrega
+          </button>
+        </div>
+      }
+    </article>
+  }
+</ng-template>

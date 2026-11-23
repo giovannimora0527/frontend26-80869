@@ -13,6 +13,7 @@ import { HistoriaMedicaComponent } from './demo/pages/historia-medica/historia-m
 import { EspecializacionComponent } from './demo/pages/especializacion/especializacion.component';
 import { LoginComponent } from './demo/pages/login/login.component';
 import { authGuard } from './guards/auth.guard';
+import { DespachoComponent } from './demo/pages/despacho/despacho.component';
 
 
 export const routes: Routes = [
@@ -28,7 +29,21 @@ export const routes: Routes = [
     canActivate: [authGuard],
     canActivateChild: [authGuard],
     data: { title: 'Inicio' },
-    children: [      
+    children: [
+            {
+        path: 'facturacion',
+        loadComponent: () =>
+          import('./demo/pages/factura/factura.component')
+            .then(m => m.FacturaComponent),
+        data: { title: 'Facturación' }
+      },
+            {
+        path: 'tarifas',
+        loadComponent: () =>
+          import('./demo/pages/tarifas/tarifas.component')
+            .then(m => m.TarifasComponent),
+        data: { title: 'Tarifas de servicios' }
+      },
       { path: 'usuarios', component: UsuarioComponent, data: { title: 'Usuarios' }},
       { path: 'mascotas', component: MascotaComponent, data: { title: 'Mascotas' }},
       { path: 'medicos', component: MedicoComponent, data: { title: 'Medicos' }},
@@ -36,9 +51,11 @@ export const routes: Routes = [
       { path: 'formulas', component: FormulaMedicaComponent, data: { title: 'Formulas' }},
       { path: 'citas', component: CitaComponent, data: { title: 'Citas' }},
       { path: 'clientes', component: ClienteComponent, data: { title: 'Clientes' }},
+      { path: 'despacho', component: DespachoComponent, data: { title: 'Despacho de medicamentos' } },
       { path: 'medicamentos', component: MedicamentoComponent, data: { title: 'Medicamentos' }},
       { path: 'historias', component: HistoriaComponent, data: { title: 'Historias' }},
       { path: 'historias-medicas', component: HistoriaMedicaComponent, data: { title: 'Historias Médicas' }},
+      { path: 'historias-clinicas', component: HistoriaMedicaComponent, data: { title: 'Historias Clínicas' }},
       { path: 'especializaciones', component: EspecializacionComponent, data: { title: 'Especializaciones' }}
     ]
   },

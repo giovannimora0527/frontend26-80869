@@ -20,6 +20,12 @@
                 {{ errorCitas }}
                 <button type="button" class="btn btn-link" (click)="listarCitas()">Reintentar</button>
             </div>
+            <app-calendario-citas
+    *ngIf="!errorCitas"
+    [citas]="listEspecializaciones"
+    (verDetalle)="verCita($event)">
+</app-calendario-citas>
+<app-reporte-citas></app-reporte-citas>
             <div class="table-responsive">
                 <table class="table table-striped table-condensed">
                     <thead>
@@ -139,6 +145,10 @@
                 <h1 class="modal-title fs-5" id="modalVerCitaLabel">Información de la cita</h1>
             </div>
             <div class="modal-body" *ngIf="citaDetalle as cita">
+                <app-finalizar-atencion
+                    [cita]="cita"
+                    (finalizada)="listarCitas()">
+                </app-finalizar-atencion>
                 <h2 class="h6">Datos de la cita</h2>
                 <dl class="row">
                     <dt class="col-sm-4">Número de cita</dt>

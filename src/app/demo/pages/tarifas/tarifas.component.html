@@ -1,0 +1,106 @@
+<section class="card border-0 shadow-sm">
+  <header class="card-header bg-success">
+    <h1 class="h4 text-white mb-0">Tarifas de servicios</h1>
+  </header>
+
+  <div class="card-body">
+    <label for="servicio-tarifa" class="form-label">Especialidad y servicio</label>
+    <select id="servicio-tarifa" class="form-select mb-3"
+            [ngModel]="servicioId"
+            (ngModelChange)="seleccionarServicio($event)"
+            [disabled]="ocupado">
+      <option [ngValue]="null">Selecciona un servicio</option>
+      @for (servicio of servicios; track servicio.id) {
+        <option [ngValue]="servicio.id">
+          {{ servicio.especialidad }} · {{ servicio.nombreServicio }}
+          {{ servicio.activo ? '' : '(inactivo)' }}
+        </option>
+      }
+    </select>
+
+    @if (ocupado) {
+      <p role="status" class="text-secondary">Procesando…</p>
+    }
+    @if (mensaje) {
+      <p role="status" class="alert alert-success">{{ mensaje }}</p>
+    }
+    @if (error) {
+      <p role="alert" class="alert alert-danger">{{ error }}</p>
+
+      @if (!ocupado && servicioId === null) {
+        <button type="button" class="btn btn-outline-secondary"
+                (click)="cargarServicios()">Volver a cargar servicios</button>
+      } @else if (!ocupado && servicioId !== null && !historialCargado) {
+        <button type="button" class="btn btn-outline-secondary"
+                (click)="cargarHistorial(servicioId)">Volver a cargar historial</button>
+      }
+    }
+
+    @if (historialCargado) {
+      <h2 class="h5">Historial de tarifas</h2>
+      <div class="table-responsive mb-4">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Vigente desde</th>
+              <th scope="col">Valor base (COP)</th>
+              <th scope="col">IVA (%)</th>
+              <th scope="col">Registrado por</th>
+              <th scope="col">Motivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of historial; track fila.id) {
+              <tr>
+                <td>{{ fila.vigenteDesde }}</td>
+                <td>{{ fila.valorBase.toLocaleString('es-CO') }}</td>
+                <td>{{ fila.porcentajeIva }}</td>
+                <td>{{ fila.usuario }}</td>
+                <td>{{ fila.motivo }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5">Este servicio aún no tiene tarifas registradas.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (servicioActivo) {
+        <h2 class="h5">Registrar nuevo precio</h2>
+        <form #formulario="ngForm" (ngSubmit)="guardar(formulario)">
+          <fieldset [disabled]="ocupado" class="row g-3">
+            <div class="col-md-4">
+              <label for="tarifa-fecha" class="form-label">Vigente desde</label>
+              <input id="tarifa-fecha" class="form-control" type="date"
+                     name="fecha" [(ngModel)]="fecha" required />
+            </div>
+
+            <div class="col-md-4">
+              <label for="tarifa-valor" class="form-label">Valor base (COP)</label>
+              <input id="tarifa-valor" class="form-control" type="number"
+                     name="valor" [(ngModel)]="valor"
+                     min="0" max="9999999999.99" step="0.01" required />
+            </div>
+
+            <div class="col-md-4">
+              <label for="tarifa-iva" class="form-label">IVA (%)</label>
+              <input id="tarifa-iva" class="form-control" type="number"
+                     name="iva" [(ngModel)]="iva"
+                     min="0" max="100" step="0.01" required />
+            </div>
+
+            <div class="col-12">
+              <label for="tarifa-motivo" class="form-label">Motivo del cambio</label>
+              <input id="tarifa-motivo" class="form-control" type="text"
+                     name="motivo" [(ngModel)]="motivo" maxlength="255" required />
+            </div>
+
+            <div class="col-12">
+              <button type="submit" class="btn btn-success">Guardar tarifa</button>
+            </div>
+          </fieldset>
+        </form>
+      }
+    }
+  </div>
+</section>

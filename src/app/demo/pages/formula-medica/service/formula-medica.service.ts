@@ -4,7 +4,16 @@ import { Observable } from 'rxjs';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
+export interface MedicamentoParaFormula {
+  id: number;
+  nombre: string;
+  tipoProducto: string;
+  cantidadDisponible: number;
+}
+
 export interface FormulaMedicaRequest {
+  cantidadPrescrita?: number | null;
+  viaAdministracion?: string | null;
 citaId: number;
 medicamentoId: number;
 dosis: string;
@@ -24,6 +33,12 @@ private api = 'formula-medica';
 constructor(
     private backendService: BackendService
 ) {}
+
+listarInventarioParaFormula(): Observable<MedicamentoParaFormula[]> {
+    return this.backendService.get<MedicamentoParaFormula[]>(
+      environment.apiUrlAuth, 'medicamento', 'inventario'
+    );
+}
 
 listarFormulas(): Observable<any[]> {
     return this.backendService.get<any[]>(

@@ -1,3 +1,4 @@
+import { FinalizarAtencionComponent } from './finalizar-atencion.component';
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
@@ -12,6 +13,8 @@ import { Mascota } from 'src/app/models/mascota';
 import { Medico } from 'src/app/models/medico';
 import { MascotaService } from '../mascota/service/mascota.service';
 import { MedicoService } from '../medico/service/medico.service';
+import { CalendarioCitasComponent } from './calendario-citas.component';
+import { ReporteCitasComponent } from './reporte-citas.component';
 
 type ColumnaOrden = 'mascota' | 'medico' | 'fechaHora' | 'motivo' | 'estado';
 type ModalBootstrap = { show(): void; hide(): void };
@@ -21,7 +24,13 @@ type WindowBootstrap = Window & { bootstrap: { Modal: new (element: Element) => 
 
 @Component({
   selector: 'app-cita',
-  imports: [CommonModule, ReactiveFormsModule, NgbTooltipModule],
+  imports: [FinalizarAtencionComponent, 
+  CommonModule,
+  ReactiveFormsModule,
+  NgbTooltipModule,
+  CalendarioCitasComponent,
+  ReporteCitasComponent
+],
   templateUrl: './cita.component.html',
   styleUrl: './cita.component.scss'
 })

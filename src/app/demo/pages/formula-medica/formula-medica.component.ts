@@ -1,13 +1,25 @@
+import { ModalFormulaComponent } from './modal-formula.component';
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FormulaMedicaService } from './service/formula-medica.service';
+import { FormulaMedicaService, MedicamentoParaFormula } from './service/formula-medica.service';
+import { DetalleMedicamentosComponent } from './detalle-medicamentos.component';
+import { FormulaPdfComponent } from './formula-pdf.component';
+import { SelectorCitaFormulaComponent } from './selector-cita-formula.component';
+import { PrefacturaCitaComponent } from './prefactura-cita.component';
+
 
 @Component({
   selector: 'app-formula-medica',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+imports: [
+  CommonModule,
+  FormsModule,
+  ModalFormulaComponent,
+  DetalleMedicamentosComponent,
+  FormulaPdfComponent,SelectorCitaFormulaComponent,PrefacturaCitaComponent
+],
   templateUrl: './formula-medica.component.html',
   styleUrl: './formula-medica.component.scss'
 })
@@ -26,7 +38,23 @@ export class FormulaMedicaComponent implements OnInit {
   formulaId: number | null = null;
   formulaSeleccionada: any = null;
 
+  catalogoFormula: MedicamentoParaFormula[] = [];
+  errorCatalogo = '';
+  medicamentoOriginal: number | null = null;
   nuevaFormula = this.formularioVacio();
+
+  cargarCatalogoFormula(): void {
+    this.errorCatalogo = '';
+    this.catalogoFormula = [];
+    this.formulaMedicaService.listarInventarioParaFormula().subscribe({
+      next: productos => {
+        this.catalogoFormula = productos.filter(p => p.tipoProducto === 'MEDICAMENTO');
+      },
+      error: () => {
+        this.errorCatalogo = 'No se pudo cargar el inventario.';
+      }
+    });
+  }
 
   // Búsqueda, filtros y ordenación
   busqueda = '';
@@ -53,6 +81,8 @@ export class FormulaMedicaComponent implements OnInit {
     return {
       citaId: null as number | null,
       medicamentoId: null as number | null,
+      cantidadPrescrita: null as number | null,
+      viaAdministracion: '',
       dosis: '',
       indicaciones: '',
       fechaEmision: '',
@@ -262,6 +292,8 @@ export class FormulaMedicaComponent implements OnInit {
   }
 
   abrirNuevaFormula(): void {
+    this.medicamentoOriginal = null;
+    this.cargarCatalogoFormula();
     this.modoEdicion = false;
     this.formulaId = null;
     this.nuevaFormula = this.formularioVacio();
@@ -284,6 +316,8 @@ export class FormulaMedicaComponent implements OnInit {
   }
 
   editarFormula(formula: any): void {
+    this.medicamentoOriginal = formula.medicamento?.id ?? formula.medicamentoId ?? null;
+    this.cargarCatalogoFormula();
     this.modoEdicion = true;
     this.formulaId = formula.id;
 
@@ -291,6 +325,8 @@ export class FormulaMedicaComponent implements OnInit {
       citaId: formula.cita?.id ?? formula.citaId ?? null,
       medicamentoId:
         formula.medicamento?.id ?? formula.medicamentoId ?? null,
+      cantidadPrescrita: formula.cantidadPrescrita ?? null,
+      viaAdministracion: formula.viaAdministracion ?? '',
       dosis: formula.dosis ?? '',
       indicaciones: formula.indicaciones ?? '',
       fechaEmision: formula.fechaEmision ?? '',
@@ -306,6 +342,16 @@ export class FormulaMedicaComponent implements OnInit {
 
   guardarFormula(): void {
     if (this.guardando) return;
+
+    const cantidad = this.nuevaFormula.cantidadPrescrita;
+    if (cantidad == null || !Number.isInteger(cantidad) || cantidad < 1 || cantidad > 4294967295) {
+      this.mensajeFormulario = 'La cantidad prescrita debe ser un entero mayor que cero dentro del rango permitido.';
+      return;
+    }
+    if (!this.nuevaFormula.viaAdministracion.trim()) {
+      this.mensajeFormulario = 'Escribe la vía de administración.';
+      return;
+    }
 
     this.mensajeFormulario = '';
 
