@@ -5,6 +5,7 @@ import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 import { ConsultaFacturasComponent } from './consulta-facturas.component';
 import { HistorialFacturacionComponent } from './historial-facturacion.component';
+import { ReporteIngresosComponent } from './reporte-ingresos.component';
 
 interface FacturaEmitida {
   facturaId: number;
@@ -19,7 +20,12 @@ interface FacturaEmitida {
 @Component({
   selector: 'app-factura',
   standalone: true,
- imports: [FormsModule, ConsultaFacturasComponent, HistorialFacturacionComponent],
+ imports: [
+  FormsModule,
+  ConsultaFacturasComponent,
+  HistorialFacturacionComponent,
+  ReporteIngresosComponent
+],
   template: `
     <section class="card border-0 shadow-sm">
       <header class="card-header bg-success">
@@ -77,6 +83,8 @@ interface FacturaEmitida {
           </section>
         }
         <app-historial-facturacion></app-historial-facturacion>
+        <app-historial-facturacion></app-historial-facturacion>
+<app-reporte-ingresos></app-reporte-ingresos>
       </div>
     </section>
   `
