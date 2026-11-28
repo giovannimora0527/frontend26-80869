@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -7,6 +8,13 @@ import { ConsultaFacturasComponent } from './consulta-facturas.component';
 import { HistorialFacturacionComponent } from './historial-facturacion.component';
 import { ReporteIngresosComponent } from './reporte-ingresos.component';
 import { ReporteGestionMedicaComponent } from './reporte-gestion-medica.component';
+
+interface CitaFacturable {
+  id: number;
+  fecha: string;
+  mascota: string;
+  propietario: string;
+}
 
 interface FacturaEmitida {
   facturaId: number;
@@ -36,25 +44,49 @@ interface FacturaEmitida {
 
       <div class="card-body">
         <form class="d-flex flex-wrap align-items-end gap-2 mb-3"
-              (ngSubmit)="emitir()">
+              (ngSubmit)="buscarCitas()">
           <div>
-            <label for="factura-cita" class="form-label">Número de cita atendida</label>
-            <input id="factura-cita" name="cita" type="number"
-                   class="form-control" min="1" step="1" required
-                   placeholder="Ej. 4"
-                   [ngModel]="citaId" (ngModelChange)="cambiarCita($event)"
-                   [disabled]="ocupado" />
+            <label for="factura-busqueda" class="form-label">
+              Documento del dueño o nombre de la mascota
+            </label>
+            <input id="factura-busqueda" name="busqueda" type="search"
+                   class="form-control" maxlength="120" required
+                   [(ngModel)]="busqueda" (ngModelChange)="limpiarBusqueda()"
+                   [disabled]="ocupado || buscando" />
           </div>
-
-          <button type="submit" class="btn btn-success"
-                  [disabled]="ocupado || !citaValida">
-            {{ ocupado ? 'Emitiendo…' : 'Emitir factura definitiva' }}
+          <button type="submit" class="btn btn-outline-success"
+                  [disabled]="ocupado || buscando || !busqueda.trim()">
+            {{ buscando ? 'Buscando…' : 'Buscar citas atendidas' }}
           </button>
         </form>
-       <app-consulta-facturas
-  [citaId]="citaId"
-  (pagoActualizado)="actualizarEstadoPago($event)">
-    </app-consulta-facturas>
+
+        @if (consultado && citas.length === 0) {
+          <p role="status">No se encontraron citas atendidas.</p>
+        }
+
+        @if (citas.length > 0) {
+          <label for="factura-cita" class="form-label">Cita atendida</label>
+          <select id="factura-cita" class="form-select mb-3"
+                  [ngModel]="citaId" (ngModelChange)="cambiarCita($event)"
+                  [disabled]="ocupado">
+            <option [ngValue]="null">Selecciona una cita</option>
+            @for (cita of citas; track cita.id) {
+              <option [ngValue]="cita.id">
+                {{ cita.fecha }} · {{ cita.mascota }} · {{ cita.propietario }} · Cita {{ cita.id }}
+              </option>
+            }
+          </select>
+        }
+
+        @if (citaValida) {
+          <button type="button" class="btn btn-success" [disabled]="ocupado" (click)="emitir()">
+            {{ ocupado ? 'Emitiendo…' : 'Emitir factura definitiva' }}
+          </button>
+          <app-consulta-facturas
+            [citaId]="citaId"
+            (pagoActualizado)="actualizarEstadoPago($event)">
+          </app-consulta-facturas>
+        }
 
         @if (error) {
           <p class="alert alert-warning" role="alert">{{ error }}</p>
@@ -93,6 +125,10 @@ interface FacturaEmitida {
 })
 export class FacturaComponent {
   citaId: number | null = null;
+  busqueda = '';
+  citas: CitaFacturable[] = [];
+  buscando = false;
+  consultado = false;
   ocupado = false;
   error = '';
   factura: FacturaEmitida | null = null;
@@ -110,6 +146,35 @@ export class FacturaComponent {
     return this.citaId !== null
       && Number.isSafeInteger(this.citaId)
       && this.citaId > 0;
+  }
+
+  limpiarBusqueda(): void {
+    this.citas = [];
+    this.consultado = false;
+    this.cambiarCita(null);
+  }
+
+  async buscarCitas(): Promise<void> {
+    const termino = this.busqueda.trim();
+    if (!termino || this.buscando || this.ocupado) return;
+
+    this.limpiarBusqueda();
+    this.buscando = true;
+    try {
+      this.citas = await firstValueFrom(
+        this.backend.get<CitaFacturable[]>(
+          environment.apiUrlAuth, 'factura', 'citas-atendidas',
+          new HttpParams().set('busqueda', termino)
+        )
+      );
+      this.consultado = true;
+      if (this.citas.length === 1) this.cambiarCita(this.citas[0].id);
+    } catch (fallo) {
+      this.error = (fallo as { error?: { message?: string } }).error?.message
+        || 'No se pudieron buscar las citas atendidas.';
+    } finally {
+      this.buscando = false;
+    }
   }
 
   cambiarCita(id: number | null): void {

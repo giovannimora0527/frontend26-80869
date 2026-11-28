@@ -15,7 +15,7 @@ interface LineaFormulaPdf {
   indicaciones?: string | null;
 }
 
-interface FormulaParaPdf extends LineaFormulaPdf {
+export interface FormulaParaPdf extends LineaFormulaPdf {
   id: number;
   fechaEmision?: string | null;
   fechaCreacionRegistro?: string | null;

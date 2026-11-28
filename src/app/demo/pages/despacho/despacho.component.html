@@ -4,20 +4,7 @@
   </header>
 
   <div class="card-body">
-    <form class="d-flex align-items-end flex-wrap gap-2 mb-4"
-          (ngSubmit)="buscarPorNumero()">
-      <div>
-        <label for="despacho-formula" class="form-label">Número de fórmula</label>
-        <input id="despacho-formula" name="formula" type="number"
-               class="form-control" min="1" step="1" required
-               [(ngModel)]="formulaId" [disabled]="bloqueado" />
-      </div>
-      <button class="btn btn-outline-success" type="submit" [disabled]="bloqueado">
-        Buscar por número
-      </button>
-    </form>
-
-    <form class="border-top pt-3 mb-3" (ngSubmit)="buscarCoincidencias()">
+    <form class="mb-3" (ngSubmit)="buscarCoincidencias()">
       <h2 class="h5">Buscar fórmulas pendientes de despacho</h2>
 
       <div class="row g-2 align-items-end">
@@ -97,7 +84,6 @@
       <h2 class="h5">Fórmula {{ lineas[0].formulaId }}</h2>
       <ng-container [ngTemplateOutlet]="detalleFormula"></ng-container>
     }
-    <app-salidas-medicamento></app-salidas-medicamento>
   </div>
 </section>
 

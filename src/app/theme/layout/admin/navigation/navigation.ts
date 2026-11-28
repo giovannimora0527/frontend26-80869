@@ -1,4 +1,4 @@
-import { getJwtMenus } from 'src/app/utils/jwt.util';
+import { getJwtMenus, getJwtPayload } from 'src/app/utils/jwt.util';
 
 export interface NavigationItem {
   id: string;
@@ -135,7 +135,19 @@ export const NavigationItems: NavigationItem[] = [
 export function getNavigationItems(): NavigationItem[] {
   let allowedCodes: Set<string>;
   try {
-    allowedCodes = new Set(getJwtMenus().filter((menu) => menu.activo).map((menu) => menu.code));
+    const rol = getJwtPayload()?.rol.trim().toLowerCase();
+    const menusMedico = ['cita', 'formulas', 'historias-clinicas'];
+    const menusDespacho = ['medicamentos', 'despacho'];
+
+    const menusPermitidos = rol === 'medico' || rol === 'médico'
+      ? menusMedico
+      : rol === 'despacho_medico' ? menusDespacho : undefined;
+
+    allowedCodes = new Set(
+      getJwtMenus()
+        .filter(menu => menu.activo && (!menusPermitidos || menusPermitidos.includes(menu.code)))
+        .map(menu => menu.code)
+    );
   } catch (error) {
     console.error('No fue posible obtener los menus del token JWT', error);
     return [];

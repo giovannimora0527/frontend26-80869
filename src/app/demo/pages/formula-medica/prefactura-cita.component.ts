@@ -26,6 +26,7 @@ interface Prefactura {
     subtotal: number;
   }[];
   subtotalMedicamentos: number;
+  serviciosAdicionales?: { vigenciaId: number; nombre: string; valor: number; porcentajeIva: number }[];
   ivaServicio: number;
   totalEstimado: number;
 }
@@ -126,6 +127,9 @@ interface Prefactura {
           <p class="mb-1">
             Medicamentos formulados: {{ pesos(p.subtotalMedicamentos) }}
           </p>
+          @for (servicio of p.serviciosAdicionales ?? []; track servicio.vigenciaId) {
+            <p class="mb-1">{{ servicio.nombre }} · {{ pesos(servicio.valor) }} · IVA {{ servicio.porcentajeIva }} %</p>
+          }
           <p class="mb-1">IVA del servicio: {{ pesos(p.ivaServicio) }}</p>
           <p class="mb-0">
             <strong>Total estimado: {{ pesos(p.totalEstimado) }}</strong>
@@ -280,6 +284,9 @@ export class PrefacturaCitaComponent implements OnChanges {
     escribir('Medicamentos formulados: ' + this.pesos(p.subtotalMedicamentos));
     escribir('IVA del servicio (' + p.tarifa.porcentajeIva + '%): '
       + this.pesos(p.ivaServicio));
+    for (const servicio of p.serviciosAdicionales ?? []) {
+      escribir(servicio.nombre + ' · ' + this.pesos(servicio.valor) + ' · IVA ' + servicio.porcentajeIva + ' %');
+    }
     escribir('Total estimado: ' + this.pesos(p.totalEstimado), 14, true);
 
     const paginas = pdf.getNumberOfPages();

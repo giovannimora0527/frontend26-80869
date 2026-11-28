@@ -8,7 +8,6 @@ import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 import { ComprobantesDespachoComponent } from './comprobantes-despacho.component';
 import { HistorialDespachoComponent } from './historial-despacho.component';
-import { SalidasMedicamentoComponent } from './salidas-medicamento.component';
 
 interface FormulaEncontrada {
   formulaId: number;
@@ -57,8 +56,7 @@ interface Comprobante {
     FormsModule,
     NgTemplateOutlet,
     ComprobantesDespachoComponent,
-    HistorialDespachoComponent,
-    SalidasMedicamentoComponent
+    HistorialDespachoComponent
   ],
   templateUrl: './despacho.component.html'
 })
@@ -132,23 +130,6 @@ export class DespachoComponent {
     } finally {
       this.ocupado = false;
     }
-  }
-
-  async buscarPorNumero(): Promise<void> {
-    if (this.bloqueado) return;
-
-    this.resultados = [];
-    this.busquedaRealizada = false;
-    const id = this.formulaId;
-
-    if (id === null || !Number.isSafeInteger(id) || id < 1) {
-      this.lineas = [];
-      this.mensaje = '';
-      this.error = 'Indica un número de fórmula válido.';
-      return;
-    }
-
-    await this.cargarDetalle(id);
   }
 
   async abrirResultado(id: number, plantilla: TemplateRef<unknown>): Promise<void> {
